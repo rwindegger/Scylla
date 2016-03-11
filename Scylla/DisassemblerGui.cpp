@@ -353,7 +353,7 @@ bool DisassemblerGui::getDisassemblyComment(unsigned int index)
 				#ifdef _WIN64
 				addressTemp = (DWORD_PTR)INSTRUCTION_GET_RIP_TARGET(&ProcessAccessHelp::decomposerResult[index]);
 
-				swprintf_s(tempBuffer,L"-> " PRINTF_DWORD_PTR_FULL,addressTemp);
+				swprintf_s(tempBuffer,L"%s-> " PRINTF_DWORD_PTR_FULL,addressTemp);
 
 				if(ProcessAccessHelp::readMemoryFromProcess(addressTemp, sizeof(DWORD_PTR), &address))
 				{
@@ -370,7 +370,7 @@ bool DisassemblerGui::getDisassemblyComment(unsigned int index)
 			{
 				addressTemp = (DWORD_PTR)ProcessAccessHelp::decomposerResult[index].disp;
 
-				swprintf_s(tempBuffer,L"-> " PRINTF_DWORD_PTR_FULL,addressTemp);
+				swprintf_s(tempBuffer,L"%s-> " PRINTF_DWORD_PTR_FULL,addressTemp);
 
 				address = 0;
 				if(ProcessAccessHelp::readMemoryFromProcess(addressTemp, sizeof(DWORD_PTR), &address))
