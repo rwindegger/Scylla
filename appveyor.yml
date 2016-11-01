@@ -6,10 +6,18 @@ branches:
     - cmake
 
 # Operating system (build VM template)
-os: Visual Studio 2015
+os:
+  - Visual Studio 2015
+  - Visual Studio 2013
 
-platform: x64
-configuration: Release
+platform:
+  - x86
+  - x64
+
+configuration:
+  - Release
+  - Debug
+
 
 build:
   project: C:/projects/scylla/tmp/Scylla.vcxproj      # path to Visual Studio solution or project
