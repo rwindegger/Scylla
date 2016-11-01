@@ -12,7 +12,7 @@ platform: x64
 configuration: Release
 
 build:
-  project: Scylla.vcxproj      # path to Visual Studio solution or project
+  project: C:/projects/scylla/tmp/Scylla.vcxproj      # path to Visual Studio solution or project
 
 before_build:
     - rmdir /S /Q tinyxml
