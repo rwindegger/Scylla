@@ -107,7 +107,7 @@ set_target_properties (ScyllaDllTest PROPERTIES
 	FOLDER "tests"
 )
 
-add_test( TestScyllaDllTest ScyllaDllTest )
+add_test( TestScyllaDllTest ScyllaDllTest)
 
 # ScyllaExeTest
 add_executable(ScyllaExeTest "${ScyllaTest_dir}/ScyllaTestExe/main.cpp")

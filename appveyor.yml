@@ -32,5 +32,6 @@ before_build:
     - cmake ..
 
 after_build:
-    - cd C:/projects/scylla/tmp/
-    - ctest
+    - cmake --build . --config %CONFIGURATION%
+    - ps: Get-ChildItem -Path $($env:CONFIGURATION) -Recurse | Write-Host
+    - ctest . -C %CONFIGURATION%
