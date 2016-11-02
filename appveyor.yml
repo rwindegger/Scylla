@@ -24,7 +24,7 @@ build:
 
 before_build:
     - rmdir /S /Q tinyxml
-    - git clone https://github.com/lucasg/tinyxml tinyxml
+    - git clone https://github.com/rjpcomputing/ticpp tinyxml
     - rmdir /S /Q WTL
     - git clone https://github.com/lucasg/WindowsTemplateLibrary WTL
     - mkdir tmp
