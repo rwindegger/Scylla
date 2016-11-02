@@ -1,3 +1,5 @@
+Disclaimer : this a light fork from NtQuery/Scylla official repository. This fork add the ability to build Scylla using cmake as well as using Appveyor as CI server (works for VS2012 and VS2013).
+
 Scylla - x64/x86 Imports Reconstruction
 =======================================
 
