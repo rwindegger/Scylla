@@ -20,6 +20,7 @@ int InitializeGui(HINSTANCE hInstance, LPARAM param);
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
+	InitCommonControls();
 	AddExceptionHandler();
 
 	return InitializeGui(hInstance, (LPARAM)0);

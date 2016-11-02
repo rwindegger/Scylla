@@ -52,7 +52,7 @@ target_include_directories(Scylla PUBLIC
 	"${WTL_dir}/Include"
 )
 set_target_properties(Scylla PROPERTIES
-	LINK_FLAGS "/SUBSYSTEM:WINDOWS"
+	LINK_FLAGS "/SUBSYSTEM:WINDOWS /MANIFESTDEPENDENCY:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df'\""
 )
 
 
