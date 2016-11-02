@@ -32,9 +32,9 @@ HMODULE hScylla = 0;
 int main(int argc, char *argv[])
 {
 #ifdef _WIN64
-	hScylla = LoadLibraryW(L"ScyllaDLLx64.dll");
+	hScylla = LoadLibrary(_T("ScyllaDllx64.dll"));
 #else
-	hScylla = LoadLibraryW(L"ScyllaDLLx86.dll");
+	hScylla = LoadLibrary(_T("ScyllaDllx64.dll"));
 #endif
 
 	if (hScylla)
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 		//testGui();
 	}
 
-	getchar();
+	//getchar();
 	return 0;
 }
 

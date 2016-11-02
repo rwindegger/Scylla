@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.0)
 project(Scylla)
 
+#  Global properties for VS project to use folders
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+enable_testing()
 
 # set the correct defines for projects to compile
 # using Unicode strings
@@ -31,6 +35,8 @@ set(Scylla_dir	"${src_dir}/Scylla" )
 set(ScyllaTest_dir	"${src_dir}/ScyllaDllTest" )
 set(WTL_dir		"${src_dir}/WTL")
 
+
+#### Dependencies
 # tinyxml static library
 message("-- Configuring : tinyxml")
 file (GLOB tinyxml_files 
@@ -38,6 +44,9 @@ file (GLOB tinyxml_files
 		"${tinyxml_dir}/*.h"
 )
 add_library(tinyxml ${tinyxml_files})
+set_target_properties (tinyxml PROPERTIES
+	FOLDER "contrib"
+)
 
 # diStorm static library
 message("-- Configuring : diStorm")
@@ -47,8 +56,12 @@ file (GLOB diStorm_files
 			"${diStorm_dir}/include/*.h"
 )
 add_library(diStorm ${diStorm_files})
+set_target_properties (diStorm PROPERTIES
+	FOLDER "contrib"
+)
 
 
+#### Scylla targets
 # Scylla executable
 message("-- Configuring : Scylla")
 file (GLOB Scylla_files 

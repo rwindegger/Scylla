@@ -30,3 +30,7 @@ before_build:
     - mkdir tmp
     - cd tmp
     - cmake ..
+
+after_build:
+    - cd C:/projects/scylla/tmp/
+    - ctest
