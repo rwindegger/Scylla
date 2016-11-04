@@ -12,10 +12,10 @@ typedef BOOL (WINAPI *def_IsWow64Process)(HANDLE hProcess,PBOOL Wow64Process);
 
 class Process {
 public:
-	DWORD PID;
+	size_t PID;
     DWORD sessionId;
-	DWORD_PTR imageBase;
-    DWORD_PTR pebAddress;
+	intptr_t imageBase;
+	intptr_t pebAddress;
 	DWORD entryPoint; //RVA without imagebase
 	DWORD imageSize;
 	WCHAR filename[MAX_PATH];

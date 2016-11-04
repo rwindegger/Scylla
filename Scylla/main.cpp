@@ -2,6 +2,7 @@
 
 #include <atlbase.h>       // base ATL classes
 #include <atlapp.h>        // base WTL classes
+#include <inttypes.h>	   // Get correct print formating for integers
 #include "Architecture.h"
 
 CAppModule _Module;
@@ -172,7 +173,7 @@ LONG WINAPI HandleUnknownException(struct _EXCEPTION_POINTERS *ExceptionInfo)
 
 	DWORD_PTR moduleBase = (DWORD_PTR)GetModuleHandleW(file);
 	
-	swprintf_s(message, _countof(message), TEXT("ExceptionCode %08X\r\nExceptionFlags %08X\r\nNumberParameters %08X\r\nExceptionAddress VA ")TEXT(PRINTF_DWORD_PTR_FULL_S)TEXT(" - Base ")TEXT(PRINTF_DWORD_PTR_FULL_S)TEXT("\r\nExceptionAddress module %s\r\n\r\n"), 
+	swprintf_s(message, _countof(message), TEXT("ExceptionCode %08X\r\nExceptionFlags %08X\r\nNumberParameters %08X\r\nExceptionAddress VA ") PRINTF_DWORD_PTR_FULL TEXT(" - Base ") PRINTF_DWORD_PTR_FULL TEXT("\r\nExceptionAddress module %s\r\n\r\n"), 
 	ExceptionInfo->ExceptionRecord->ExceptionCode,
 	ExceptionInfo->ExceptionRecord->ExceptionFlags, 
 	ExceptionInfo->ExceptionRecord->NumberParameters, 
@@ -180,8 +181,10 @@ LONG WINAPI HandleUnknownException(struct _EXCEPTION_POINTERS *ExceptionInfo)
 	moduleBase,
 	file);
 
+	
+
 #ifdef _WIN64
-	swprintf_s(registerInfo, _countof(registerInfo),TEXT("rax=0x%p, rbx=0x%p, rdx=0x%p, rcx=0x%p, rsi=0x%p, rdi=0x%p, rbp=0x%p, rsp=0x%p, rip=0x%p"),
+	swprintf_s(registerInfo, _countof(registerInfo), TEXT("rax=0x%llx, rbx = 0x%llx, rdx = 0x%llx, rcx = 0x%llx, rsi = 0x%llx, rdi = 0x%llx, rbp = 0x%llx, rsp = 0x%llx, rip = 0x%llx"),
 		ExceptionInfo->ContextRecord->Rax,
 		ExceptionInfo->ContextRecord->Rbx,
 		ExceptionInfo->ContextRecord->Rdx,
@@ -193,7 +196,7 @@ LONG WINAPI HandleUnknownException(struct _EXCEPTION_POINTERS *ExceptionInfo)
 		ExceptionInfo->ContextRecord->Rip
 		);
 #else
-	swprintf_s(registerInfo, _countof(registerInfo),TEXT("eax=0x%p, ebx=0x%p, edx=0x%p, ecx=0x%p, esi=0x%p, edi=0x%p, ebp=0x%p, esp=0x%p, eip=0x%p"),
+	swprintf_s(registerInfo, _countof(registerInfo), TEXT("eax=0x%lx, ebx=0x%lx, edx=0x%lx, ecx=0x%lx, esi=0x%lx, edi=0x%lx, ebp=0x%lx, esp=0x%lx, eip=0x%lx"),
 		ExceptionInfo->ContextRecord->Eax,
 		ExceptionInfo->ContextRecord->Ebx,
 		ExceptionInfo->ContextRecord->Edx,

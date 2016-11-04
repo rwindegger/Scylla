@@ -115,9 +115,9 @@ public:
 	/*
 	 * Open a new process handle
 	 */
-	static bool openProcessHandle(DWORD dwPID);
+	static bool openProcessHandle(size_t szPID);
 
-	static HANDLE NativeOpenProcess(DWORD dwDesiredAccess, DWORD dwProcessId);
+	static HANDLE NativeOpenProcess(DWORD dwDesiredAccess, size_t szPID);
 
 	static void closeProcessHandle();
 

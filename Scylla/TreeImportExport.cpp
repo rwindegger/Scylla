@@ -198,7 +198,7 @@ bool TreeImportExport::ConvertStringToBool(const char * strValue)
 
 void TreeImportExport::ConvertDwordPtrToString(const DWORD_PTR dwValue)
 {
-	sprintf_s(xmlStringBuffer, PRINTF_DWORD_PTR_FULL_S, dwValue);
+	sprintf_s(xmlStringBuffer, "%" PRIxPTR, dwValue);
 }
 
 DWORD_PTR TreeImportExport::ConvertStringToDwordPtr(const char * strValue)

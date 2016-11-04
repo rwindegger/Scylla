@@ -27,9 +27,9 @@ BYTE ProcessAccessHelp::fileHeaderFromDisk[PE_HEADER_BYTES_COUNT];
 
 //#define DEBUG_COMMENTS
 
-bool ProcessAccessHelp::openProcessHandle(DWORD dwPID)
+bool ProcessAccessHelp::openProcessHandle(size_t szPID)
 {
-	if (dwPID > 0)
+	if (szPID > 0)
 	{
 		if (hProcess)
 		{
@@ -43,7 +43,7 @@ bool ProcessAccessHelp::openProcessHandle(DWORD dwPID)
 			//hProcess = OpenProcess(PROCESS_CREATE_THREAD|PROCESS_VM_OPERATION|PROCESS_QUERY_INFORMATION|PROCESS_VM_READ|PROCESS_VM_WRITE, 0, dwPID);
 			//if (!NT_SUCCESS(NativeWinApi::NtOpenProcess(&hProcess,PROCESS_CREATE_THREAD|PROCESS_VM_OPERATION|PROCESS_QUERY_INFORMATION|PROCESS_VM_READ|PROCESS_VM_WRITE,&ObjectAttributes, &cid)))
 
-			hProcess = NativeOpenProcess(PROCESS_CREATE_THREAD|PROCESS_VM_OPERATION|PROCESS_QUERY_INFORMATION|PROCESS_VM_READ|PROCESS_VM_WRITE|PROCESS_SUSPEND_RESUME|PROCESS_TERMINATE, dwPID);
+			hProcess = NativeOpenProcess(PROCESS_CREATE_THREAD|PROCESS_VM_OPERATION|PROCESS_QUERY_INFORMATION|PROCESS_VM_READ|PROCESS_VM_WRITE|PROCESS_SUSPEND_RESUME|PROCESS_TERMINATE, szPID);
 
 			if (hProcess)
 			{
@@ -68,7 +68,7 @@ bool ProcessAccessHelp::openProcessHandle(DWORD dwPID)
 	
 }
 
-HANDLE ProcessAccessHelp::NativeOpenProcess(DWORD dwDesiredAccess, DWORD dwProcessId)
+HANDLE ProcessAccessHelp::NativeOpenProcess(DWORD dwDesiredAccess, size_t szProcessId)
 {
 	HANDLE hProcess = 0;
 	CLIENT_ID cid = {0};
@@ -76,7 +76,7 @@ HANDLE ProcessAccessHelp::NativeOpenProcess(DWORD dwDesiredAccess, DWORD dwProce
 	NTSTATUS ntStatus = 0;
 
 	InitializeObjectAttributes(&ObjectAttributes, 0, 0, 0, 0);
-	cid.UniqueProcess = (HANDLE)dwProcessId;
+	cid.UniqueProcess = (HANDLE)szProcessId;
 
 	ntStatus = NativeWinApi::NtOpenProcess(&hProcess,dwDesiredAccess,&ObjectAttributes, &cid);
 

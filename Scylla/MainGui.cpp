@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include "MainGui.h"
 
 #include "Architecture.h"
@@ -76,7 +77,7 @@ void MainGui::InitDllStartWithPreSelect( PGUI_DLL_PARAMETER guiParam )
 	{
 		if (processList[i].PID == guiParam->dwProcessId)
 			newSel = (int)i;
-		swprintf_s(stringBuffer, L"%04d - %s - %s", processList[i].PID, processList[i].filename, processList[i].fullPath);
+		swprintf_s(stringBuffer, L"%llu - %s - %s", processList[i].PID, processList[i].filename, processList[i].fullPath);
 		ComboProcessList.AddString(stringBuffer);
 	}
 	if (newSel != -1)
@@ -651,7 +652,7 @@ void MainGui::fillProcessListComboBox(CComboBox& hCombo)
 
 	for (size_t i = 0; i < processList.size(); i++)
 	{
-		swprintf_s(stringBuffer, L"%04d - %s - %s", processList[i].PID, processList[i].filename, processList[i].fullPath);
+		swprintf_s(stringBuffer, L"%llu - %s - %s", processList[i].PID, processList[i].filename, processList[i].fullPath);
 		hCombo.AddString(stringBuffer);
 	}
 }
