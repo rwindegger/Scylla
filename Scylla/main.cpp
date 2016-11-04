@@ -110,6 +110,41 @@ void RemoveExceptionHandler()
 	SetUnhandledExceptionFilter(oldFilter);
 }
 
+#if SCYLLA_USE_MINIDUMP_FOR_CRASH
+#include <dbghelp.h>	   // Minidumps creation helpers
+LONG WINAPI HandleUnknownException(struct _EXCEPTION_POINTERS *ExceptionInfo)
+{
+	HANDLE hFile = CreateFile(_T("ScyllaMiniDump.dmp"), GENERIC_READ | GENERIC_WRITE,
+		0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+	if ((hFile != NULL) && (hFile != INVALID_HANDLE_VALUE))
+	{
+		// Create the minidump 
+		MINIDUMP_EXCEPTION_INFORMATION mdei;
+
+		mdei.ThreadId = GetCurrentThreadId();
+		mdei.ExceptionPointers = ExceptionInfo;
+		mdei.ClientPointers = FALSE;
+
+		MINIDUMP_CALLBACK_INFORMATION mci;
+
+		mci.CallbackRoutine = (MINIDUMP_CALLBACK_ROUTINE) NULL;
+		mci.CallbackParam = 0;
+
+		MINIDUMP_TYPE mdt = (MINIDUMP_TYPE)(MiniDumpWithIndirectlyReferencedMemory | MiniDumpScanMemory);
+
+		BOOL rv = MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(),
+			hFile, mdt, (ExceptionInfo != 0) ? &mdei : 0, 0, &mci);	
+
+		CloseHandle(hFile);
+
+	}
+
+
+	MessageBox(0, _T("Something went wrong : could you send the ScyllaMiniDump.dmp file to http://www.github.com/NtQuery/Scylla ?") , _T("Scylla crash pad"), MB_ICONERROR);
+	return EXCEPTION_CONTINUE_SEARCH;
+}
+#else
 LONG WINAPI HandleUnknownException(struct _EXCEPTION_POINTERS *ExceptionInfo)
 {
 	WCHAR registerInfo[220];
@@ -177,3 +212,4 @@ LONG WINAPI HandleUnknownException(struct _EXCEPTION_POINTERS *ExceptionInfo)
 
 	return EXCEPTION_CONTINUE_SEARCH;
 }
+#endif

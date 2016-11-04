@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.0)
 project(Scylla)
 
+# Compilation options
+option(SCYLLA_USE_MINIDUMP_FOR_CRASH "Use dbghelp.lib to create minidumps on crashs" OFF)
+set(WDK_LIBPATH "" CACHE FILEPATH "Path to your Windows Kit library folder (usually C:/Program Files (x86)/Windows Kits/10/Debuggers/lib)" )
+
+
 #  Global properties for VS project to use folders
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -100,6 +105,14 @@ set_target_properties(ScyllaDll PROPERTIES
 	FOLDER "Scylla"
 )
 
+
+if (SCYLLA_USE_MINIDUMP_FOR_CRASH)
+	find_library(dbghelp_lib dbghelp ${WDK_LIBPATH}/${ARCH})
+	
+	target_link_libraries(Scylla ${dbghelp_lib})
+	target_compile_definitions(Scylla PUBLIC "-DSCYLLA_USE_MINIDUMP_FOR_CRASH")
+endif()
+
 #### Scylla tests
 # ScyllaDllTest
 add_executable(ScyllaDllTest "${ScyllaTest_dir}/ScyllaDllTest/Source.cpp")
@@ -115,6 +128,7 @@ set_target_properties (ScyllaExeTest PROPERTIES
 	FOLDER "tests"
 	LINK_FLAGS "/SUBSYSTEM:WINDOWS"
 )
+
 
 
 # compile projects as unicode
