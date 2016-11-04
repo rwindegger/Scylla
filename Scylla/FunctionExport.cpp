@@ -1,9 +1,8 @@
-#include <windows.h>
+#include "FunctionExport.h"
 #include "PeParser.h"
 #include "ProcessAccessHelp.h"
 #include "Scylla.h"
 #include "Architecture.h"
-#include "FunctionExport.h"
 #include "ProcessLister.h"
 #include "ApiReader.h"
 #include "IATSearch.h"

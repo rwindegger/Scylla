@@ -2,6 +2,11 @@
 
 #include <windows.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #if defined (WIN32)
 #if defined (_MSC_VER)
 #pragma warning(disable: 4251)
@@ -9,7 +14,7 @@
 #if defined(ScyllaDll_EXPORTS)
 #define  SCYLLA_DLL_EXPORT __declspec(dllexport)
 #else
-#define  SCYLLA_DLL_EXPORT  __declspec(dllimport)
+#define  SCYLLA_DLL_EXPORT  /*__declspec(dllimport)*/
 #endif
 #else
 #define SCYLLA_DLL_EXPORT 
@@ -31,9 +36,6 @@ typedef struct _GUI_DLL_PARAMETER {
 
 int InitializeGui(HINSTANCE hInstance, LPARAM param);
 
-#ifdef __cplusplus
-extern "C" { 
-#endif
 
 //function to export in DLL
 
