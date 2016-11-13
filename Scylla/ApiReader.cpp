@@ -1,9 +1,9 @@
 
 #include "ApiReader.h"
+#include <VersionHelpers.h>
 
 #include "Scylla.h"
 #include "Architecture.h"
-#include "SystemInformation.h"
 #include "StringConversion.h"
 #include "PeParser.h"
 
@@ -1192,45 +1192,28 @@ bool ApiReader::addNotFoundApiToModuleList(DWORD_PTR iatAddressVA, DWORD_PTR api
 
 bool ApiReader::isApiBlacklisted( const char * functionName )
 {
-	if (SystemInformation::currenOS < WIN_VISTA_32)
+	if (!IsWindowsVistaOrGreater())
 	{
-		if (!strcmp(functionName, "RestoreLastError"))
-		{
-			return true;
-		}
-		else
-		{
-			return false;
-		}
+		return 0 != strcmp(functionName, "RestoreLastError");
 	}
-	else
-	{
-		return false;
-	}
-
-
-	/*#ifdef _WIN64
-	else if (SystemInformation::currenOS == WIN_XP_64 && !strcmp(functionName, "DecodePointer"))
-	{
-		return true;
-	}
-#endif*/
+	
+	return false;
 }
 
 bool ApiReader::isWinSxSModule( ModuleInfo * module )
 {
+
 	if (wcsstr(module->fullPath, L"\\WinSxS\\"))
 	{
 		return true;
 	}
-	else if (wcsstr(module->fullPath, L"\\winsxs\\"))
+	
+	if (wcsstr(module->fullPath, L"\\winsxs\\"))
 	{
 		return true;
 	}
-	else
-	{
-		return false;
-	}
+	
+	return false;
 }
 
 bool ApiReader::isInvalidMemoryForIat( DWORD_PTR address )

@@ -1,5 +1,6 @@
-#include <inttypes.h>
 #include "MainGui.h"
+#include <inttypes.h>
+#include <VersionHelpers.h>
 
 #include "Architecture.h"
 //#include "PluginLoader.h"
@@ -10,7 +11,6 @@
 #include "PickApiGui.h"
 //#include "NativeWinApi.h"
 #include "ImportRebuilder.h"
-#include "SystemInformation.h"
 #include "Scylla.h"
 #include "AboutGui.h"
 #include "DonateGui.h"
@@ -121,7 +121,7 @@ void MainGui::InitDllStartWithPreSelect( PGUI_DLL_PARAMETER guiParam )
 
 BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
-	if (SystemInformation::currenOS == UNKNOWN_OS)
+	if (!IsWindowsXPOrGreater())
 	{
 		if(IDCANCEL == MessageBox(L"Operating System is not supported\r\nContinue anyway?", L"Scylla", MB_ICONWARNING | MB_OKCANCEL))
 		{

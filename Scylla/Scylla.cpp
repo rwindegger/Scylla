@@ -1,7 +1,6 @@
 #include "Scylla.h"
 
 #include "NativeWinApi.h"
-#include "SystemInformation.h"
 #include "ProcessAccessHelp.h"
 
 ConfigurationHolder Scylla::config(L"Scylla.ini");
@@ -20,7 +19,6 @@ void Scylla::initAsGuiApp()
 	plugins.findAllPlugins();
 
 	NativeWinApi::initialize();
-	SystemInformation::getSystemInformation();
 
 	if(config[DEBUG_PRIVILEGE].isTrue())
 	{
@@ -35,6 +33,5 @@ void Scylla::initAsDll()
 	ProcessAccessHelp::ownModuleList.clear();
 
 	NativeWinApi::initialize();
-	SystemInformation::getSystemInformation();
 	ProcessAccessHelp::getProcessModules(GetCurrentProcess(), ProcessAccessHelp::ownModuleList);
 }
