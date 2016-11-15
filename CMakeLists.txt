@@ -3,6 +3,7 @@ project(Scylla)
 
 # Compilation options
 option(SCYLLA_USE_MINIDUMP_FOR_CRASH "Use dbghelp.lib to create minidumps on crashs" OFF)
+option(SCYLLA_USE_DEBUGGING_LOG "Create a debugging log file" OFF)
 set(WDK_LIBPATH "" CACHE FILEPATH "Path to your Windows Kit library folder (usually C:/Program Files (x86)/Windows Kits/10/Debuggers/lib)" )
 
 
@@ -65,7 +66,6 @@ set_target_properties (diStorm PROPERTIES
 	FOLDER "contrib"
 )
 
-
 #### Scylla targets
 # Scylla executable
 message("-- Configuring : Scylla")
@@ -76,14 +76,14 @@ file (GLOB Scylla_files
 			"${Scylla_dir}/*.rc"
 )
 add_executable(Scylla ${Scylla_files})
-target_link_libraries(Scylla tinyxml diStorm)
+target_link_libraries(Scylla tinyxml diStorm )
 target_include_directories(Scylla PUBLIC 
 	"${tinyxml_dir}/"
 	"${diStorm_dir}/include"
 	"${WTL_dir}/Include"
 )
 set_target_properties(Scylla PROPERTIES
-	LINK_FLAGS "/SUBSYSTEM:WINDOWS /MANIFESTDEPENDENCY:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df'\""
+	LINK_FLAGS "/SUBSYSTEM:WINDOWS /MANIFESTDEPENDENCY:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df'\" /DYNAMICBASE Psapi.lib Imagehlp.lib"
 	FOLDER "Scylla"
 )
 
@@ -94,7 +94,7 @@ file (GLOB ScyllaDll_files
 			"${Scylla_dir}/*.h"
 )
 add_library(ScyllaDll SHARED ${ScyllaDll_files})
-target_link_libraries(ScyllaDll tinyxml diStorm)
+target_link_libraries(ScyllaDll tinyxml diStorm Psapi)
 target_include_directories(ScyllaDll PUBLIC 
 	"${tinyxml_dir}/"
 	"${diStorm_dir}/include"
@@ -102,6 +102,7 @@ target_include_directories(ScyllaDll PUBLIC
 )
 set_target_properties(ScyllaDll PROPERTIES
 	OUTPUT_NAME "ScyllaDll${ARCH}"
+	LINK_FLAGS "/DYNAMICBASE Psapi.lib Imagehlp.lib"
 	FOLDER "Scylla"
 )
 
@@ -111,6 +112,10 @@ if (SCYLLA_USE_MINIDUMP_FOR_CRASH)
 	
 	target_link_libraries(Scylla ${dbghelp_lib})
 	target_compile_definitions(Scylla PUBLIC "-DSCYLLA_USE_MINIDUMP_FOR_CRASH")
+endif()
+
+if (SCYLLA_USE_DEBUGGING_LOG)
+	target_compile_definitions(Scylla PUBLIC "-DDEBUG_COMMENTS")
 endif()
 
 #### Scylla tests

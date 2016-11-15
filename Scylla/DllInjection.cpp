@@ -5,7 +5,6 @@
 #include "NativeWinApi.h"
 #include "ProcessAccessHelp.h"
 
-#pragma comment(lib, "Psapi.lib")
 
 
 	HMODULE DllInjection::dllInjection(HANDLE hProcess, const WCHAR * filename)

@@ -6,8 +6,6 @@
 #include "Architecture.h"
 #include "Scylla.h"
 
-#pragma comment(lib, "Psapi.lib")
-
 
 DisassemblerGui::DisassemblerGui(DWORD_PTR startAddress, ApiReader * apiReaderObject)
 {

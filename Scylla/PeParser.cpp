@@ -4,8 +4,6 @@
 #include <algorithm>
 #include <imagehlp.h>
 
-#pragma comment(lib, "Imagehlp.lib")
-
 
 PeParser::PeParser()
 {
