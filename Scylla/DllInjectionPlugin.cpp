@@ -5,8 +5,6 @@ const WCHAR * DllInjectionPlugin::FILE_MAPPING_NAME = L"ScyllaPluginExchange";
 
 HANDLE DllInjectionPlugin::hProcess = 0;
 
-//#define DEBUG_COMMENTS
-
 void DllInjectionPlugin::injectPlugin(Plugin & plugin, std::map<DWORD_PTR, ImportModuleThunk> & moduleList, DWORD_PTR imageBase, DWORD_PTR imageSize)
 {
 	PSCYLLA_EXCHANGE scyllaExchange = 0;
@@ -23,9 +21,7 @@ void DllInjectionPlugin::injectPlugin(Plugin & plugin, std::map<DWORD_PTR, Impor
 
 	if (!createFileMapping((DWORD)(sizeof(SCYLLA_EXCHANGE) + sizeof(UNRESOLVED_IMPORT) + (sizeof(UNRESOLVED_IMPORT) * numberOfUnresolvedImports))))
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"injectPlugin :: createFileMapping %X failed",sizeof(SCYLLA_EXCHANGE) + sizeof(UNRESOLVED_IMPORT) + (sizeof(UNRESOLVED_IMPORT) * numberOfUnresolvedImports));
-#endif
 		return;
 	}
 
@@ -77,9 +73,7 @@ void DllInjectionPlugin::injectImprecPlugin(Plugin & plugin, std::map<DWORD_PTR,
 	
 	if (hImprecMap == NULL)
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"injectImprecPlugin :: CreateFileMapping failed 0x%X", GetLastError());
-#endif
 		return;
 	}
 
@@ -87,9 +81,7 @@ void DllInjectionPlugin::injectImprecPlugin(Plugin & plugin, std::map<DWORD_PTR,
 
 	if (lpImprecViewOfFile == NULL)
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"injectImprecPlugin :: MapViewOfFile failed 0x%X", GetLastError());
-#endif
 		CloseHandle(hImprecMap);
 		return;
 	}
@@ -115,9 +107,7 @@ bool DllInjectionPlugin::createFileMapping(DWORD mappingSize)
 
 	if (hMapFile == NULL)
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"createFileMapping :: CreateFileMapping failed 0x%X", GetLastError());
-#endif
 		return false;
 	}
 
@@ -125,9 +115,7 @@ bool DllInjectionPlugin::createFileMapping(DWORD mappingSize)
 
 	if (lpViewOfFile == NULL)
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"createFileMapping :: MapViewOfFile failed 0x%X", GetLastError());
-#endif
 		CloseHandle(hMapFile);
 		hMapFile = 0;
 		return false;

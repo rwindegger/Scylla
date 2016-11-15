@@ -1,9 +1,13 @@
 #include "DisassemblerGui.h"
 #include <algorithm>
+#include <Psapi.h>
+
 #include "ProcessAccessHelp.h"
 #include "Architecture.h"
-#include <Psapi.h>
+#include "Scylla.h"
+
 #pragma comment(lib, "Psapi.lib")
+
 
 DisassemblerGui::DisassemblerGui(DWORD_PTR startAddress, ApiReader * apiReaderObject)
 {
@@ -414,9 +418,7 @@ void DisassemblerGui::initAddressCommentList()
 			}
 			else
 			{
-#ifdef DEBUG_COMMENTS
 				Scylla::debugLog.log(L"DllInjection::getModuleHandle :: GetModuleFileNameExW failed 0x%X", GetLastError());
-#endif
 			}
 		}
 	}

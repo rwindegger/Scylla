@@ -1,12 +1,11 @@
 #include "ProcessLister.h"
-
-#include "SystemInformation.h"
-#include "Logger.h"
-#include "ProcessAccessHelp.h"
-
 #include <algorithm>
 
-//#define DEBUG_COMMENTS
+#include "ProcessAccessHelp.h"
+#include "Scylla.h"
+
+
+
 
 def_IsWow64Process ProcessLister::_IsWow64Process = 0;
 
@@ -127,11 +126,8 @@ bool ProcessLister::getAbsoluteFilePath(HANDLE hProcess, Process * process)
 	{
 		if (!deviceNameResolver->resolveDeviceLongNameToShort(processPath, process->fullPath))
 		{
-#ifdef DEBUG_COMMENTS
-			Scylla::debugLog.log(L"getAbsoluteFilePath :: resolveDeviceLongNameToShort failed with path %s", processPath);
-#endif
 			//some virtual volumes
-
+            Scylla::debugLog.log(L"getAbsoluteFilePath :: resolveDeviceLongNameToShort failed with path %s", processPath);
             if (GetModuleFileNameExW(hProcess, 0, process->fullPath, _countof(process->fullPath)) != 0)
             {
                 retVal = true;
@@ -144,9 +140,7 @@ bool ProcessLister::getAbsoluteFilePath(HANDLE hProcess, Process * process)
 	}
 	else
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"getAbsoluteFilePath :: GetProcessImageFileName failed %u", GetLastError());
-#endif
 		if (GetModuleFileNameExW(hProcess, 0, process->fullPath, _countof(process->fullPath)) != 0)
 		{
 			retVal = true;

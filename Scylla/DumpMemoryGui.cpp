@@ -1,9 +1,10 @@
 #include "DumpMemoryGui.h"
+#include <Psapi.h>
 
 #include "Architecture.h"
 #include "ProcessAccessHelp.h"
-#include <Psapi.h>
 #include "PeParser.h"
+#include "Scylla.h"
 
 WCHAR DumpMemoryGui::protectionString[100];
 const WCHAR DumpMemoryGui::MemoryUndefined[] = L"UNDEF";
@@ -395,9 +396,7 @@ void DumpMemoryGui::getMemoryList()
 		}
 		else
 		{
-#ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"getMemoryList :: GetModuleFileNameExW failed 0x%X", GetLastError());
-#endif
 		}
 	}
 

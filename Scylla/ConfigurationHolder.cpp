@@ -2,10 +2,9 @@
 
 #include <shlwapi.h>
 #include "Architecture.h"
+#include "Scylla.h"
 
 const WCHAR ConfigurationHolder::CONFIG_FILE_SECTION_NAME[] = L"SCYLLA_CONFIG";
-
-//#define DEBUG_COMMENTS
 
 ConfigurationHolder::ConfigurationHolder(const WCHAR* fileName)
 {
@@ -196,9 +195,7 @@ bool ConfigurationHolder::buildConfigFilePath(const WCHAR* fileName)
 
 	if (!GetModuleFileName(0, configPath, _countof(configPath)))
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"buildConfigFilePath :: GetModuleFileName failed %d", GetLastError());
-#endif
 		return false;
 	}
 

@@ -7,7 +7,6 @@
 
 #pragma comment(lib, "Psapi.lib")
 
-//#define DEBUG_COMMENTS
 
 	HMODULE DllInjection::dllInjection(HANDLE hProcess, const WCHAR * filename)
 	{
@@ -20,9 +19,7 @@
 
 		if (memorySize < 7)
 		{
-#ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"dllInjection :: memorySize invalid");
-#endif
 			return 0;
 		}
 
@@ -30,9 +27,7 @@
 
 		if (remoteMemory == 0)
 		{
-#ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"dllInjection :: VirtualAllocEx failed 0x%X", GetLastError());
-#endif
 			return 0;
 		}
 
@@ -52,9 +47,7 @@
 				//returns only 32 bit values -> design bug by microsoft
 				if (!GetExitCodeThread(hThread, (LPDWORD) &hModule))
 				{
-#ifdef DEBUG_COMMENTS
 					Scylla::debugLog.log(L"dllInjection :: GetExitCodeThread failed 0x%X", GetLastError());
-#endif
 					hModule = 0;
 				}
 #endif
@@ -63,16 +56,12 @@
 			}
 			else
 			{
-#ifdef DEBUG_COMMENTS
 				Scylla::debugLog.log(L"dllInjection :: CreateRemoteThread failed 0x%X", GetLastError());
-#endif
 			}
 		}
 		else
 		{
-#ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"dllInjection :: WriteProcessMemory failed 0x%X", GetLastError());
-#endif
 		}
 
 
@@ -96,9 +85,7 @@
 
 			if (!GetExitCodeThread(hThread, (LPDWORD) &freeLibraryRet))
 			{
-#ifdef DEBUG_COMMENTS
 				Scylla::debugLog.log(L"unloadDllInProcess :: GetExitCodeThread failed 0x%X", GetLastError());
-#endif
 				freeLibraryRet = 0;
 			}
 
@@ -106,9 +93,7 @@
 		}
 		else
 		{
-#ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"unloadDllInProcess :: CreateRemoteThread failed 0x%X", GetLastError());
-#endif
 		}
 
 		return freeLibraryRet != 0;
@@ -138,17 +123,13 @@
 			}
 			else
 			{
-#ifdef DEBUG_COMMENTS
 				Scylla::debugLog.log(L"DllInjection::getModuleHandle :: GetModuleFileNameExW failed 0x%X", GetLastError());
-#endif
 			}
 		}
 
 		if (!hModResult)
 		{
-#ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"DllInjection::getModuleHandle :: Handle not found");
-#endif
 		}
 
 		delete [] hMods;
@@ -162,18 +143,14 @@
 		{
 			if (!SetThreadPriority(hThread, THREAD_PRIORITY_TIME_CRITICAL))
 			{
-#ifdef DEBUG_COMMENTS
 				Scylla::debugLog.log(L"specialThreadSettings :: SetThreadPriority(hThread, THREAD_PRIORITY_TIME_CRITICAL) failed 0x%X", GetLastError());
-#endif
 			}
 
 			if (NativeWinApi::NtSetInformationThread)
 			{
 				if (NativeWinApi::NtSetInformationThread(hThread, ThreadHideFromDebugger, 0, 0) != STATUS_SUCCESS)
 				{
-#ifdef DEBUG_COMMENTS
 					Scylla::debugLog.log(L"specialThreadSettings :: NtSetInformationThread ThreadHideFromDebugger failed");
-#endif
 				}
 			}
 		}
@@ -212,9 +189,7 @@
 			}
 			else
 			{
-#ifdef DEBUG_COMMENTS
 				Scylla::debugLog.log(L"customCreateRemoteThread :: NtCreateThreadEx failed 0x%X", NativeWinApi::RtlNtStatusToDosError(ntStatus));
-#endif
 				return 0;
 			}
 		}

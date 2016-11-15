@@ -1,7 +1,6 @@
 #include "Logger.h"
 
 #include <shlwapi.h>
-//#include <fstream>
 #include <cstdio>
 #include <atlbase.h> 
 #include <atlconv.h>
@@ -10,6 +9,7 @@ extern bool IsDllMode;
 
 void Logger::log(const WCHAR * format, ...)
 {
+#ifdef DEBUG_COMMENTS
 	static WCHAR buf[300];
 
 	if(!format)
@@ -21,10 +21,12 @@ void Logger::log(const WCHAR * format, ...)
 	va_end (va_alist);
 
 	write(buf);
+#endif /* DEBUG_COMMENTS */
 }
 
-void Logger::log(const char * format, ...)
+void Logger::log(const CHAR * format, ...)
 {
+#ifdef DEBUG_COMMENTS
 	static char buf[300];
 
 	if(!format)
@@ -36,6 +38,7 @@ void Logger::log(const char * format, ...)
 	va_end (va_alist);
 
 	write(buf);
+#endif /* DEBUG_COMMENTS */
 }
 
 void Logger::write(const CHAR * str)

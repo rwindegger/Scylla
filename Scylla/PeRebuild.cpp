@@ -4,8 +4,6 @@
 #include "ProcessAccessHelp.h"
 #include "Scylla.h"
 
-//#define DEBUG_COMMENTS
-
 bool PeRebuild::truncateFile(WCHAR * szFilePath, DWORD dwNewFsize)
 {
 	bool retValue = true;
@@ -34,9 +32,7 @@ bool PeRebuild::truncateFile(WCHAR * szFilePath, DWORD dwNewFsize)
 
 	if (!SetEndOfFile(hFile))
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"SetEndOfFile failed error %d", GetLastError());
-#endif
 		retValue = false;
 	}
 
@@ -200,10 +196,7 @@ DWORD PeRebuild::realignPE(LPVOID AddressOfMapFile, DWORD dwFsize)
 
 			if (pSections[i] == NULL) // fatal error !!!
 			{
-#ifdef DEBUG_COMMENTS
 				Scylla::debugLog.log(L"realignPE :: malloc failed with dwTmpNum %08X %08X", dwTmpNum, extraAlign);
-#endif
-
 				cleanSectionPointer();
 
 				return 4;
@@ -278,10 +271,7 @@ DWORD PeRebuild::realignPE(LPVOID AddressOfMapFile, DWORD dwFsize)
 	{
 		// clean up
 		cleanSectionPointer();
-
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"realignPE :: Exception occured");
-#endif
 		return 0;
 	}
 
@@ -599,15 +589,12 @@ bool PeRebuild::updatePeHeaderChecksum(LPVOID AddressOfMapFile, DWORD dwFsize)
 
 	if (!pNTHeader32)
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"updatePeHeaderChecksum :: CheckSumMappedFile failed error %X", GetLastError());
-#endif
 		return false;
 	}
 
-#ifdef DEBUG_COMMENTS
 	Scylla::debugLog.log(L"Old checksum %08X new checksum %08X", headerSum, checkSum);
-#endif
+
 
 	if (pNTHeader32->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC)
 	{
@@ -628,9 +615,8 @@ LPVOID PeRebuild::createFileMappingViewFull(const WCHAR * filePath)
 
 	if( hFileToMap == INVALID_HANDLE_VALUE )
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"createFileMappingView :: INVALID_HANDLE_VALUE %u", GetLastError());
-#endif
+
 		hMappedFile = 0;
 		hFileToMap = 0;
 		addrMappedDll = 0;
@@ -641,9 +627,8 @@ LPVOID PeRebuild::createFileMappingViewFull(const WCHAR * filePath)
 
 	if( hMappedFile == NULL )
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"createFileMappingViewFull :: hMappedFile == NULL");
-#endif
+
 		CloseHandle(hFileToMap);
 		hMappedFile = 0;
 		hFileToMap = 0;
@@ -653,9 +638,8 @@ LPVOID PeRebuild::createFileMappingViewFull(const WCHAR * filePath)
 
 	if (GetLastError() == ERROR_ALREADY_EXISTS)
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"createFileMappingView :: GetLastError() == ERROR_ALREADY_EXISTS");
-#endif
+
 		CloseHandle(hFileToMap);
 		hMappedFile = 0;
 		hFileToMap = 0;
@@ -667,9 +651,8 @@ LPVOID PeRebuild::createFileMappingViewFull(const WCHAR * filePath)
 
 	if(!addrMappedDll)
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"createFileMappingView :: addrMappedDll == NULL");
-#endif
+
 		CloseHandle(hFileToMap);
 		CloseHandle(hMappedFile);
 		hMappedFile = 0;
@@ -686,9 +669,7 @@ void PeRebuild::closeAllMappingHandles()
 	{
 		if (!FlushViewOfFile(addrMappedDll, 0)) 
 		{
-#ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"closeAllMappingHandles :: Could not flush memory to disk (%d)", GetLastError());
-#endif
 		}
 
 		UnmapViewOfFile(addrMappedDll);

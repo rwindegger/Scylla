@@ -3,7 +3,7 @@
 #include "Scylla.h"
 #include "StringConversion.h"
 
-//#define DEBUG_COMMENTS
+
 
 /*
 New Scylla section contains:
@@ -211,10 +211,8 @@ DWORD ImportRebuilder::fillImportSection(std::map<DWORD_PTR, ImportModuleThunk> 
 		importModuleThunk = &((*mapIt).second);
 
 		stringLength = addImportDescriptor(importModuleThunk, offset, offsetOFTArray);
-
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"fillImportSection :: importDesc.Name %X", pImportDescriptor->Name);
-#endif
+
 
 		offset += (DWORD)stringLength; //stringLength has null termination char
 
@@ -241,9 +239,7 @@ DWORD ImportRebuilder::fillImportSection(std::map<DWORD_PTR, ImportModuleThunk> 
 			//check wrong iat pointer
 			if (!pThunk)
 			{
-#ifdef DEBUG_COMMENTS
 				Scylla::debugLog.log(L"fillImportSection :: Failed to get pThunk RVA: %X", importThunk->rva);
-#endif
 				return 0;
 			}
 
@@ -259,9 +255,7 @@ DWORD ImportRebuilder::fillImportSection(std::map<DWORD_PTR, ImportModuleThunk> 
 			}
 			lastRVA = importThunk->rva;
 
-#ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"fillImportSection :: importThunk %X pThunk %X pImportByName %X offset %X", importThunk,pThunk,pImportByName,offset);
-#endif
 			stringLength = addImportToImportTable(importThunk, pThunk, pImportByName, offset);
 
 			offset += (DWORD)stringLength; //is 0 bei import by ordinal
@@ -378,18 +372,14 @@ size_t ImportRebuilder::addImportToImportTable( ImportThunk * pImport, PIMAGE_TH
 
 		if (!pThunk->u1.AddressOfData)
 		{
-#ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"addImportToImportTable :: failed to get AddressOfData %X %X", listPeSection[importSectionIndex].sectionHeader.PointerToRawData, sectionOffset);
-#endif
 		}
 
 		//next import should be nulled
 		pThunk++;
 		pThunk->u1.AddressOfData = 0;
 
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"addImportToImportTable :: pThunk->u1.AddressOfData %X %X %X", pThunk->u1.AddressOfData, pThunk, listPeSection[importSectionIndex].sectionHeader.PointerToRawData + sectionOffset);
-#endif
 		stringLength += sizeof(WORD);
 	}
 

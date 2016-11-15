@@ -25,17 +25,13 @@ unsigned int  ProcessAccessHelp::decodedInstructionsCount = 0;
 
 BYTE ProcessAccessHelp::fileHeaderFromDisk[PE_HEADER_BYTES_COUNT];
 
-//#define DEBUG_COMMENTS
-
 bool ProcessAccessHelp::openProcessHandle(size_t szPID)
 {
 	if (szPID > 0)
 	{
 		if (hProcess)
 		{
-#ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"openProcessHandle :: There is already a process handle, HANDLE %X", hProcess);
-#endif
 			return false;
 		}
 		else
@@ -51,18 +47,15 @@ bool ProcessAccessHelp::openProcessHandle(size_t szPID)
 			}
 			else
 			{
-#ifdef DEBUG_COMMENTS
-				Scylla::debugLog.log(L"openProcessHandle :: Failed to open handle, PID %X", dwPID);
-#endif
+				Scylla::debugLog.log(L"openProcessHandle :: Failed to open handle, PID %X", szPID);
 				return false;
 			}
 		}
 	}
 	else
 	{
-#ifdef DEBUG_COMMENTS
-		Scylla::debugLog.log(L"openProcessHandle :: Wrong PID, PID %X", dwPID);
-#endif
+		Scylla::debugLog.log(L"openProcessHandle :: Wrong PID, PID %X", szPID);
+
 		return false;
 	}
 	
@@ -86,9 +79,7 @@ HANDLE ProcessAccessHelp::NativeOpenProcess(DWORD dwDesiredAccess, size_t szProc
 	}
 	else
 	{
-#ifdef DEBUG_COMMENTS
-		Scylla::debugLog.log(L"NativeOpenProcess :: Failed to open handle, PID %X Error 0x%X", dwProcessId, NativeWinApi::RtlNtStatusToDosError(ntStatus));
-#endif
+		Scylla::debugLog.log(L"NativeOpenProcess :: Failed to open handle, PID %X Error 0x%X", szProcessId, NativeWinApi::RtlNtStatusToDosError(ntStatus));
 		return 0;
 	}
 }
@@ -116,9 +107,7 @@ bool ProcessAccessHelp::readMemoryPartlyFromProcess(DWORD_PTR address, SIZE_T si
 
 	if (!hProcess)
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"readMemoryPartlyFromProcess :: hProcess == NULL");
-#endif
 		return returnValue;
 	}
 
@@ -130,9 +119,7 @@ bool ProcessAccessHelp::readMemoryPartlyFromProcess(DWORD_PTR address, SIZE_T si
 		{
 			if (!VirtualQueryEx(ProcessAccessHelp::hProcess,(LPCVOID)addressPart,&memBasic,sizeof(memBasic)))
 			{
-#ifdef DEBUG_COMMENTS
 				Scylla::debugLog.log(L"readMemoryPartlyFromProcess :: Error VirtualQueryEx %X %X err: %u", addressPart,size, GetLastError());
-#endif
 				break;
 			}
 
@@ -181,9 +168,7 @@ bool ProcessAccessHelp::writeMemoryToProcess(DWORD_PTR address, SIZE_T size, LPV
 	SIZE_T lpNumberOfBytesWritten = 0;
 	if (!hProcess)
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"readMemoryFromProcess :: hProcess == NULL");
-#endif
 		return false;
 	}
 
@@ -199,31 +184,24 @@ bool ProcessAccessHelp::readMemoryFromProcess(DWORD_PTR address, SIZE_T size, LP
 
 	if (!hProcess)
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"readMemoryFromProcess :: hProcess == NULL");
-#endif
 		return returnValue;
 	}
 
 	if (!ReadProcessMemory(hProcess, (LPVOID)address, dataBuffer, size, &lpNumberOfBytesRead))
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"readMemoryFromProcess :: Error ReadProcessMemory %X %X err: %u", address, size, GetLastError());
-#endif
+
 		if (!VirtualProtectEx(hProcess, (LPVOID)address, size, PAGE_READWRITE, &dwProtect))
 		{
-#ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"readMemoryFromProcess :: Error VirtualProtectEx %X %X err: %u", address,size, GetLastError());
-#endif
 			returnValue = false;
 		}
 		else
 		{
 			if (!ReadProcessMemory(hProcess, (LPVOID)address, dataBuffer, size, &lpNumberOfBytesRead))
 			{
-#ifdef DEBUG_COMMENTS
 				Scylla::debugLog.log(L"readMemoryFromProcess :: Error ReadProcessMemory %X %X err: %u", address, size, GetLastError());
-#endif
 				returnValue = false;
 			}
 			else
@@ -242,9 +220,7 @@ bool ProcessAccessHelp::readMemoryFromProcess(DWORD_PTR address, SIZE_T size, LP
 	{
 		if (size != lpNumberOfBytesRead)
 		{
-#ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"readMemoryFromProcess :: Error ReadProcessMemory read %d bytes requested %d bytes", lpNumberOfBytesRead, size);
-#endif
 			returnValue = false;
 		}
 		else
@@ -269,9 +245,7 @@ bool ProcessAccessHelp::decomposeMemory(BYTE * dataBuffer, SIZE_T bufferSize, DW
 
 	if (distorm_decompose(&decomposerCi, decomposerResult, sizeof(decomposerResult)/sizeof(decomposerResult[0]), &decomposerInstructionsCount) == DECRES_INPUTERR)
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"decomposeMemory :: distorm_decompose == DECRES_INPUTERR");
-#endif
 		return false;
 	}
 	else
@@ -305,9 +279,7 @@ bool ProcessAccessHelp::disassembleMemory(BYTE * dataBuffer, SIZE_T bufferSize, 
 
 	if (res == DECRES_INPUTERR)
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"disassembleMemory :: res == DECRES_INPUTERR");
-#endif
 		return false;
 	}
 	else if (res == DECRES_SUCCESS)
@@ -317,9 +289,7 @@ bool ProcessAccessHelp::disassembleMemory(BYTE * dataBuffer, SIZE_T bufferSize, 
 	}
 	else
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"disassembleMemory :: res == %d", res);
-#endif
 		return true; //not all instructions fit in buffer
 	}
 }
@@ -373,9 +343,7 @@ LONGLONG ProcessAccessHelp::getFileSize(HANDLE hFile)
 	{
 		if (!GetFileSizeEx(hFile, &lpFileSize))
 		{
-#ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"ProcessAccessHelp::getFileSize :: GetFileSizeEx failed %u", GetLastError());
-#endif
 			return 0;
 		}
 		else
@@ -385,9 +353,7 @@ LONGLONG ProcessAccessHelp::getFileSize(HANDLE hFile)
 	}
 	else
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"ProcessAccessHelp::getFileSize hFile invalid");
-#endif
 		return 0;
 	}
 }
@@ -406,9 +372,7 @@ bool ProcessAccessHelp::readMemoryFromFile(HANDLE hFile, LONG offset, DWORD size
 
 		if ((retValue == INVALID_SET_FILE_POINTER) && (dwError != NO_ERROR))
 		{
-#ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"readMemoryFromFile :: SetFilePointer failed error %u", dwError);
-#endif
 			return false;
 		}
 		else
@@ -419,18 +383,14 @@ bool ProcessAccessHelp::readMemoryFromFile(HANDLE hFile, LONG offset, DWORD size
 			}
 			else
 			{
-#ifdef DEBUG_COMMENTS
 				Scylla::debugLog.log(L"readMemoryFromFile :: ReadFile failed - size %d - error %u", size, GetLastError());
-#endif
 				return false;
 			}
 		}
 	}
 	else
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"readMemoryFromFile :: hFile invalid");
-#endif
 		return false;
 	}
 }
@@ -464,9 +424,7 @@ bool ProcessAccessHelp::writeMemoryToFile(HANDLE hFile, LONG offset, DWORD size,
 
 		if ((retValue == INVALID_SET_FILE_POINTER) && (dwError != NO_ERROR))
 		{
-#ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"writeMemoryToFile :: SetFilePointer failed error %u", dwError);
-#endif
 			return false;
 		}
 		else
@@ -477,18 +435,14 @@ bool ProcessAccessHelp::writeMemoryToFile(HANDLE hFile, LONG offset, DWORD size,
 			}
 			else
 			{
-#ifdef DEBUG_COMMENTS
 				Scylla::debugLog.log(L"writeMemoryToFile :: WriteFile failed - size %d - error %u", size, GetLastError());
-#endif
 				return false;
 			}
 		}
 	}
 	else
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"writeMemoryToFile :: hFile invalid");
-#endif
 		return false;
 	}
 }
@@ -508,17 +462,14 @@ bool ProcessAccessHelp::writeMemoryToFileEnd(HANDLE hFile, DWORD size, LPCVOID d
 		}
 		else
 		{
-#ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"writeMemoryToFileEnd :: WriteFile failed - size %d - error %u", size, GetLastError());
-#endif
 			return false;
 		}
 	}
 	else
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"writeMemoryToFileEnd :: hFile invalid");
-#endif
+
 		return false;
 	}
 }
@@ -534,9 +485,7 @@ bool ProcessAccessHelp::readHeaderFromFile(BYTE * buffer, DWORD bufferSize, cons
 
 	if( hFile == INVALID_HANDLE_VALUE )
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"readHeaderFromFile :: INVALID_HANDLE_VALUE %u", GetLastError());
-#endif
 		returnValue = false;
 	}
 	else
@@ -579,9 +528,7 @@ LPVOID ProcessAccessHelp::createFileMappingView(const WCHAR * filePath, DWORD ac
 
 	if( hFile == INVALID_HANDLE_VALUE )
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"createFileMappingView :: INVALID_HANDLE_VALUE %u", GetLastError());
-#endif
 		return NULL;
 	}
 
@@ -590,17 +537,13 @@ LPVOID ProcessAccessHelp::createFileMappingView(const WCHAR * filePath, DWORD ac
 
 	if( hMappedFile == NULL )
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"createFileMappingView :: hMappedFile == NULL");
-#endif
 		return NULL;
 	}
 
 	if (GetLastError() == ERROR_ALREADY_EXISTS)
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"createFileMappingView :: GetLastError() == ERROR_ALREADY_EXISTS");
-#endif
 		CloseHandle(hMappedFile);
 		return NULL;
 	}
@@ -609,9 +552,7 @@ LPVOID ProcessAccessHelp::createFileMappingView(const WCHAR * filePath, DWORD ac
 
 	if( addrMappedDll == NULL )
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"createFileMappingView :: addrMappedDll == NULL");
-#endif
 		CloseHandle(hMappedFile);
 		return NULL;
 	}
@@ -630,9 +571,7 @@ DWORD ProcessAccessHelp::getProcessByName(const WCHAR * processName)
 
 	if( !Process32FirstW( hProcessSnap, &pe32 ) )
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"getProcessByName :: Error getting first Process");
-#endif
 		CloseHandle( hProcessSnap );
 		return 0;
 	}
@@ -712,9 +651,7 @@ bool ProcessAccessHelp::getMemoryRegionFromAddress(DWORD_PTR address, DWORD_PTR 
 
 	if (VirtualQueryEx(hProcess,(LPCVOID)address,&memBasic,sizeof(MEMORY_BASIC_INFORMATION)) != sizeof(MEMORY_BASIC_INFORMATION))
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"getMemoryRegionFromAddress :: VirtualQueryEx error %u", GetLastError());
-#endif
 		return false;
 	}
 	else
@@ -765,9 +702,8 @@ SIZE_T ProcessAccessHelp::getSizeOfImageProcess(HANDLE processHandle, DWORD_PTR 
 
 		if (!VirtualQueryEx(processHandle, (LPCVOID)moduleBase, &lpBuffer, sizeof(MEMORY_BASIC_INFORMATION)))
 		{
-#ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"getSizeOfImageProcess :: VirtualQuery failed %X", GetLastError());
-#endif
+
 			lpBuffer.Type = 0;
 			sizeOfImage = 0;
 		}
@@ -812,9 +748,7 @@ bool ProcessAccessHelp::createBackupFile(const WCHAR * filePath)
 
 	if (!retValue)
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"createBackupFile :: CopyFile failed with error 0x%X", GetLastError());
-#endif
 	}
 
 	delete [] backupFile;
@@ -834,9 +768,8 @@ DWORD ProcessAccessHelp::getModuleHandlesFromProcess(const HANDLE hProcess, HMOD
 	{
 		if (!EnumProcessModules(hProcess, *hMods, count * sizeof(HMODULE), &cbNeeded))
 		{
-#ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"getModuleHandlesFromProcess :: EnumProcessModules failed count %d", count);
-#endif
+
 			delete [] *hMods;
 			return 0;
 		}

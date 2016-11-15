@@ -1,5 +1,5 @@
 #include "PluginLoader.h"
-#include "Logger.h"
+#include "Scylla.h"
 
 #include "ProcessAccessHelp.h"
 #include "StringConversion.h"
@@ -12,7 +12,6 @@ const WCHAR PluginLoader::PLUGIN_SEARCH_STRING[] = L"*.dll";
 const WCHAR PluginLoader::PLUGIN_IMPREC_DIR[] = L"ImpRec_Plugins\\";
 const WCHAR PluginLoader::PLUGIN_IMPREC_WRAPPER_DLL[] = L"Imprec_Wrapper_DLL.dll";
 
-//#define DEBUG_COMMENTS
 
 std::vector<Plugin> & PluginLoader::getScyllaPluginList()
 {
@@ -75,17 +74,13 @@ bool PluginLoader::searchForPlugin(std::vector<Plugin> & newPluginList, const WC
 
 	if (dwError == ERROR_FILE_NOT_FOUND)
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"findAllPlugins :: No files found");
-#endif
 		return true;
 	}
 
 	if (hFind == INVALID_HANDLE_VALUE)
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"findAllPlugins :: FindFirstFile failed %d", dwError);
-#endif
 		return false;
 	}
 
@@ -96,9 +91,8 @@ bool PluginLoader::searchForPlugin(std::vector<Plugin> & newPluginList, const WC
 
 			if ((ffd.nFileSizeHigh != 0) || (ffd.nFileSizeLow < 200))
 			{
-#ifdef DEBUG_COMMENTS
 				Scylla::debugLog.log(L"findAllPlugins :: Plugin invalid file size: %s", ffd.cFileName);
-#endif
+
 			}
 			else
 			{
@@ -106,9 +100,8 @@ bool PluginLoader::searchForPlugin(std::vector<Plugin> & newPluginList, const WC
 				wcscpy_s(pluginData.fullpath, baseDirPath);
 				wcscat_s(pluginData.fullpath, ffd.cFileName);
 
-#ifdef DEBUG_COMMENTS
 				Scylla::debugLog.log(L"findAllPlugins :: Plugin %s", pluginData.fullpath);
-#endif
+
 				if (isValidDllFile(pluginData.fullpath))
 				{
 					if (isScyllaPlugin)
@@ -120,9 +113,7 @@ bool PluginLoader::searchForPlugin(std::vector<Plugin> & newPluginList, const WC
 						}
 						else
 						{
-#ifdef DEBUG_COMMENTS
 							Scylla::debugLog.log(L"Cannot get scylla plugin name %s", pluginData.fullpath);
-#endif
 						}
 					}
 					else
@@ -166,10 +157,7 @@ bool PluginLoader::getScyllaPluginName(Plugin * pluginData)
 		{
 			wcscpy_s(pluginData->pluginName, ScyllaPluginNameW());
 
-#ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"getPluginName :: Plugin name %s", pluginData->pluginName);
-#endif
-
 			retValue = true;
 		}
 		else
@@ -182,9 +170,7 @@ bool PluginLoader::getScyllaPluginName(Plugin * pluginData)
 
 				StringConversion::ToUTF16(pluginName, pluginData->pluginName, _countof(pluginData->pluginName));
 
-#ifdef DEBUG_COMMENTS
 				Scylla::debugLog.log(L"getPluginName :: Plugin name mbstowcs_s %s", pluginData->pluginName);
-#endif
 
 				if (wcslen(pluginData->pluginName) > 1)
 				{
@@ -199,9 +185,7 @@ bool PluginLoader::getScyllaPluginName(Plugin * pluginData)
 	}
 	else
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"getPluginName :: LoadLibraryEx failed %s", pluginData->fullpath);
-#endif
 		return false;
 	}
 }
@@ -213,9 +197,7 @@ bool PluginLoader::buildSearchString()
 
 	if (!GetModuleFileName(0, dirSearchString, _countof(dirSearchString)))
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"buildSearchString :: GetModuleFileName failed %d", GetLastError());
-#endif
 		return false;
 	}
 
@@ -229,11 +211,7 @@ bool PluginLoader::buildSearchString()
 
 	//wprintf(L"dirSearchString 3 %s\n\n", dirSearchString);
 
-#ifdef DEBUG_COMMENTS
 	Scylla::debugLog.log(L"dirSearchString final %s", dirSearchString);
-#endif
-
-
 	return true;
 }
 
@@ -268,9 +246,7 @@ bool PluginLoader::isValidImprecPlugin(const WCHAR * fullpath)
 	}
 	else
 	{
-#ifdef DEBUG_COMMENTS
-		Scylla::debugLog.log(L"isValidImprecPlugin :: LoadLibraryEx failed %s", pluginData->fullpath);
-#endif
+		Scylla::debugLog.log(L"isValidImprecPlugin :: LoadLibraryEx failed %s", fullpath);
 		return false;
 	}
 }

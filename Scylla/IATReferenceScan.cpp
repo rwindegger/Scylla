@@ -3,9 +3,6 @@
 #include "Architecture.h"
 #include <set>
 
-//#define DEBUG_COMMENTS
-
-
 FileLog IATReferenceScan::directImportLog(L"Scylla_direct_imports.log");
 
 int IATReferenceScan::numberOfFoundDirectImports()
@@ -74,9 +71,8 @@ void IATReferenceScan::startScan(DWORD_PTR imageBase, DWORD imageSize, DWORD_PTR
 	{
 		if (!VirtualQueryEx(ProcessAccessHelp::hProcess, (LPCVOID)section, &memBasic, sizeof(MEMORY_BASIC_INFORMATION)))
 		{
-#ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"VirtualQueryEx failed %d", GetLastError());
-#endif
+
 
 			break;
 		}

@@ -3,8 +3,6 @@
 #include "Architecture.h"
 
 
-//#define DEBUG_COMMENTS
-
 bool IATSearch::searchImportAddressTableInProcess( DWORD_PTR startAddress, DWORD_PTR* addressIAT, DWORD* sizeIAT, bool advanced )
 {
 	DWORD_PTR addressInIAT = 0;
@@ -22,9 +20,7 @@ bool IATSearch::searchImportAddressTableInProcess( DWORD_PTR startAddress, DWORD
 
 	if(!addressInIAT)
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"searchImportAddressTableInProcess :: addressInIAT not found, startAddress " PRINTF_DWORD_PTR_FULL, startAddress);
-#endif
 		return false;
 	}
 	else
@@ -48,9 +44,8 @@ bool IATSearch::findIATAdvanced( DWORD_PTR startAddress, DWORD_PTR* addressIAT, 
 
 	if (!readMemoryFromProcess((DWORD_PTR)baseAddress, memorySize,dataBuffer))
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"findAPIAddressInIAT2 :: error reading memory");
-#endif
+
 		delete [] dataBuffer;
 		return false;
 	}
@@ -120,9 +115,7 @@ DWORD_PTR IATSearch::findAPIAddressInIAT(DWORD_PTR startAddress)
 
 		if (!readMemoryFromProcess(startAddress, sizeof(dataBuffer), dataBuffer))
 		{
-#ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"findAPIAddressInIAT :: error reading memory " PRINTF_DWORD_PTR_FULL, startAddress);
-#endif
 			return 0;
 		}
 
@@ -224,9 +217,7 @@ bool IATSearch::isIATPointerValid(DWORD_PTR iatPointer, bool checkRedirects)
 
 	if (!readMemoryFromProcess(iatPointer,sizeof(DWORD_PTR),&apiAddress))
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"isIATPointerValid :: error reading memory");
-#endif
 		return false;
 	}
 
@@ -277,9 +268,8 @@ bool IATSearch::findIATStartAndSize(DWORD_PTR address, DWORD_PTR * addressIAT, D
 
 	if (!readMemoryFromProcess(baseAddress, baseSize, dataBuffer))
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"findIATStartAddress :: error reading memory");
-#endif
+
 		delete [] dataBuffer;
 		return false;
 	}
@@ -331,16 +321,11 @@ DWORD IATSearch::findIATSize(DWORD_PTR baseAddress, DWORD_PTR iatAddress, BYTE *
 	DWORD_PTR *pIATAddress = 0;
 
 	pIATAddress = (DWORD_PTR *)((iatAddress - baseAddress) + (DWORD_PTR)dataBuffer);
-
-#ifdef DEBUG_COMMENTS
 	Scylla::debugLog.log(L"findIATSize :: baseAddress %X iatAddress %X dataBuffer %X pIATAddress %X", baseAddress, iatAddress, dataBuffer, pIATAddress);
-#endif
 
 	while((DWORD_PTR)pIATAddress < ((DWORD_PTR)dataBuffer + bufferSize - 1))
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"findIATSize :: %X %X %X", pIATAddress, *pIATAddress, *(pIATAddress + 1));
-#endif
 		if (isInvalidMemoryForIat(*pIATAddress)) //normal is 0
 		{
 			if (isInvalidMemoryForIat(*(pIATAddress + 1)))
@@ -411,9 +396,7 @@ void IATSearch::findExecutableMemoryPagesByStartAddress( DWORD_PTR startAddress,
 
 	if (VirtualQueryEx(hProcess,(LPCVOID)startAddress, &memBasic, sizeof(MEMORY_BASIC_INFORMATION)) != sizeof(MEMORY_BASIC_INFORMATION))
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"findIATStartAddress :: VirtualQueryEx error %u", GetLastError());
-#endif
 		return;
 	}
 

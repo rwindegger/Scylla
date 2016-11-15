@@ -1,15 +1,15 @@
 #include "ImportsHandling.h"
 
-#include "Thunks.h"
-#include "Architecture.h"
-
 #include <atlmisc.h>
 #include <atlcrack.h>
 #include "multitree.h" // CMultiSelectTreeViewCtrl
 
 #include "resource.h"
 
-//#define DEBUG_COMMENTS
+#include "Thunks.h"
+#include "Architecture.h"
+#include "Scylla.h"
+
 
 void ImportThunk::invalidate()
 {
@@ -693,9 +693,7 @@ bool ImportsHandling::addNotFoundApiToModuleList(const ImportThunk * apiNotFound
 			}
 			else
 			{
-#ifdef DEBUG_COMMENTS
 				Scylla::debugLog.log(L"Error iterator1 != (*moduleThunkList).end()");
-#endif
 				break;
 			}
 		}
@@ -709,9 +707,7 @@ bool ImportsHandling::addNotFoundApiToModuleList(const ImportThunk * apiNotFound
 
 	if (!module)
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"ImportsHandling::addFunction module not found rva " PRINTF_DWORD_PTR_FULL, rva);
-#endif
 		return false;
 	}
 
@@ -760,9 +756,7 @@ bool ImportsHandling::addFunctionToModuleList(const ImportThunk * apiFound)
 			}
 			else
 			{
-#ifdef DEBUG_COMMENTS
 				Scylla::debugLog.log(L"Error iterator1 != moduleListNew.end()");
-#endif
 				break;
 			}
 		}
@@ -775,9 +769,7 @@ bool ImportsHandling::addFunctionToModuleList(const ImportThunk * apiFound)
 
 	if (!module)
 	{
-#ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"ImportsHandling::addFunction module not found rva " PRINTF_DWORD_PTR_FULL, apiFound->rva);
-#endif
 		return false;
 	}
 

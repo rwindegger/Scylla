@@ -2,7 +2,6 @@
 
 #include <windows.h>
 
-
 #ifdef _WIN64
 #define ARCHITECTURE_S          "x64"
 #else
