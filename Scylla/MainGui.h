@@ -25,6 +25,12 @@
 #include "FunctionExport.h"
 #include "IATReferenceScan.h"
 
+typedef struct _GUI_DLL_PARAMETER {
+	DWORD dwProcessId;
+	HINSTANCE mod;
+	DWORD_PTR entrypoint;
+} GUI_DLL_PARAMETER, *PGUI_DLL_PARAMETER;
+
 class MainGui : public CDialogImpl<MainGui>, public CWinDataExchange<MainGui>, public CDialogResize<MainGui>, public CMessageFilter
 {
 public:

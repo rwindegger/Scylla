@@ -20,6 +20,7 @@ extern "C" {
 #define SCYLLA_DLL_EXPORT 
 #endif
 
+/* Scylla Dll API error IDs */
 const int SCY_ERROR_SUCCESS = 0;
 const int SCY_ERROR_PROCOPEN = -1;
 const int SCY_ERROR_IATWRITE = -2;

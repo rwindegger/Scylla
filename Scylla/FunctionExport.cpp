@@ -7,9 +7,24 @@
 #include "ApiReader.h"
 #include "IATSearch.h"
 #include "ImportRebuilder.h"
+#include "MainGui.h"
 
 
 extern HINSTANCE hDllModule;
+
+/*
+Dump target process into output file.
+@param fileToDump : path to file to dump
+@param imagebase : Process image base (why ??)
+@param entrypoint : Process entry point (or estimated entry point ?)
+@param fileResult
+
+*/
+BOOL DumpProcessW(const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult);
+
+
+int InitializeGui(HINSTANCE hInstance, LPARAM param);
+
 
 const WCHAR * WINAPI ScyllaVersionInformationW()
 {
