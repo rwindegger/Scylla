@@ -186,31 +186,18 @@ int WINAPI ScyllaIatSearch(DWORD dwProcessId, DWORD_PTR * iatStart, DWORD * iatS
 	Process *processPtr = 0;
 	IATSearch iatSearch;
 
-	std::vector<Process>& processList = processLister.getProcessListSnapshotNative();
-	for(std::vector<Process>::iterator it = processList.begin(); it != processList.end(); ++it)
-	{
-		if(it->PID == dwProcessId)
-		{
-			processPtr = &(*it);
-			break;
-		}
-	}
-
-	if(!processPtr) return SCY_ERROR_PIDNOTFOUND;
-
+	// Close previous context. FIX ME : use a dedicated structure to store Scylla's context instead of globals
 	ProcessAccessHelp::closeProcessHandle();
 	apiReader.clearAll();
 
-	if (!ProcessAccessHelp::openProcessHandle(processPtr->PID))
+	if (!ProcessAccessHelp::openProcessHandle(dwProcessId))
 	{
 		return SCY_ERROR_PROCOPEN;
 	}
 
 	ProcessAccessHelp::getProcessModules(ProcessAccessHelp::hProcess, ProcessAccessHelp::moduleList);
-
 	ProcessAccessHelp::selectedModule = 0;
-	ProcessAccessHelp::targetImageBase = processPtr->imageBase;
-	ProcessAccessHelp::targetSizeOfImage = processPtr->imageSize;
+	
 
 	apiReader.readApisFromModuleList();
 
@@ -231,7 +218,6 @@ int WINAPI ScyllaIatSearch(DWORD dwProcessId, DWORD_PTR * iatStart, DWORD * iatS
 		}
 	}
 
-	processList.clear();
 	ProcessAccessHelp::closeProcessHandle();
 	apiReader.clearAll();
 
@@ -242,19 +228,9 @@ int WINAPI ScyllaIatSearch(DWORD dwProcessId, DWORD_PTR * iatStart, DWORD * iatS
 int WINAPI ScyllaIatFixAutoW(DWORD_PTR iatAddr, DWORD iatSize, DWORD dwProcessId, const WCHAR * dumpFile, const WCHAR * iatFixFile)
 {
 	ApiReader apiReader;
-	ProcessLister processLister;
 	Process *processPtr = 0;
 	std::map<DWORD_PTR, ImportModuleThunk> moduleList;
 
-	std::vector<Process>& processList = processLister.getProcessListSnapshotNative();
-	for(std::vector<Process>::iterator it = processList.begin(); it != processList.end(); ++it)
-	{
-		if(it->PID == dwProcessId)
-		{
-			processPtr = &(*it);
-			break;
-		}
-	}
 
 	if(!processPtr) return SCY_ERROR_PIDNOTFOUND;
 
@@ -267,10 +243,7 @@ int WINAPI ScyllaIatFixAutoW(DWORD_PTR iatAddr, DWORD iatSize, DWORD dwProcessId
 	}
 
 	ProcessAccessHelp::getProcessModules(ProcessAccessHelp::hProcess, ProcessAccessHelp::moduleList);
-
 	ProcessAccessHelp::selectedModule = 0;
-	ProcessAccessHelp::targetImageBase = processPtr->imageBase;
-	ProcessAccessHelp::targetSizeOfImage = processPtr->imageSize;
 
 	apiReader.readApisFromModuleList();
 
@@ -287,7 +260,6 @@ int WINAPI ScyllaIatFixAutoW(DWORD_PTR iatAddr, DWORD iatSize, DWORD dwProcessId
 		retVal = SCY_ERROR_SUCCESS;
 	}
 
-	processList.clear();
 	moduleList.clear();
 	ProcessAccessHelp::closeProcessHandle();
 	apiReader.clearAll();

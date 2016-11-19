@@ -27,6 +27,10 @@ BYTE ProcessAccessHelp::fileHeaderFromDisk[PE_HEADER_BYTES_COUNT];
 
 bool ProcessAccessHelp::openProcessHandle(size_t szPID)
 {
+	HMODULE hProcModule;
+	uint16_t cbProcModuleSize;
+	MODULEENTRY32  ModInfo = { 0 };
+
 	if (szPID > 0)
 	{
 		if (hProcess)
@@ -39,12 +43,29 @@ bool ProcessAccessHelp::openProcessHandle(size_t szPID)
 			//hProcess = OpenProcess(PROCESS_CREATE_THREAD|PROCESS_VM_OPERATION|PROCESS_QUERY_INFORMATION|PROCESS_VM_READ|PROCESS_VM_WRITE, 0, dwPID);
 			//if (!NT_SUCCESS(NativeWinApi::NtOpenProcess(&hProcess,PROCESS_CREATE_THREAD|PROCESS_VM_OPERATION|PROCESS_QUERY_INFORMATION|PROCESS_VM_READ|PROCESS_VM_WRITE,&ObjectAttributes, &cid)))
 
+			// First loaded module is always the process own executable.
+			
+
 			hProcess = NativeOpenProcess(PROCESS_CREATE_THREAD|PROCESS_VM_OPERATION|PROCESS_QUERY_INFORMATION|PROCESS_VM_READ|PROCESS_VM_WRITE|PROCESS_SUSPEND_RESUME|PROCESS_TERMINATE, szPID);
 
 			if (hProcess)
 			{
-				return true;
+				HANDLE hSnapShot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, szPID);
+				
+				ModInfo.dwSize = sizeof(MODULEENTRY32);
+				if (Module32First(hSnapShot, &ModInfo))
+				{
+					ProcessAccessHelp::targetImageBase = (uintptr_t) ModInfo.modBaseAddr;
+					ProcessAccessHelp::targetSizeOfImage = ModInfo.modBaseSize;
+					CloseHandle(hSnapShot);
+					return true;
+				}
+				CloseHandle(hSnapShot);
+
+				Scylla::debugLog.log(L"openProcessHandle :: Failed to enumerate first module, PID %X LastError : %x", szPID, GetLastError());
+				return false;
 			}
+
 			else
 			{
 				Scylla::debugLog.log(L"openProcessHandle :: Failed to open handle, PID %X", szPID);
