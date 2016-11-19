@@ -29,19 +29,13 @@ const int SCY_ERROR_IATNOTFOUND = -4;
 const int SCY_ERROR_PIDNOTFOUND = -5;
 
 
-typedef struct _GUI_DLL_PARAMETER {
-	DWORD dwProcessId;
-	HINSTANCE mod;
-	DWORD_PTR entrypoint;
-} GUI_DLL_PARAMETER, *PGUI_DLL_PARAMETER;
-
-int InitializeGui(HINSTANCE hInstance, LPARAM param);
-
-
-//function to export in DLL
-
-SCYLLA_DLL_EXPORT  BOOL DumpProcessW(const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult);
-
+/*
+	Dump Current process into a file.
+	@param fileToDump : path to output file
+	@param imagebase : Process image base (why ??)
+	@param entrypoint : Process entry point (or estimated entry point ?)
+	@param fileResult :
+*/
 SCYLLA_DLL_EXPORT  BOOL WINAPI ScyllaDumpCurrentProcessW(const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult);
 SCYLLA_DLL_EXPORT  BOOL WINAPI ScyllaDumpCurrentProcessA(const char * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const char * fileResult);
 
@@ -59,19 +53,29 @@ SCYLLA_DLL_EXPORT  DWORD WINAPI ScyllaVersionInformationDword();
 SCYLLA_DLL_EXPORT  int WINAPI ScyllaStartGui(DWORD dwProcessId, HINSTANCE mod, DWORD_PTR entrypoint);
 
 SCYLLA_DLL_EXPORT  int WINAPI ScyllaIatSearch(DWORD dwProcessId, DWORD_PTR * iatStart, DWORD * iatSize, DWORD_PTR searchStart, BOOL advancedSearch);
+
+
+/*
+	Scylla AutoFix import address ?
+	@param
+*/
 SCYLLA_DLL_EXPORT  int WINAPI ScyllaIatFixAutoW(DWORD_PTR iatAddr, DWORD iatSize, DWORD dwProcessId, const WCHAR * dumpFile, const WCHAR * iatFixFile);
+
+
+
+#ifdef UNICODE
+#define ScyllaDumpProcess ScyllaDumpProcessW
+#define ScyllaDumpCurrentProcess ScyllaDumpCurrentProcessW
+#define ScyllaVersionInformation ScyllaVersionInformationW
+#define ScyllaRebuildFile ScyllaRebuildFileW
+#else
+#define ScyllaDumpProcess ScyllaDumpProcessA
+#define ScyllaDumpCurrentProcess ScyllaDumpCurrentProcessA
+#define ScyllaVersionInformation ScyllaVersionInformationA
+#define ScyllaRebuildFile ScyllaRebuildFileA
+#endif  // !UNICODE
+
 
 #ifdef __cplusplus
 }
 #endif
-
-/*
-C/C++ Prototyps
-
-typedef const WCHAR * (WINAPI * def_ScyllaVersionInformationW)();
-typedef const char * (WINAPI * def_ScyllaVersionInformationA)();
-typedef DWORD (WINAPI * def_ScyllaVersionInformationDword)();
-typedef int (WINAPI * def_ScyllaIatSearch)(DWORD dwProcessId, DWORD_PTR * iatStart, DWORD * iatSize, DWORD_PTR searchStart, BOOL advancedSearch);
-typedef int (WINAPI * def_ScyllaStartGui)(DWORD dwProcessId, HINSTANCE mod);
-
-*/
