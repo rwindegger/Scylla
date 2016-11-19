@@ -16,8 +16,8 @@
 // Using inttypes string formating if possible (VS2015 and greater)
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #define PRINTF_DWORD_PTR      TEXT("%" PRIxPTR)
-#define PRINTF_DWORD_PTR_FULL TEXT("%" PRIxLEAST64)
-#define PRINTF_DWORD_PTR_HALF TEXT("%" PRIxLEAST64)
+#define PRINTF_DWORD_PTR_FULL TEXT("%" PRIxPTR)
+#define PRINTF_DWORD_PTR_HALF TEXT("%" PRIxPTR)
 #define PRINTF_INTEGER        TEXT("%" PRIuMAX)
 #else
 

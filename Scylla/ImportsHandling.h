@@ -21,7 +21,7 @@ public:
 	std::map<DWORD_PTR, ImportModuleThunk> moduleListNew;
 
 	ImportsHandling(CMultiSelectTreeViewCtrl& TreeImports);
-	~ImportsHandling();
+	virtual ~ImportsHandling();
 
 	unsigned int thunkCount() const { return m_thunkCount; }
 	unsigned int invalidThunkCount() const { return m_invalidThunkCount; }

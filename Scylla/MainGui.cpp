@@ -108,6 +108,8 @@ BOOL MainGui::PreTranslateMessage(MSG* pMsg)
 
 void MainGui::InitDllStartWithPreSelect( PGUI_DLL_PARAMETER guiParam )
 {
+	TCHAR TmpStringBuffer[600] = { 0 };
+
 	ComboProcessList.ResetContent();
 	std::vector<Process>& processList = Scylla::processLister.getProcessListSnapshotNative();
 	int newSel = -1;
@@ -115,8 +117,8 @@ void MainGui::InitDllStartWithPreSelect( PGUI_DLL_PARAMETER guiParam )
 	{
 		if (processList[i].PID == guiParam->dwProcessId)
 			newSel = (int)i;
-		swprintf_s(stringBuffer, L"%llu - %s - %s", processList[i].PID, processList[i].filename, processList[i].fullPath);
-		ComboProcessList.AddString(stringBuffer);
+		_stprintf_s(TmpStringBuffer, _T("%zu - %s - %s"), processList[i].PID, processList[i].filename, processList[i].fullPath);
+		ComboProcessList.AddString(TmpStringBuffer);
 	}
 	if (newSel != -1)
 	{
@@ -684,14 +686,16 @@ void MainGui::processSelectedActionHandler(int index)
 
 void MainGui::fillProcessListComboBox(CComboBox& hCombo)
 {
+	TCHAR TmpStringBuffer[600] = { 0 };
 	hCombo.ResetContent();
+	
 
 	std::vector<Process>& processList = Scylla::processLister.getProcessListSnapshotNative();
 
 	for (size_t i = 0; i < processList.size(); i++)
 	{
-		swprintf_s(stringBuffer, L"%llu - %s - %s", processList[i].PID, processList[i].filename, processList[i].fullPath);
-		hCombo.AddString(stringBuffer);
+		_stprintf_s(TmpStringBuffer,  _T("%zu - %s - %s"), processList[i].PID, processList[i].filename, processList[i].fullPath);
+		hCombo.AddString(TmpStringBuffer);
 	}
 }
 
