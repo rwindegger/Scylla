@@ -75,6 +75,7 @@ file (GLOB Scylla_files
 			"${Scylla_dir}/*.ico"
 			"${Scylla_dir}/*.rc"
 )
+list(REMOVE_ITEM Scylla_files "${Scylla_dir}/MainDll.cpp")
 add_executable(Scylla ${Scylla_files})
 target_link_libraries(Scylla tinyxml diStorm )
 target_include_directories(Scylla PUBLIC 
@@ -93,6 +94,7 @@ file (GLOB ScyllaDll_files
 			"${Scylla_dir}/*.cpp"
 			"${Scylla_dir}/*.h"
 )
+list(REMOVE_ITEM ScyllaDll_files "${Scylla_dir}/main.cpp")
 add_library(ScyllaDll SHARED ${ScyllaDll_files})
 target_link_libraries(ScyllaDll tinyxml diStorm Psapi)
 target_include_directories(ScyllaDll PUBLIC 

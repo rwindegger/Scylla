@@ -31,6 +31,10 @@ typedef struct _GUI_DLL_PARAMETER {
 	DWORD_PTR entrypoint;
 } GUI_DLL_PARAMETER, *PGUI_DLL_PARAMETER;
 
+
+// Initialize GUI instance
+int InitializeGui(HINSTANCE hInstance, LPARAM param);
+
 class MainGui : public CDialogImpl<MainGui>, public CWinDataExchange<MainGui>, public CDialogResize<MainGui>, public CMessageFilter
 {
 public:

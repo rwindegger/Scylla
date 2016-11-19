@@ -17,7 +17,8 @@
 #include "OptionsGui.h"
 #include "TreeImportExport.h"
 
-extern CAppModule _Module; // o_O
+// Globals
+CAppModule _Module;
 
 const WCHAR MainGui::filterExe[]    = L"Executable (*.exe)\0*.exe\0All files\0*.*\0";
 const WCHAR MainGui::filterDll[]    = L"Dynamic Link Library (*.dll)\0*.dll\0All files\0*.*\0";
@@ -25,6 +26,43 @@ const WCHAR MainGui::filterExeDll[] = L"Executable (*.exe)\0*.exe\0Dynamic Link 
 const WCHAR MainGui::filterTxt[]    = L"Text file (*.txt)\0*.txt\0All files\0*.*\0";
 const WCHAR MainGui::filterXml[]    = L"XML file (*.xml)\0*.xml\0All files\0*.*\0";
 const WCHAR MainGui::filterMem[]    = L"MEM file (*.mem)\0*.mem\0All files\0*.*\0";
+
+
+int InitializeGui(HINSTANCE hInstance, LPARAM param)
+{
+	CoInitialize(NULL);
+
+	AtlInitCommonControls(ICC_LISTVIEW_CLASSES | ICC_TREEVIEW_CLASSES);
+
+	Scylla::initAsGuiApp();
+
+	HRESULT hRes = _Module.Init(NULL, hInstance);
+	ATLASSERT(SUCCEEDED(hRes));
+
+
+
+	int nRet = 0;
+	// BLOCK: Run application
+	{
+		MainGui dlgMain;
+		//MainGui* pMainGui = &dlgMain; // o_O
+
+		CMessageLoop loop;
+		_Module.AddMessageLoop(&loop);
+
+		dlgMain.Create(GetDesktopWindow(), param);
+
+		dlgMain.ShowWindow(SW_SHOW);
+
+		loop.Run();
+	}
+
+	_Module.Term();
+	CoUninitialize();
+
+	return nRet;
+}
+
 
 MainGui::MainGui() : selectedProcess(0), isProcessSuspended(false), importsHandling(TreeImports), TreeImportsSubclass(this, IDC_TREE_IMPORTS)
 {
