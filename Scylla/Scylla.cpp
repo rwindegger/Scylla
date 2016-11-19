@@ -8,10 +8,17 @@ PluginLoader Scylla::plugins;
 
 ProcessLister Scylla::processLister;
 
-const WCHAR Scylla::DEBUG_LOG_FILENAME[] = L"Scylla_debug.log";
 
-FileLog Scylla::debugLog(DEBUG_LOG_FILENAME);
+#ifndef DEBUG_COMMENTS
+	DummyLogger Scylla::debugLog;
+# else
+	FileLog Scylla::debugLog(DEBUG_LOG_FILENAME);
+#endif /* DEBUG_COMMENTS */
+const WCHAR Scylla::DEBUG_LOG_FILENAME[] = L"Scylla_debug.log";
 ListboxLog Scylla::windowLog;
+
+
+
 
 void Scylla::initAsGuiApp()
 {

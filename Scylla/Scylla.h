@@ -14,9 +14,10 @@
 #define APPNAME TEXT(APPNAME_S)
 #define APPVERSION TEXT(APPVERSION_S)
 
-class Scylla
+class Scylla 
 {
-public:
+public :
+	
 
 	static void initAsGuiApp();
 	static void initAsDll();
@@ -26,8 +27,13 @@ public:
 
 	static ProcessLister processLister;
 
-	static FileLog debugLog;
+
 	static ListboxLog windowLog;
+#ifndef DEBUG_COMMENTS
+	static DummyLogger debugLog;
+# else
+	static FileLog debugLog;
+#endif /* DEBUG_COMMENTS */
 
 private:
 

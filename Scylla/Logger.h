@@ -2,6 +2,7 @@
 
 #include <windows.h>
 
+// Abstract class for logging text.
 class Logger
 {
 public:
@@ -13,6 +14,15 @@ protected:
 
 	virtual void write(const WCHAR * str) = 0;
 	virtual void write(const CHAR * str);
+};
+
+// Dummy logger which does absolutely nothing
+class DummyLogger : public Logger
+{
+public:
+	DummyLogger() {};
+private:
+	void write(const WCHAR * str) {};
 };
 
 class FileLog : public Logger

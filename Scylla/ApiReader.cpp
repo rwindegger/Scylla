@@ -730,14 +730,15 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 			return apiFound;
 	}
 
-	//is never reached
+	// There is a equal number of legit imports going by the same virtual address => log every one of them and return the last one.
 	Scylla::windowLog.log(L"getApiByVirtualAddress :: There is a api resolving bug, VA: " PRINTF_DWORD_PTR_FULL, virtualAddress);
 	for (size_t c = 0; c < countDuplicates; c++, it1++)
 	{
 		apiFound = (ApiInfo *)((*it1).second);
 		Scylla::windowLog.log(L"-> Possible API: %S ord: %d ", apiFound->name, apiFound->ordinal);
 	}
-	return (ApiInfo *) 1; 
+
+	return (ApiInfo *) apiFound;
 }
 
 //ApiInfo * ApiReader::getScoredApi(stdext::hash_multimap<DWORD_PTR, ApiInfo *>::iterator it1,size_t countDuplicates, bool hasName, bool hasUnicodeAnsiName, bool hasNoUnderlineInName, bool hasPrioDll,bool hasPrio0Dll,bool hasPrio1Dll, bool hasPrio2Dll, bool firstWin )
