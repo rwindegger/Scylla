@@ -8,19 +8,18 @@
 #include <tchar.h>
 #include <psapi.h>
 #include "ScyllaLoad.h"
+#include "DebugProcess.h"
 
 
-void testGui(SCYLLA_DLL ScyllaDllObject);
+//void testGui(SCYLLA_DLL ScyllaDllObject);
 bool testIatSearch(TCHAR *TargetProcess, SCYLLA_DLL ScyllaDllObject, uintptr_t TargetIATOffset, size_t TargetIATSize);
-DWORD_PTR GetExeModuleBase(DWORD dwProcessId);
-uintptr_t GetExeEntryPoint(DWORD dwProcessId);
 
 
 TCHAR default_target[] = "ScyllaTestExe.exe";
 
 HMODULE hScylla = 0;
 
-DWORD GetCreatedProcessPID(DWORD ControllerPID)
+/*DWORD GetCreatedProcessPID(DWORD ControllerPID)
 {
 	DWORD UniquePID = NULL;
 	HANDLE  hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -42,7 +41,7 @@ DWORD GetCreatedProcessPID(DWORD ControllerPID)
 
 	CloseHandle(hProcessSnap);
 	return UniquePID;
-}
+}*/
 
 int _tmain(int argc, TCHAR *argv[])
 {
@@ -80,149 +79,83 @@ int _tmain(int argc, TCHAR *argv[])
 	return 0x00;
 }
 
-void testGui(SCYLLA_DLL ScyllaDllObject)
-{
-	printf("----------------\nGUI TEST\n----------------\n");
-
-	STARTUPINFOW si = { 0 };
-	PROCESS_INFORMATION pi = { 0 };
-	si.cb = sizeof(STARTUPINFO);
-
-	if (CreateProcessW(0, (WCHAR*) default_target, 0, 0, TRUE, CREATE_SUSPENDED, 0, 0, &si, &pi))
-	{
-		//Sleep(1000);
-
-
-		DWORD_PTR hMod = GetExeModuleBase(pi.dwProcessId);
-		_tprintf(_T("GetExeModuleBase %p\n"), (void*) hMod);
-
-		ScyllaDllObject.ScyllaStartGui(pi.dwProcessId, 0);
-
-		TerminateProcess(pi.hProcess, 0);
-		CloseHandle(pi.hThread);
-		CloseHandle(pi.hProcess);
-	}
-}
+//void testGui(SCYLLA_DLL ScyllaDllObject)
+//{
+//	printf("----------------\nGUI TEST\n----------------\n");
+//
+//	STARTUPINFOW si = { 0 };
+//	PROCESS_INFORMATION pi = { 0 };
+//	si.cb = sizeof(STARTUPINFO);
+//
+//	if (CreateProcessW(0, (WCHAR*) default_target, 0, 0, TRUE, CREATE_SUSPENDED, 0, 0, &si, &pi))
+//	{
+//		//Sleep(1000);
+//
+//
+//		DWORD_PTR hMod = GetExeModuleBase(pi.dwProcessId);
+//		_tprintf(_T("GetExeModuleBase %p\n"), (void*) hMod);
+//
+//		ScyllaDllObject.ScyllaStartGui(pi.dwProcessId, 0);
+//
+//		TerminateProcess(pi.hProcess, 0);
+//		CloseHandle(pi.hThread);
+//		CloseHandle(pi.hProcess);
+//	}
+//}
 
 
 bool testIatSearch(TCHAR *TargetProcess, SCYLLA_DLL ScyllaDllObject, uintptr_t TargetIATOffset, size_t TargetIATSize)
 {
-	printf("----------------\nIAT Search Test\n----------------\n");
+	_tprintf(("----------------\n"));
+	_tprintf(("IAT Search Test : \n"));
+	_tprintf(("\t Executable : %s \n"), TargetProcess);
+	_tprintf(("----------------\n"));
 
-	
-	STARTUPINFO si = { 0 };
-	PROCESS_INFORMATION pi = { 0 };
-	si.cb = sizeof(STARTUPINFO);
 
-	if (!CreateProcess(0, TargetProcess, 0, 0, TRUE, DEBUG_PROCESS, 0, 0, &si, &pi))
+	bool bIATCorrectlyRetrieved = false;
+	DBG_PROC_HANDLE hDbgProcess = 0;
+	DEBUG_PROCESS_INFOS DbgProcInfos = {0};
+
+	if (!FreezeProcessOnStartup(TargetProcess, &hDbgProcess))
 	{
-		_tprintf(_T("Error while creating process : %s\n"), TargetProcess);
+		_tprintf(_T("[x] Error while creating process %s  : %d \n"), TargetProcess, GetLastError());
 		return false;
 	}
-
-	DebugSetProcessKillOnExit(TRUE);
-	DebugActiveProcess(pi.dwProcessId);
 	
-	DEBUG_EVENT debugEvent = { 0 };
-	do {
-		if (!WaitForDebugEvent(&debugEvent, 10*1000 /*INFINITE*/))
-		{
-			goto DEBUG_TIMEOUT;
-		}
+	if (!GetProcessInfos(hDbgProcess, &DbgProcInfos))
+	{
+		_tprintf(_T("[x] Could not retrieve informations about process %s  : %d \n"), TargetProcess, GetLastError());
+		goto testIatSearch_END;
+	}
 
-		// Stop on debug exception
-		if (debugEvent.dwDebugEventCode != EXCEPTION_DEBUG_EVENT)
-			ContinueDebugEvent(debugEvent.dwProcessId,
-				debugEvent.dwThreadId,
-				DBG_CONTINUE);
-
-	} while (debugEvent.dwDebugEventCode == LOAD_DLL_DEBUG_EVENT || debugEvent.dwDebugEventCode == CREATE_THREAD_DEBUG_EVENT || debugEvent.dwDebugEventCode == CREATE_PROCESS_DEBUG_EVENT);
-
-
-DEBUG_TIMEOUT:
-
-	DWORD TargetPID = /*GetCreatedProcessPID(pi.dwProcessId)*/ pi.dwProcessId;
-	DWORD_PTR iatStart = 0;
-	DWORD iatSize = 0;
-
-	DWORD_PTR BaseAddress = GetExeModuleBase(TargetPID);
-	uintptr_t EntryPoint = GetExeEntryPoint(TargetPID);
-	_tprintf(_T("GetExeModuleBase %p EntryPoint %p\n"), (void*)BaseAddress, (void*)EntryPoint);
-	
-	uintptr_t RefIATStart = BaseAddress + TargetIATOffset;
+	uintptr_t RefIATStart = DbgProcInfos.ExeBaseAddress + TargetIATOffset;
 	size_t RefIATSize = TargetIATSize;
+	
 
-	int error = ScyllaDllObject.ScyllaIatSearch(TargetPID, &iatStart, &iatSize, EntryPoint, FALSE);
-	_tprintf(_T("error %d iatStart %p iatSize %X\n"), error, (void*)iatStart, iatSize);
-	if (!error)
+	uintptr_t CalcIatStartAddress = 0x00;
+	size_t CalcIatSize = 0x00;
+
+	// Starting a IAT automatic search on exe entry point.
+	if (!ScyllaDllObject.ScyllaIatSearch((DWORD) DbgProcInfos.ProcessPID, (DWORD_PTR*)&CalcIatStartAddress, (DWORD*)&CalcIatSize, (DWORD_PTR)DbgProcInfos.ExeEntryPoint, FALSE))
 	{
-		bool bIATCorrectlyRetrieved = (iatStart <= RefIATStart) && (iatStart + iatSize >= RefIATStart + RefIATSize);
-		_tprintf(_T("IAT Correctly retrieved : %d \n"), bIATCorrectlyRetrieved);
+		bIATCorrectlyRetrieved = true;
 
-		if (!bIATCorrectlyRetrieved)
-			error = 0x01;
+		// Checking that the calculated IAT at least contains the origin IAT (surjective mapping).
+		bool bContainsOrigIAT = (CalcIatStartAddress <= RefIATStart) && (CalcIatStartAddress + CalcIatSize >= RefIATStart + RefIATSize);
+		
+		if (!bContainsOrigIAT)
+			bIATCorrectlyRetrieved = false;
 	}
 
-	DebugActiveProcessStop(pi.dwProcessId);
-	TerminateProcess(pi.hProcess, 0);
-	CloseHandle(pi.hThread);
-	CloseHandle(pi.hProcess);
+	
+	_tprintf(_T("[.] Reference IAT address: %p - %p \n"), (void*) RefIATStart, (void*) (RefIATStart + RefIATSize));
+	_tprintf(_T("[.] Reference IAT Size: %zx \n"), RefIATSize);
+	_tprintf(_T("[.] Computed  IAT address: %p - %p \n"), (void*) CalcIatStartAddress, (void*)(CalcIatStartAddress + CalcIatSize));
+	_tprintf(_T("[.] Computed  IAT Size: %zx \n"), CalcIatSize);
+	_tprintf(_T("[.] IAT Correctly retrieved : %s \n"), bIATCorrectlyRetrieved ? _T("true") : _T("false"));
 
-	return error == 0;
+testIatSearch_END:
+	StopProcess(hDbgProcess);
+	return bIATCorrectlyRetrieved;
 }
 
-DWORD_PTR GetExeModuleBase(DWORD dwProcessId)
-{
-	MODULEENTRY32 lpModuleEntry = { 0 };	
-	HANDLE hProcessSnapShot = 0x00;
-	DWORD_PTR ModuleBaseAddress = 0x00;
-
-	hProcessSnapShot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, dwProcessId);
-	if (INVALID_HANDLE_VALUE == hProcessSnapShot)
-		return 0x00;
-
-	// Executable is always the first module loaded
-	lpModuleEntry.dwSize = sizeof(lpModuleEntry);
-	if (Module32First(hProcessSnapShot, &lpModuleEntry))
-	{
-		ModuleBaseAddress = (DWORD_PTR)lpModuleEntry.modBaseAddr;
-	}
-
-	CloseHandle(hProcessSnapShot);
-	return ModuleBaseAddress;
-}
-
-uintptr_t GetExeEntryPoint(DWORD dwProcessId)
-{
-	HANDLE hProcess = NULL;
-	HMODULE hMods[1024];
-	DWORD cbNeeded;
-	MODULEINFO ModuleInfo;
-	uintptr_t EntryPoint = NULL;
-	
-	hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dwProcessId);
-	if (!hProcess)
-	{
-		goto GetExeEntryPoint_END;
-	}
-
-	if (!EnumProcessModules(hProcess, hMods, sizeof(hMods), &cbNeeded))
-	{
-		goto GetExeEntryPoint_END;
-	}
-	
-	if (!GetModuleInformation(hProcess, hMods[0], &ModuleInfo, sizeof(MODULEINFO)))
-	{
-		goto GetExeEntryPoint_END;
-	}
-
-	EntryPoint = (uintptr_t) ModuleInfo.EntryPoint;
-
-GetExeEntryPoint_END:
-	if (hProcess) 
-	{
-		CloseHandle(hProcess);
-	}
-	
-	return EntryPoint;
-}

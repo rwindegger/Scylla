@@ -121,13 +121,29 @@ if (SCYLLA_USE_DEBUGGING_LOG)
 endif()
 
 #### Scylla tests
+
 # ScyllaDllTest
-add_executable(ScyllaDllTest "${ScyllaTest_dir}/ScyllaDllTest/Source.cpp")
+message("-- Configuring : ScyllaDllTest")
+file (GLOB ScyllaDllTest_files 
+			"${ScyllaTest_dir}/ScyllaDllTest/*.cpp"
+			"${ScyllaTest_dir}/ScyllaDllTest/*.h"
+)
+add_executable(ScyllaDllTest ${ScyllaDllTest_files})
 set_target_properties (ScyllaDllTest PROPERTIES
 	FOLDER "tests"
 )
 
-add_test( TestScyllaDllTest ScyllaDllTest)
+# X86 version of ScyllaDll can only create/open x86 process, and same for x64
+if (${ARCH} STREQUAL  "x86")
+add_test( NAME TEST_MSTSC
+	COMMAND ScyllaDllTest "${src_dir}/tests/x86/mstsc/l_mstsc.exe" 0x129A90 0x1288 
+)
+elseif ("${ARCH}" STREQUAL  "x64")
+add_test( NAME TEST_SNIPPINGTOOL
+	COMMAND ScyllaDllTest "${src_dir}/tests/x64/snippingtool/snippingtool.exe" 0x295E0 0xA58
+)
+endif()
+
 
 # ScyllaExeTest
 add_executable(ScyllaExeTest "${ScyllaTest_dir}/ScyllaTestExe/main.cpp")
