@@ -1,6 +1,7 @@
 #include "DebugProcess.h"
 #include <psapi.h>
 #include <tlhelp32.h>
+#include <tchar.h>
 
 typedef struct DEBUG_PROCESS_T_
 {
@@ -127,6 +128,15 @@ bool FreezeProcessOnStartup(const TCHAR *tExePath, DBG_PROC_HANDLE *phDbgProc)
 		case EXCEPTION_DEBUG_EVENT:
 			goto FreezeProcessOnStartup_SUCCESS;
 
+		case UNLOAD_DLL_DEBUG_EVENT:
+			// Allow the x64 system dlls to be unloaded when dealing with a x86 process
+			// To be really clean, we need to check if the currently unloaded dll is a 
+			// well-known DLL. Unfortunately, there is no easy way to do so.
+			if (!bTargetProcessArch )
+			{
+				goto FreezeProcessOnStartup_ERROR;
+			}
+			
 		case LOAD_DLL_DEBUG_EVENT:
 		case CREATE_THREAD_DEBUG_EVENT:
 		case CREATE_PROCESS_DEBUG_EVENT:

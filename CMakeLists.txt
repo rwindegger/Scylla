@@ -135,8 +135,8 @@ set_target_properties (ScyllaDllTest PROPERTIES
 
 # X86 version of ScyllaDll can only create/open x86 process, and same for x64
 if (${ARCH} STREQUAL  "x86")
-add_test( NAME TEST_MSTSC
-	COMMAND ScyllaDllTest "${src_dir}/tests/x86/mstsc/l_mstsc.exe" 0x129A90 0x1288 
+add_test( NAME TEST_MSPAINT
+	COMMAND ScyllaDllTest "${src_dir}/tests/x86/mspaint/mspaint.exe" 0xA5000  0x10BC 
 )
 elseif ("${ARCH}" STREQUAL  "x64")
 add_test( NAME TEST_SNIPPINGTOOL
