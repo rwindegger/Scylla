@@ -26,17 +26,17 @@ BOOL DumpProcessW(const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entry
 int InitializeGui(HINSTANCE hInstance, LPARAM param);
 
 
-const WCHAR * WINAPI ScyllaVersionInformationW()
+const WCHAR *  ScyllaVersionInformationW()
 {
 	return APPNAME L" " ARCHITECTURE L" " APPVERSION;
 }
 
-const char * WINAPI ScyllaVersionInformationA()
+const char *  ScyllaVersionInformationA()
 {
 	return APPNAME_S " " ARCHITECTURE_S " " APPVERSION_S;
 }
 
-DWORD WINAPI ScyllaVersionInformationDword()
+DWORD  ScyllaVersionInformationDword()
 {
 	return APPVERSIONDWORD;
 }
@@ -60,7 +60,7 @@ BOOL DumpProcessW(const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entry
 	return result;
 }
 
-BOOL WINAPI ScyllaRebuildFileW(const WCHAR * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup)
+BOOL  ScyllaRebuildFileW(const WCHAR * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup)
 {
 	if (createBackup)
 	{
@@ -94,7 +94,7 @@ BOOL WINAPI ScyllaRebuildFileW(const WCHAR * fileToRebuild, BOOL removeDosStub, 
 	return FALSE;
 }
 
-BOOL WINAPI ScyllaRebuildFileA(const char * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup)
+BOOL  ScyllaRebuildFileA(const char * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup)
 {
 	WCHAR fileToRebuildW[MAX_PATH];
 	if (MultiByteToWideChar(CP_ACP, 0, fileToRebuild, -1, fileToRebuildW, _countof(fileToRebuildW)) == 0)
@@ -105,14 +105,14 @@ BOOL WINAPI ScyllaRebuildFileA(const char * fileToRebuild, BOOL removeDosStub, B
 	return ScyllaRebuildFileW(fileToRebuildW, removeDosStub, updatePeHeaderChecksum, createBackup);
 }
 
-BOOL WINAPI ScyllaDumpCurrentProcessW(const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult)
+BOOL  ScyllaDumpCurrentProcessW(const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult)
 {
 	ProcessAccessHelp::setCurrentProcessAsTarget();
 
 	return DumpProcessW(fileToDump, imagebase, entrypoint, fileResult);
 }
 
-BOOL WINAPI ScyllaDumpProcessW(DWORD_PTR pid, const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult)
+BOOL  ScyllaDumpProcessW(DWORD_PTR pid, const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult)
 {
 	if (ProcessAccessHelp::openProcessHandle((DWORD)pid))
 	{
@@ -124,7 +124,7 @@ BOOL WINAPI ScyllaDumpProcessW(DWORD_PTR pid, const WCHAR * fileToDump, DWORD_PT
 	}	
 }
 
-BOOL WINAPI ScyllaDumpCurrentProcessA(const char * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const char * fileResult)
+BOOL  ScyllaDumpCurrentProcessA(const char * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const char * fileResult)
 {
 	WCHAR fileToDumpW[MAX_PATH];
 	WCHAR fileResultW[MAX_PATH];
@@ -154,7 +154,7 @@ BOOL WINAPI ScyllaDumpCurrentProcessA(const char * fileToDump, DWORD_PTR imageba
 	}
 }
 
-BOOL WINAPI ScyllaDumpProcessA(DWORD_PTR pid, const char * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const char * fileResult)
+BOOL  ScyllaDumpProcessA(DWORD_PTR pid, const char * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const char * fileResult)
 {
 	WCHAR fileToDumpW[MAX_PATH];
 	WCHAR fileResultW[MAX_PATH];
@@ -184,7 +184,7 @@ BOOL WINAPI ScyllaDumpProcessA(DWORD_PTR pid, const char * fileToDump, DWORD_PTR
 	}
 }
 
-INT WINAPI ScyllaStartGui(DWORD dwProcessId, HINSTANCE mod, DWORD_PTR entrypoint)
+INT  ScyllaStartGui(DWORD dwProcessId, HINSTANCE mod, DWORD_PTR entrypoint)
 {
 	GUI_DLL_PARAMETER guiParam;
 	guiParam.dwProcessId = dwProcessId;
@@ -194,7 +194,7 @@ INT WINAPI ScyllaStartGui(DWORD dwProcessId, HINSTANCE mod, DWORD_PTR entrypoint
 	return InitializeGui(hDllModule, (LPARAM)&guiParam);
 }
 
-int WINAPI ScyllaIatSearch(DWORD dwProcessId, DWORD_PTR * iatStart, DWORD * iatSize, DWORD_PTR searchStart, BOOL advancedSearch)
+int  ScyllaIatSearch(DWORD dwProcessId, DWORD_PTR * iatStart, DWORD * iatSize, DWORD_PTR searchStart, BOOL advancedSearch)
 {
 	ApiReader apiReader;
 	ProcessLister processLister;
@@ -240,7 +240,7 @@ int WINAPI ScyllaIatSearch(DWORD dwProcessId, DWORD_PTR * iatStart, DWORD * iatS
 }
 
 
-int WINAPI ScyllaIatFixAutoW(DWORD_PTR iatAddr, DWORD iatSize, DWORD dwProcessId, const WCHAR * dumpFile, const WCHAR * iatFixFile)
+int  ScyllaIatFixAutoW(DWORD_PTR iatAddr, DWORD iatSize, DWORD dwProcessId, const WCHAR * dumpFile, const WCHAR * iatFixFile)
 {
 	ApiReader apiReader;
 	Process *processPtr = 0;
