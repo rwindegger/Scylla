@@ -89,6 +89,21 @@ bool FreezeProcessOnStartup(const TCHAR *tExePath, DBG_PROC_HANDLE *phDbgProc)
 		goto FreezeProcessOnStartup_ERROR;
 	}
 
+	// Check whether calling and debugged process have the same arch
+	// In theory x64 process can debug x86 process, but to do so we need
+	// to handle the Wow64 emulation layer (EXCEPTION_DEBUG_EVENT will fire 
+	// when all x64 dll are loaded, but x86 aren't) and it's a major hassle.
+	BOOL bTargetProcessArch = FALSE;
+	BOOL bCallerProcessArch = FALSE;
+	IsWow64Process(pi.hProcess, &bTargetProcessArch);
+	IsWow64Process(GetCurrentProcess(), &bCallerProcessArch);
+	if (bTargetProcessArch != bCallerProcessArch)
+	{
+		// Indicating the error type for the caller to understand why it failed.
+		SetLastError(ERROR_BAD_EXE_FORMAT);
+		goto FreezeProcessOnStartup_ERROR;
+	}		
+
 	pPrivateDbgProc-> hDebuggedProc = pi.hProcess;
 	pPrivateDbgProc-> hDebuggedThread = pi.hThread;
 	pPrivateDbgProc-> DebuggedPID = pi.dwProcessId;
