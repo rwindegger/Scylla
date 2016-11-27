@@ -32,7 +32,7 @@ elseif( "${CMAKE_SIZEOF_VOID_P}" EQUAL "4" )
 else()
 	set(ARCH "Unkown")
 endif()
-
+message("-- Configuring project for arch ${ARCH}.")
 
 get_filename_component(src_dir		"${PROJECT_SOURCE_DIR}" 	REALPATH)
 set(tinyxml_dir	"${src_dir}/tinyxml")

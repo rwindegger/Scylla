@@ -10,14 +10,18 @@ os:
   - Visual Studio 2015
   - Visual Studio 2013
 
-platform:
-  - x86
-  - x64
 
 configuration:
   - Release
   - Debug
 
+# cmake generator name
+environment:
+
+  matrix:
+    - CMAKE_GEN_PLATFORM: ""
+    - CMAKE_GEN_PLATFORM: "x64"      
+      
 
 build:
   project: C:/projects/scylla/tmp/Scylla.vcxproj      # path to Visual Studio solution or project
@@ -29,10 +33,9 @@ before_build:
     - git clone https://github.com/lucasg/WindowsTemplateLibrary WTL
     - mkdir tmp
     - cd tmp
-    - cmake ..
+    - cmake -A "%CMAKE_GEN_PLATFORM%" ..
 
 after_build:
     - cmake --build . --config %CONFIGURATION%
     - ps: Get-ChildItem -Path $($env:CONFIGURATION) -Recurse | Write-Host
-    - ps: Get-ChildItem -Path "C:/projects/scylla/tests/x86/mspaint" -Recurse | Write-Host
     - ctest . -V -C %CONFIGURATION%
