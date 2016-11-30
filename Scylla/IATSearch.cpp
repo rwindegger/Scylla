@@ -318,29 +318,34 @@ DWORD_PTR IATSearch::findIATStartAddress(DWORD_PTR baseAddress, DWORD_PTR startA
 
 DWORD IATSearch::findIATSize(DWORD_PTR baseAddress, DWORD_PTR iatAddress, BYTE * dataBuffer, DWORD bufferSize)
 {
-	DWORD_PTR *pIATAddress = 0;
+	size_t iatSize = 0;
+	size_t iatOffset = (iatAddress - baseAddress);
+	size_t iatMaxByteSize = bufferSize - iatOffset;
+	DWORD_PTR *pIATAddress = (DWORD_PTR *) (dataBuffer + iatOffset);
+	DWORD_PTR CurrentImportAddress;
 
-	pIATAddress = (DWORD_PTR *)((iatAddress - baseAddress) + (DWORD_PTR)dataBuffer);
 	Scylla::debugLog.log(L"findIATSize :: baseAddress %X iatAddress %X dataBuffer %X pIATAddress %X", baseAddress, iatAddress, dataBuffer, pIATAddress);
-
-	while((DWORD_PTR)pIATAddress < ((DWORD_PTR)dataBuffer + bufferSize - 1))
+	for (int iat_index = 0; iat_index * sizeof(DWORD_PTR) < iatMaxByteSize; iat_index++)
 	{
-		Scylla::debugLog.log(L"findIATSize :: %X %X %X", pIATAddress, *pIATAddress, *(pIATAddress + 1));
-		if (isInvalidMemoryForIat(*pIATAddress)) //normal is 0
+		CurrentImportAddress = pIATAddress[iat_index];
+		Scylla::debugLog.log(L"findIATSize :: %p %p %p", (void*)&CurrentImportAddress, pIATAddress[iat_index + 1], pIATAddress[iat_index + 1]);
+		
+		// Heuristic for end of IAT
+		if (isInvalidMemoryForIat(pIATAddress[iat_index])
+			&& isInvalidMemoryForIat(pIATAddress[iat_index + 1])
+			&& !isApiAddressValid(pIATAddress[iat_index + 2]))
 		{
-			if (isInvalidMemoryForIat(*(pIATAddress + 1)))
-			{
-				//IAT end
-				if (!isApiAddressValid(*(pIATAddress + 2)))
-				{
-					return (DWORD)((DWORD_PTR)pIATAddress - (DWORD_PTR)dataBuffer - (iatAddress - baseAddress));
-				}
-			}
+			// IAT usually ends with a null pointer which we need to take into account.
+			iatSize = iat_index * sizeof(DWORD_PTR);
+			if (!CurrentImportAddress)
+				iatSize += sizeof(DWORD_PTR);
+
+			return iatSize;
 		}
 
-		pIATAddress++;
 	}
 
+	// Found no IAT ending in the databuffer => returning everything.
 	return bufferSize;
 }
 
