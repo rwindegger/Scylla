@@ -217,22 +217,11 @@ int  ScyllaIatSearch(DWORD dwProcessId, DWORD_PTR * iatStart, DWORD * iatSize, D
 	apiReader.readApisFromModuleList();
 
 	int retVal = SCY_ERROR_IATNOTFOUND;
-
-	if (advancedSearch)
+	if (iatSearch.searchImportAddressTableInProcess(searchStart, iatStart, iatSize, TRUE == advancedSearch))
 	{
-		if (iatSearch.searchImportAddressTableInProcess(searchStart, iatStart, iatSize, true))
-		{
-			retVal = SCY_ERROR_SUCCESS;
-		}
+		retVal = SCY_ERROR_SUCCESS;
 	}
-	else
-	{
-		if (iatSearch.searchImportAddressTableInProcess(searchStart, iatStart, iatSize, false))
-		{
-			retVal = SCY_ERROR_SUCCESS;
-		}
-	}
-
+	
 	ProcessAccessHelp::closeProcessHandle();
 	apiReader.clearAll();
 
