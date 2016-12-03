@@ -874,69 +874,73 @@ void MainGui::iatAutosearchActionHandler()
 	DWORD_PTR searchAddress = 0;
 	DWORD_PTR addressIAT = 0, addressIATAdv = 0;
 	DWORD sizeIAT = 0, sizeIATAdv = 0;
-	IATSearch iatSearch;
+	bool bAdvancedSearch = false;
 
 	if(!selectedProcess)
 		return;
 
-	if(EditOEPAddress.GetWindowTextLength() > 0)
+	if (EditOEPAddress.GetWindowTextLength() == 0)
+		return;
+
+	searchAddress = EditOEPAddress.GetValue();
+	if (!searchAddress)
+		return;
+
+	
+	// Normal search
+	if (SCY_ERROR_SUCCESS == ScyllaIatSearch(hProcessContext, &addressIAT, &sizeIAT, searchAddress, false))
 	{
-		searchAddress = EditOEPAddress.GetValue();
-		if (searchAddress)
+		Scylla::windowLog.log(L"IAT Search Nor: IAT VA " PRINTF_DWORD_PTR_FULL L" RVA " PRINTF_DWORD_PTR_FULL L" Size 0x%04X (%d)", addressIAT, addressIAT - ProcessAccessHelp::targetImageBase, sizeIAT, sizeIAT);
+	}
+	else
+	{
+		Scylla::windowLog.log(L"IAT Search Nor: IAT not found at OEP " PRINTF_DWORD_PTR_FULL L"!", searchAddress);
+	}
+
+	// optional advanced search
+	bAdvancedSearch = Scylla::config[USE_ADVANCED_IAT_SEARCH].isTrue();
+	if (bAdvancedSearch)
+	{
+		if (SCY_ERROR_SUCCESS == ScyllaIatSearch(hProcessContext, &addressIATAdv, &sizeIATAdv, searchAddress, true))
 		{
+			Scylla::windowLog.log(L"IAT Search Adv: IAT VA " PRINTF_DWORD_PTR_FULL L" RVA " PRINTF_DWORD_PTR_FULL L" Size 0x%04X (%d)", addressIATAdv, addressIATAdv - ProcessAccessHelp::targetImageBase, sizeIATAdv, sizeIATAdv);
+		}
+		else
+		{
+			Scylla::windowLog.log(L"IAT Search Adv: IAT not found at OEP " PRINTF_DWORD_PTR_FULL L"!", searchAddress);
+		}
 
-			if (Scylla::config[USE_ADVANCED_IAT_SEARCH].isTrue())
-			{
-				if (iatSearch.searchImportAddressTableInProcess(searchAddress, &addressIATAdv, &sizeIATAdv, true))
-				{
-					Scylla::windowLog.log(L"IAT Search Adv: IAT VA " PRINTF_DWORD_PTR_FULL L" RVA " PRINTF_DWORD_PTR_FULL L" Size 0x%04X (%d)", addressIATAdv, addressIATAdv - ProcessAccessHelp::targetImageBase, sizeIATAdv, sizeIATAdv);
-				}
-				else
-				{
-					Scylla::windowLog.log(L"IAT Search Adv: IAT not found at OEP " PRINTF_DWORD_PTR_FULL L"!", searchAddress);
-				}
-			}
+	}
 
-
-			if (iatSearch.searchImportAddressTableInProcess(searchAddress, &addressIAT, &sizeIAT, false))
-			{
-				Scylla::windowLog.log(L"IAT Search Nor: IAT VA " PRINTF_DWORD_PTR_FULL L" RVA " PRINTF_DWORD_PTR_FULL L" Size 0x%04X (%d)", addressIAT, addressIAT - ProcessAccessHelp::targetImageBase, sizeIAT, sizeIAT);
-			}
-			else
-			{
-				Scylla::windowLog.log(L"IAT Search Nor: IAT not found at OEP " PRINTF_DWORD_PTR_FULL L"!", searchAddress);
-			}
-
-			if (addressIAT != 0 && addressIATAdv == 0)
-			{
-				setDialogIATAddressAndSize(addressIAT, sizeIAT);
-			}
-			else if (addressIAT == 0 && addressIATAdv != 0)
+	// Executive arbitrage between normal and advanced search results
+	if (addressIAT != 0 && addressIATAdv == 0)
+	{
+		setDialogIATAddressAndSize(addressIAT, sizeIAT);
+	}
+	else if (addressIAT == 0 && addressIATAdv != 0)
+	{
+		setDialogIATAddressAndSize(addressIATAdv, sizeIATAdv);
+	}
+	else if (addressIAT != 0 && addressIATAdv != 0)
+	{
+		if (addressIATAdv != addressIAT || sizeIAT != sizeIATAdv)
+		{
+			int msgboxID = MessageBox(L"Result of advanced and normal search is different. Do you want to use the IAT Search Advanced result?", L"Information", MB_YESNO|MB_ICONINFORMATION);
+			if (msgboxID == IDYES)
 			{
 				setDialogIATAddressAndSize(addressIATAdv, sizeIATAdv);
 			}
-			else if (addressIAT != 0 && addressIATAdv != 0)
+			else
 			{
-				if (addressIATAdv != addressIAT || sizeIAT != sizeIATAdv)
-				{
-					int msgboxID = MessageBox(L"Result of advanced and normal search is different. Do you want to use the IAT Search Advanced result?", L"Information", MB_YESNO|MB_ICONINFORMATION);
-					if (msgboxID == IDYES)
-					{
-						setDialogIATAddressAndSize(addressIATAdv, sizeIATAdv);
-					}
-					else
-					{
-						setDialogIATAddressAndSize(addressIAT, sizeIAT);
-					}
-				}
-				else
-				{
-					setDialogIATAddressAndSize(addressIAT, sizeIAT);
-				}
+				setDialogIATAddressAndSize(addressIAT, sizeIAT);
 			}
-			
+		}
+		else
+		{
+			setDialogIATAddressAndSize(addressIAT, sizeIAT);
 		}
 	}
+			
 }
 
 void MainGui::getImportsActionHandler()
