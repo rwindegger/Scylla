@@ -38,6 +38,12 @@ bool ScyllaLoadDll(TCHAR *ScyllaDllPath, SCYLLA_DLL *pScyllaDllObject)
 	pScyllaDllObject->ScyllaStartGui = (def_ScyllaStartGui) GetProcAddress(hScylla, DecorateSymbolName("ScyllaStartGui"));
 	bScyllaProcAddressSuccessful &= (pScyllaDllObject->ScyllaStartGui != NULL);
 
+	pScyllaDllObject->ScyllaInitContext = (def_ScyllaInitContext)GetProcAddress(hScylla, DecorateSymbolName("ScyllaInitContext"));
+	bScyllaProcAddressSuccessful &= (pScyllaDllObject->ScyllaInitContext != NULL);
+
+	pScyllaDllObject->ScyllaUnInitContext = (def_ScyllaUnInitContext)GetProcAddress(hScylla, DecorateSymbolName("ScyllaUnInitContext"));
+	bScyllaProcAddressSuccessful &= (pScyllaDllObject->ScyllaUnInitContext != NULL);
+
 	// Test if every GetProcAddress was successful
 	if (!bScyllaProcAddressSuccessful)
 	{

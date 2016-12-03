@@ -152,6 +152,8 @@ public:
 
 	MainGui();
 
+	~MainGui();
+
 	//void addTextToOutputLog(const WCHAR * text);
 
 	//CWindow getLogListboxHandle() const { return ListLog; }
@@ -170,6 +172,7 @@ protected:
 
 	Process * selectedProcess;
 	bool isProcessSuspended;
+	SCY_HANDLE hProcessContext;
 
 	// File selection filters
 

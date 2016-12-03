@@ -64,7 +64,8 @@ int InitializeGui(HINSTANCE hInstance, LPARAM param)
 }
 
 
-MainGui::MainGui() : selectedProcess(0), isProcessSuspended(false), importsHandling(TreeImports), TreeImportsSubclass(this, IDC_TREE_IMPORTS)
+MainGui::MainGui() 
+: selectedProcess(0), isProcessSuspended(false), importsHandling(TreeImports), TreeImportsSubclass(this, IDC_TREE_IMPORTS), hProcessContext(NULL)
 {
 	/*
 	Logger::getDebugLogFilePath();
@@ -90,6 +91,11 @@ MainGui::MainGui() : selectedProcess(0), isProcessSuspended(false), importsHandl
 	hIconCheck.LoadIcon(IDI_ICON_CHECK, 16, 16);
 	hIconWarning.LoadIcon(IDI_ICON_WARNING, 16, 16);
 	hIconError.LoadIcon(IDI_ICON_ERROR, 16, 16);
+}
+
+MainGui::~MainGui()
+{
+	ScyllaUnInitContext(hProcessContext);
 }
 
 BOOL MainGui::PreTranslateMessage(MSG* pMsg)
@@ -639,17 +645,14 @@ void MainGui::processSelectedActionHandler(int index)
 	Process &process = processList.at(index);
 	selectedProcess = 0;
 
+	// Cleanup previous results
 	clearImportsActionHandler();
+	ScyllaUnInitContext(hProcessContext);
 
 	Scylla::windowLog.log(L"Analyzing %s", process.fullPath);
 
-	if (ProcessAccessHelp::hProcess != 0)
-	{
-		ProcessAccessHelp::closeProcessHandle();
-		apiReader.clearAll();
-	}
-
-	if (!ProcessAccessHelp::openProcessHandle(process.PID))
+	// Open Scylla handle on current process
+	if (!ScyllaInitContext(&hProcessContext, process.PID))
 	{
 		enableDialogControls(FALSE);
 		Scylla::windowLog.log(L"Error: Cannot open process handle.");

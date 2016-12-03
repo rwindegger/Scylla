@@ -12,18 +12,13 @@
 
 extern HINSTANCE hDllModule;
 
-/*
-Dump target process into output file.
-@param fileToDump : path to file to dump
-@param imagebase : Process image base (why ??)
-@param entrypoint : Process entry point (or estimated entry point ?)
-@param fileResult
+// Internal structure of a SCY_HANDLE
+typedef struct SCY_CONTEXT_T_
+{
+	size_t targetProcId;
+	ApiReader apiReader;
+} SCY_CONTEXT_T;
 
-*/
-BOOL DumpProcessW(const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult);
-
-
-int InitializeGui(HINSTANCE hInstance, LPARAM param);
 
 
 const WCHAR *  ScyllaVersionInformationW()
@@ -41,7 +36,7 @@ DWORD  ScyllaVersionInformationDword()
 	return APPVERSIONDWORD;
 }
 
-BOOL DumpProcessW(const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult)
+BOOL DumpProcessW(SCY_HANDLE hScyllaContext, const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult)
 {
 	PeParser * peFile = 0;
 
@@ -60,7 +55,7 @@ BOOL DumpProcessW(const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entry
 	return result;
 }
 
-BOOL  ScyllaRebuildFileW(const WCHAR * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup)
+BOOL  ScyllaRebuildFileW(SCY_HANDLE hScyllaContext, const WCHAR * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup)
 {
 	if (createBackup)
 	{
@@ -94,7 +89,7 @@ BOOL  ScyllaRebuildFileW(const WCHAR * fileToRebuild, BOOL removeDosStub, BOOL u
 	return FALSE;
 }
 
-BOOL  ScyllaRebuildFileA(const char * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup)
+BOOL  ScyllaRebuildFileA(SCY_HANDLE hScyllaContext, const char * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup)
 {
 	WCHAR fileToRebuildW[MAX_PATH];
 	if (MultiByteToWideChar(CP_ACP, 0, fileToRebuild, -1, fileToRebuildW, _countof(fileToRebuildW)) == 0)
@@ -102,32 +97,37 @@ BOOL  ScyllaRebuildFileA(const char * fileToRebuild, BOOL removeDosStub, BOOL up
 		return FALSE;
 	}
 
-	return ScyllaRebuildFileW(fileToRebuildW, removeDosStub, updatePeHeaderChecksum, createBackup);
+	return ScyllaRebuildFileW(hScyllaContext, fileToRebuildW, removeDosStub, updatePeHeaderChecksum, createBackup);
 }
 
-BOOL  ScyllaDumpCurrentProcessW(const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult)
+BOOL  ScyllaDumpCurrentProcessW(SCY_HANDLE hScyllaContext, const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult)
 {
-	ProcessAccessHelp::setCurrentProcessAsTarget();
-
-	return DumpProcessW(fileToDump, imagebase, entrypoint, fileResult);
+	//ProcessAccessHelp::setCurrentProcessAsTarget();
+	return DumpProcessW(hScyllaContext, fileToDump, imagebase, entrypoint, fileResult);
 }
 
 BOOL  ScyllaDumpProcessW(DWORD_PTR pid, const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult)
 {
-	if (ProcessAccessHelp::openProcessHandle((DWORD)pid))
-	{
-		return DumpProcessW(fileToDump, imagebase, entrypoint, fileResult);
-	}
-	else
-	{
+	BOOL bDumpResult;
+	SCY_HANDLE hScyllaContext;
+
+	if (!ScyllaInitContext(&hScyllaContext, pid))
 		return FALSE;
-	}	
+
+	bDumpResult = DumpProcessW(hScyllaContext, fileToDump, imagebase, entrypoint, fileResult);
+	ScyllaUnInitContext(hScyllaContext);
+
+	return bDumpResult;
 }
 
-BOOL  ScyllaDumpCurrentProcessA(const char * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const char * fileResult)
+BOOL  ScyllaDumpCurrentProcessA(SCY_HANDLE hScyllaContext, const char * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const char * fileResult)
 {
 	WCHAR fileToDumpW[MAX_PATH];
 	WCHAR fileResultW[MAX_PATH];
+	SCY_CONTEXT_T* pPrivScyContext = (SCY_CONTEXT_T*)hScyllaContext;
+
+	if (!pPrivScyContext)
+		return FALSE;
 
 	if (fileResult == 0)
 	{
@@ -146,11 +146,11 @@ BOOL  ScyllaDumpCurrentProcessA(const char * fileToDump, DWORD_PTR imagebase, DW
 			return FALSE;
 		}
 
-		return ScyllaDumpCurrentProcessW(fileToDumpW, imagebase, entrypoint, fileResultW);
+		return ScyllaDumpCurrentProcessW(hScyllaContext, fileToDumpW, imagebase, entrypoint, fileResultW);
 	}
 	else
 	{
-		return ScyllaDumpCurrentProcessW(0, imagebase, entrypoint, fileResultW);
+		return ScyllaDumpCurrentProcessW(hScyllaContext, 0, imagebase, entrypoint, fileResultW);
 	}
 }
 
@@ -184,37 +184,46 @@ BOOL  ScyllaDumpProcessA(DWORD_PTR pid, const char * fileToDump, DWORD_PTR image
 	}
 }
 
-INT  ScyllaStartGui(DWORD dwProcessId, HINSTANCE mod, DWORD_PTR entrypoint)
+INT  ScyllaStartGui(SCY_HANDLE hScyllaContext, HINSTANCE mod, DWORD_PTR entrypoint)
 {
 	GUI_DLL_PARAMETER guiParam;
-	guiParam.dwProcessId = dwProcessId;
+	SCY_CONTEXT_T* pPrivScyContext = (SCY_CONTEXT_T*)hScyllaContext;
+
+	if (!pPrivScyContext)
+		return SCY_ERROR_PIDNOTFOUND;
+
+	guiParam.dwProcessId = pPrivScyContext->targetProcId;
 	guiParam.mod = mod;
 	guiParam.entrypoint = entrypoint;
 
 	return InitializeGui(hDllModule, (LPARAM)&guiParam);
 }
 
-int  ScyllaIatSearch(DWORD dwProcessId, DWORD_PTR * iatStart, DWORD * iatSize, DWORD_PTR searchStart, BOOL advancedSearch)
+int  ScyllaIatSearch(SCY_HANDLE hScyllaContext, DWORD_PTR * iatStart, DWORD * iatSize, DWORD_PTR searchStart, BOOL advancedSearch)
 {
-	ApiReader apiReader;
+	//ApiReader apiReader;
 	ProcessLister processLister;
-	Process *processPtr = 0;
+	//Process *processPtr = 0;
 	IATSearch iatSearch;
+	SCY_CONTEXT_T* pPrivScyContext = (SCY_CONTEXT_T*)hScyllaContext;
+
+	if (!pPrivScyContext)
+		return SCY_ERROR_PIDNOTFOUND;
 
 	// Close previous context. FIX ME : use a dedicated structure to store Scylla's context instead of globals
-	ProcessAccessHelp::closeProcessHandle();
-	apiReader.clearAll();
+	//ProcessAccessHelp::closeProcessHandle();
+	//apiReader.clearAll();
 
-	if (!ProcessAccessHelp::openProcessHandle(dwProcessId))
-	{
-		return SCY_ERROR_PROCOPEN;
-	}
+	//if (!ProcessAccessHelp::openProcessHandle(dwProcessId))
+	//{
+	//	return SCY_ERROR_PROCOPEN;
+	//}
 
 	ProcessAccessHelp::getProcessModules(ProcessAccessHelp::hProcess, ProcessAccessHelp::moduleList);
 	ProcessAccessHelp::selectedModule = 0;
 	
 
-	apiReader.readApisFromModuleList();
+	pPrivScyContext->apiReader.readApisFromModuleList();
 
 	int retVal = SCY_ERROR_IATNOTFOUND;
 	if (iatSearch.searchImportAddressTableInProcess(searchStart, iatStart, iatSize, TRUE == advancedSearch))
@@ -222,36 +231,37 @@ int  ScyllaIatSearch(DWORD dwProcessId, DWORD_PTR * iatStart, DWORD * iatSize, D
 		retVal = SCY_ERROR_SUCCESS;
 	}
 	
-	ProcessAccessHelp::closeProcessHandle();
-	apiReader.clearAll();
+	//ProcessAccessHelp::closeProcessHandle();
+	//apiReader.clearAll();
 
 	return retVal;
 }
 
 
-int  ScyllaIatFixAutoW(DWORD_PTR iatAddr, DWORD iatSize, DWORD dwProcessId, const WCHAR * dumpFile, const WCHAR * iatFixFile)
+int  ScyllaIatFixAutoW(SCY_HANDLE hScyllaContext, DWORD_PTR iatAddr, DWORD iatSize, DWORD dwProcessId, const WCHAR * dumpFile, const WCHAR * iatFixFile)
 {
-	ApiReader apiReader;
-	Process *processPtr = 0;
 	std::map<DWORD_PTR, ImportModuleThunk> moduleList;
 
+	SCY_CONTEXT_T* pPrivScyContext = (SCY_CONTEXT_T*)hScyllaContext;
 
-	if(!processPtr) return SCY_ERROR_PIDNOTFOUND;
+	if (!pPrivScyContext)
+		return SCY_ERROR_PIDNOTFOUND;
 
-	ProcessAccessHelp::closeProcessHandle();
-	apiReader.clearAll();
 
-	if (!ProcessAccessHelp::openProcessHandle(processPtr->PID))
-	{
-		return SCY_ERROR_PROCOPEN;
-	}
+	//ProcessAccessHelp::closeProcessHandle();
+	//apiReader.clearAll();
+
+	//if (!ProcessAccessHelp::openProcessHandle(processPtr->PID))
+	//{
+	//	return SCY_ERROR_PROCOPEN;
+	//}
 
 	ProcessAccessHelp::getProcessModules(ProcessAccessHelp::hProcess, ProcessAccessHelp::moduleList);
 	ProcessAccessHelp::selectedModule = 0;
 
-	apiReader.readApisFromModuleList();
+	pPrivScyContext->apiReader.readApisFromModuleList();
 
-	apiReader.readAndParseIAT(iatAddr, iatSize, moduleList);
+	pPrivScyContext->apiReader.readAndParseIAT(iatAddr, iatSize, moduleList);
 
 	//add IAT section to dump
 	ImportRebuilder importRebuild(dumpFile);
@@ -265,8 +275,46 @@ int  ScyllaIatFixAutoW(DWORD_PTR iatAddr, DWORD iatSize, DWORD dwProcessId, cons
 	}
 
 	moduleList.clear();
-	ProcessAccessHelp::closeProcessHandle();
-	apiReader.clearAll();
+	//ProcessAccessHelp::closeProcessHandle();
+	//apiReader.clearAll();
 
 	return retVal;
+}
+
+BOOL ScyllaInitContext(PSCY_HANDLE phCtxt, DWORD_PTR TargetProcessPid)
+{
+	SCY_CONTEXT_T* pPrivScyContext = NULL;
+
+	*phCtxt = NULL;
+
+	pPrivScyContext = (SCY_CONTEXT_T*)calloc(1, sizeof(SCY_CONTEXT_T));
+	if (NULL == pPrivScyContext)
+		return FALSE;
+	memset(pPrivScyContext, 0, sizeof(SCY_CONTEXT_T));
+
+	// Open target process
+	if (!ProcessAccessHelp::openProcessHandle(TargetProcessPid))
+	{
+		return FALSE;
+	}
+	pPrivScyContext->apiReader.readApisFromModuleList();
+
+	*phCtxt = (SCY_HANDLE)pPrivScyContext;
+	return TRUE;
+}
+
+BOOL ScyllaUnInitContext(SCY_HANDLE hCtxt)
+{
+	SCY_CONTEXT_T* pPrivScyContext = (SCY_CONTEXT_T*)hCtxt;
+	
+	if (!pPrivScyContext)
+		return FALSE;
+
+	// Close process handle
+	ProcessAccessHelp::closeProcessHandle();
+	pPrivScyContext->apiReader.clearAll();
+
+
+	free(pPrivScyContext);
+	return TRUE;
 }
