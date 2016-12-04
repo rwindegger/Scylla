@@ -35,7 +35,7 @@ before_build:
     - cd tmp
     - cmake -A "%CMAKE_GEN_PLATFORM%" ..
 
-after_build:
+test_script:
     - cmake --build . --config %CONFIGURATION%
     - ps: Get-ChildItem -Path $($env:CONFIGURATION) -Recurse | Write-Host
     - ctest . -V -C %CONFIGURATION%
