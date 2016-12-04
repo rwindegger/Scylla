@@ -74,7 +74,8 @@ int _tmain(int argc, TCHAR *argv[])
 	}
 
 	if (!testIatSearch(target, ScyllaDll, target_iat_offset, target_iat_size))
-		return 0x01;
+		return GetLastError();
+	
 
 	return 0x00;
 }

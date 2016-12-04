@@ -10,7 +10,13 @@ set(WDK_LIBPATH "" CACHE FILEPATH "Path to your Windows Kit library folder (usua
 #  Global properties for VS project to use folders
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+# Testing environment
 enable_testing()
+if(NOT MSVC_VERSION VERSION_LESS 1800 AND MSVC_VERSION VERSION_LESS 1900)
+	set(DUMPBIN_PATH "C:/Program Files (x86)/Microsoft Visual Studio 12.0/VC/BIN/dumpbin.exe")
+elseif(NOT MSVC_VERSION VERSION_LESS 1900 AND MSVC_VERSION VERSION_LESS 2000)
+	set(DUMPBIN_PATH "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/BIN/dumpbin.exe")
+endif()
 
 # set the correct defines for projects to compile
 # using Unicode strings
@@ -135,12 +141,15 @@ set_target_properties (ScyllaDllTest PROPERTIES
 
 # X86 version of ScyllaDll can only create/open x86 process, and same for x64
 if (${ARCH} STREQUAL  "x86")
-add_test( NAME TEST_MSPAINT
-	COMMAND ScyllaDllTest "C:/Windows/SysWOW64/ping.exe" 0xA5000  0x10BC 
+add_test( NAME TEST_SYSINTERNALS
+	COMMAND Powershell.exe "${src_dir}/tests/DumpbinIatDirectoryEntry.ps1" -Dumpbin \"${DUMPBIN_PATH}\" -TestFolder "${src_dir}/tests/x86" -ScyllaExe "$<TARGET_FILE:ScyllaDllTest>"
+)
+add_test( NAME TEST_SYSWOW64
+	COMMAND Powershell.exe "${src_dir}/tests/DumpbinIatDirectoryEntry.ps1" -Dumpbin \"${DUMPBIN_PATH}\" -TestFolder "C:/Windows/SysWOW64" -ScyllaExe "$<TARGET_FILE:ScyllaDllTest>"
 )
 elseif ("${ARCH}" STREQUAL  "x64")
-add_test( NAME TEST_PING
-	COMMAND ScyllaDllTest "C:/Windows/system32/ping.exe"  0x40E0 0x2d0
+add_test( NAME TEST_SYS32
+	COMMAND Powershell.exe "${src_dir}/tests/DumpbinIatDirectoryEntry.ps1" -Dumpbin \"${DUMPBIN_PATH}\" -TestFolder "C:/Windows/System32" -ScyllaExe "$<TARGET_FILE:ScyllaDllTest>"
 )
 endif()
 
