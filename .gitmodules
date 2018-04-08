@@ -1,3 +1,7 @@
 [submodule "tinyxml"]
 	path = tinyxml
 	url = git@github.com:wxFormBuilder/ticpp.git
+[submodule "WTL"]
+	path = WTL
+	url = git@github.com:lucasg/WindowsTemplateLibrary.git
+	branch = master
