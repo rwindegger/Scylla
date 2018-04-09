@@ -14,28 +14,31 @@
 #define APPNAME TEXT(APPNAME_S)
 #define APPVERSION TEXT(APPVERSION_S)
 
-class Scylla 
+#define CONSOLE_LOG
+
+class Scylla
 {
-public :
-	
+public:
+    static void initAsGuiApp();
+    static void initAsDll();
 
-	static void initAsGuiApp();
-	static void initAsDll();
+    static ConfigurationHolder config;
+    static PluginLoader plugins;
 
-	static ConfigurationHolder config;
-	static PluginLoader plugins;
+    static ProcessLister processLister;
+#ifndef CONSOLE_LOG    
+    static ListboxLog windowLog;
+#else
+    static ConsoleLogger windowLog;
+#endif
 
-	static ProcessLister processLister;
-
-
-	static ListboxLog windowLog;
 #ifndef DEBUG_COMMENTS
-	static DummyLogger debugLog;
+    static DummyLogger debugLog;
 # else
-	static FileLog debugLog;
+    static FileLog debugLog(DEBUG_LOG_FILENAME);
 #endif /* DEBUG_COMMENTS */
 
 private:
 
-	static const WCHAR DEBUG_LOG_FILENAME[];
+    static const WCHAR DEBUG_LOG_FILENAME[];
 };

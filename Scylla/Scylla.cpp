@@ -10,35 +10,36 @@ ProcessLister Scylla::processLister;
 
 
 #ifndef DEBUG_COMMENTS
-	DummyLogger Scylla::debugLog;
+DummyLogger Scylla::debugLog;
 # else
-	FileLog Scylla::debugLog(DEBUG_LOG_FILENAME);
+FileLog Scylla::debugLog(DEBUG_LOG_FILENAME);
 #endif /* DEBUG_COMMENTS */
 const WCHAR Scylla::DEBUG_LOG_FILENAME[] = L"Scylla_debug.log";
+#ifndef CONSOLE_LOG
 ListboxLog Scylla::windowLog;
-
-
-
+#else
+ConsoleLogger Scylla::windowLog;
+#endif
 
 void Scylla::initAsGuiApp()
 {
-	config.loadConfiguration();
-	plugins.findAllPlugins();
+    config.loadConfiguration();
+    plugins.findAllPlugins();
 
-	NativeWinApi::initialize();
+    NativeWinApi::initialize();
 
-	if(config[DEBUG_PRIVILEGE].isTrue())
-	{
-		processLister.setDebugPrivileges();
-	}
+    if (config[DEBUG_PRIVILEGE].isTrue())
+    {
+        processLister.setDebugPrivileges();
+    }
 
-	ProcessAccessHelp::getProcessModules(GetCurrentProcess(), ProcessAccessHelp::ownModuleList);
+    ProcessAccessHelp::getProcessModules(GetCurrentProcess(), ProcessAccessHelp::ownModuleList);
 }
 
 void Scylla::initAsDll()
 {
-	ProcessAccessHelp::ownModuleList.clear();
+    ProcessAccessHelp::ownModuleList.clear();
 
-	NativeWinApi::initialize();
-	ProcessAccessHelp::getProcessModules(GetCurrentProcess(), ProcessAccessHelp::ownModuleList);
+    NativeWinApi::initialize();
+    ProcessAccessHelp::getProcessModules(GetCurrentProcess(), ProcessAccessHelp::ownModuleList);
 }
