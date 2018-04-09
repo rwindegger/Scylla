@@ -12,7 +12,9 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # Testing environment
 enable_testing()
-if(NOT MSVC_VERSION VERSION_LESS 1800 AND MSVC_VERSION VERSION_LESS 1900)
+if(true)
+	set(DUMPBIN_PATH "C:/Program Files (x86)/Microsoft Visual Studio/2017/Enterprise/VC/Tools/MSVC/14.11.25503/bin/HostX64/x64/dumpbin.exe")
+elseif(NOT MSVC_VERSION VERSION_LESS 1800 AND MSVC_VERSION VERSION_LESS 1900)
 	set(DUMPBIN_PATH "C:/Program Files (x86)/Microsoft Visual Studio 12.0/VC/BIN/dumpbin.exe")
 elseif(NOT MSVC_VERSION VERSION_LESS 1900 AND MSVC_VERSION VERSION_LESS 2000)
 	set(DUMPBIN_PATH "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/BIN/dumpbin.exe")
@@ -57,7 +59,7 @@ file (GLOB tinyxml_files
 )
 add_library(tinyxml ${tinyxml_files})
 set_target_properties (tinyxml PROPERTIES
-	FOLDER "contrib"
+	FOLDER "vendor"
 )
 
 # diStorm static library
@@ -69,7 +71,7 @@ file (GLOB diStorm_files
 )
 add_library(diStorm ${diStorm_files})
 set_target_properties (diStorm PROPERTIES
-	FOLDER "contrib"
+	FOLDER "vendor"
 )
 
 #### Scylla targets
@@ -104,6 +106,9 @@ list(REMOVE_ITEM ScyllaDll_files "${Scylla_dir}/main.cpp")
 add_library(ScyllaDll SHARED ${ScyllaDll_files})
 target_link_libraries(ScyllaDll tinyxml diStorm Psapi)
 target_include_directories(ScyllaDll PUBLIC 
+	"${Scylla_dir}/"
+)
+target_include_directories(ScyllaDll PRIVATE 
 	"${tinyxml_dir}/"
 	"${diStorm_dir}/include"
 	"${WTL_dir}/Include"
@@ -160,8 +165,6 @@ set_target_properties (ScyllaExeTest PROPERTIES
 	FOLDER "tests"
 	LINK_FLAGS "/SUBSYSTEM:WINDOWS"
 )
-
-
 
 # compile projects as unicode
 set(unicode_targets Scylla ScyllaDll)
