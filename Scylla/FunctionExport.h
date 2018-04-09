@@ -71,7 +71,7 @@ SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  ScyllaDumpCurrentProcessA(SCY_HANDLE hS
 	@param fileResult :
 */
 SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  ScyllaDumpProcessW(DWORD_PTR pid, const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult);
-
+SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  ScyllaDumpProcessExW(DWORD_PTR pid, const WCHAR * fileResult);
 /*
 	Dump process by PID into a file.
 	@param pid : process unique PID to dump
