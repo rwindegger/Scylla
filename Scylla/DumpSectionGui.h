@@ -15,22 +15,7 @@
 
 #include <vector>
 #include "hexedit.h"
-
-
-class PeSection
-{
-public:
-	WCHAR name[IMAGE_SIZEOF_SHORT_NAME + 1];
-	DWORD_PTR virtualAddress;
-	DWORD  virtualSize;
-	DWORD  rawAddress;
-	DWORD  rawSize;
-	DWORD characteristics;
-
-	bool isDumped;
-
-	bool highlightVirtualSize();
-};
+#include "PeParser.h"
 
 class DumpSectionGui : public CDialogImpl<DumpSectionGui>, public CWinDataExchange<DumpSectionGui>, public CDialogResize<DumpSectionGui>
 {

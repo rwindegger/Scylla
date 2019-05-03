@@ -107,15 +107,6 @@ SCYLLA_DLL_EXPORT  const char * SCYLLA_DECL_API  ScyllaVersionInformationA();
 */
 SCYLLA_DLL_EXPORT  DWORD SCYLLA_DECL_API  ScyllaVersionInformationDword();
 
-
-/*
-	Start Scylla Gui from the API.
-	@param dwProcessId : process ID to attach to
-	@param mod : module instance from chosen processus
-	@param entrypoint : process entry point (for IAT search)
-*/
-SCYLLA_DLL_EXPORT  int SCYLLA_DECL_API  ScyllaStartGui(SCY_HANDLE hScyllaContext, HINSTANCE mod, DWORD_PTR entrypoint);
-
 /*
 	Search IAT in the target process 
 	@param dwProcessId : target process PID. the calling process must be able to read into target memory (PROCESS_QUERY_INFORMATION and PROCESS_READ_VM)

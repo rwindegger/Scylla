@@ -269,21 +269,6 @@ BOOL  ScyllaDumpProcessA(DWORD_PTR pid, const char * fileToDump, DWORD_PTR image
     }
 }
 
-INT  ScyllaStartGui(SCY_HANDLE hScyllaContext, HINSTANCE mod, DWORD_PTR entrypoint)
-{
-    GUI_DLL_PARAMETER guiParam;
-    SCY_CONTEXT_T* pPrivScyContext = (SCY_CONTEXT_T*)hScyllaContext;
-
-    if (!pPrivScyContext)
-        return SCY_ERROR_PIDNOTFOUND;
-
-    guiParam.dwProcessId = pPrivScyContext->targetProcId;
-    guiParam.mod = mod;
-    guiParam.entrypoint = entrypoint;
-
-    return InitializeGui(hDllModule, (LPARAM)&guiParam);
-}
-
 int  ScyllaIatSearch(SCY_HANDLE hScyllaContext, DWORD_PTR * iatStart, DWORD * iatSize, DWORD_PTR searchStart, BOOL advancedSearch)
 {
     //ApiReader apiReader;

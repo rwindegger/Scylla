@@ -47,8 +47,10 @@ set(vendor_dir "${src_dir}/vendor")
 set(tinyxml_dir	"${vendor_dir}/ticpp")
 set(diStorm_dir	"${vendor_dir}/distorm")
 set(WTL_dir		"${vendor_dir}/WindowsTemplateLibrary")
-set(Scylla_dir	"${src_dir}/Scylla" )
-set(ScyllaTest_dir	"${src_dir}/ScyllaDllTest" )
+set(libScylla_dir "${src_dir}/libScylla")
+set(libScylla_static_dir "${src_dir}/libScylla_static")
+set(Scylla_dir	"${src_dir}/Scylla")
+set(ScyllaTest_dir	"${src_dir}/ScyllaDllTest")
 
 message("-- Configuring : tinyxml2")
 set(BUILD_SHARED_LIBS OFF)
@@ -65,36 +67,31 @@ add_library(diStorm ${diStorm_files})
 target_include_directories(diStorm PUBLIC "${diStorm_dir}/include")
 set_target_properties (diStorm PROPERTIES FOLDER "vendor")
 
-
-file (GLOB libScylla_files
-			"${Scylla_dir}/*.cpp"
-)
-list(REMOVE_ITEM libScylla_files "${Scylla_dir}/main.cpp")
-list(REMOVE_ITEM libScylla_files "${Scylla_dir}/MainDll.cpp")
-list(REMOVE_ITEM libScylla_files "${Scylla_dir}/FunctionExport.cpp")
-
 message("-- Configuring : libScylla_static")
+file (GLOB libScylla_files "${libScylla_static_dir}/*.cpp")
 add_library(libScylla_static ${libScylla_files})
-target_link_libraries(libScylla_static tinyxml2 diStorm Psapi Psapi Imagehlp)
-target_include_directories(libScylla_static PUBLIC "${Scylla_dir}/")
-target_include_directories(libScylla_static PRIVATE "${WTL_dir}/Include")
+target_link_libraries(libScylla_static tinyxml2 diStorm Psapi Imagehlp)
+target_include_directories(libScylla_static PUBLIC "${libScylla_static_dir}/")
 set_target_properties(libScylla_static PROPERTIES FOLDER "Scylla")
 
 message("-- Configuring : libScylla")
-add_library(libScylla SHARED "${Scylla_dir}/MainDll.cpp" "${Scylla_dir}/FunctionExport.cpp")
+file(GLOB libScylla_files "${libScylla_dir}/*.cpp")
+add_library(libScylla SHARED ${libScylla_files})
 target_link_libraries(libScylla libScylla_static)
-target_include_directories(libScylla PUBLIC "${Scylla_dir}/" "${WTL_dir}/Include")
+target_include_directories(libScylla_static PUBLIC "${libScylla_dir}/")
 set_target_properties(libScylla PROPERTIES FOLDER "Scylla")
 
 #### Scylla targets
 # Scylla executable
 message("-- Configuring : Scylla")
 file (GLOB Scylla_files 
-			"${Scylla_dir}/main.cpp"
+			"${Scylla_dir}/*.cpp"
 			"${Scylla_dir}/*.ico"
 			"${Scylla_dir}/*.rc"
 )
 add_executable(Scylla ${Scylla_files})
+target_include_directories(libScylla_static PUBLIC "${Scylla_dir}/")
+target_include_directories(libScylla_static PUBLIC "${WTL_dir}/Include")
 target_link_libraries(Scylla libScylla)
 set_target_properties(Scylla PROPERTIES FOLDER "Scylla"
 	LINK_FLAGS "/SUBSYSTEM:WINDOWS /MANIFESTDEPENDENCY:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df'\" /DYNAMICBASE")
