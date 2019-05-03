@@ -6,3 +6,6 @@ url=git://git.code.sf.net/p/wtl/git
 	path = vendor/ticpp
 	url = git@github.com:wxFormBuilder/ticpp.git
 	branch = master
+[submodule "vendor/distorm"]
+	path = vendor/distorm
+	url = git@github.com:gdabah/distorm.git
