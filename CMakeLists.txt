@@ -50,16 +50,9 @@ set(WTL_dir		"${vendor_dir}/WindowsTemplateLibrary")
 set(Scylla_dir	"${src_dir}/Scylla" )
 set(ScyllaTest_dir	"${src_dir}/ScyllaDllTest" )
 
-#### Dependencies
-# tinyxml static library
-message("-- Configuring : tinyxml")
-file (GLOB tinyxml_files 
-		"${tinyxml_dir}/*.cpp"
-		"${tinyxml_dir}/*.h"
-)
-add_library(tinyxml ${tinyxml_files})
-target_include_directories(tinyxml PUBLIC "${tinyxml_dir}/")
-set_target_properties (tinyxml PROPERTIES FOLDER "vendor")
+message("-- Configuring : tinyxml2")
+set(BUILD_SHARED_LIBS OFF)
+add_subdirectory("${vendor_dir}/tinyxml2")
 
 # diStorm static library
 message("-- Configuring : diStorm")
@@ -82,7 +75,7 @@ list(REMOVE_ITEM libScylla_files "${Scylla_dir}/FunctionExport.cpp")
 
 message("-- Configuring : libScylla_static")
 add_library(libScylla_static ${libScylla_files})
-target_link_libraries(libScylla_static tinyxml diStorm Psapi Psapi Imagehlp)
+target_link_libraries(libScylla_static tinyxml2 diStorm Psapi Psapi Imagehlp)
 target_include_directories(libScylla_static PUBLIC "${Scylla_dir}/")
 target_include_directories(libScylla_static PRIVATE "${WTL_dir}/Include")
 set_target_properties(libScylla_static PROPERTIES FOLDER "Scylla")

@@ -10,16 +10,14 @@ TreeImportExport::TreeImportExport(const WCHAR * targetXmlFile)
 
 bool TreeImportExport::exportTreeList(const std::map<DWORD_PTR, ImportModuleThunk> & moduleList, const Process * process, DWORD_PTR addressOEP, DWORD_PTR addressIAT, DWORD sizeIAT)
 {
-	TiXmlDocument doc;
-
-	TiXmlDeclaration * decl = new TiXmlDeclaration("1.0", "", "");
+	tinyxml2::XMLDocument doc = new tinyxml2::XMLDocument();
+    
+    tinyxml2::XMLDeclaration * decl = doc.NewDeclaration("1.0");
 	doc.LinkEndChild(decl);
-
-	TiXmlElement * rootElement = new TiXmlElement("target");
-
-	setTargetInformation(rootElement, process, addressOEP, addressIAT, sizeIAT);
-
-	addModuleListToRootElement(rootElement, moduleList);
+        
+    tinyxml2::XMLElement * rootElement = doc.NewElement("target");
+    setTargetInformation(rootElement, process, addressOEP, addressIAT, sizeIAT);
+    addModuleListToRootElement(doc, rootElement, moduleList);
 	
 	doc.LinkEndChild(rootElement);
 
@@ -32,14 +30,14 @@ bool TreeImportExport::importTreeList(std::map<DWORD_PTR, ImportModuleThunk> & m
 	*addressOEP = *addressIAT = 0;
 	*sizeIAT = 0;
 
-	TiXmlDocument doc;
+    tinyxml2::XMLDocument doc;
 	if(!readXmlFile(doc, xmlPath))
 	{
-		Scylla::windowLog.log(L"Load Tree :: Error parsing xml %S: %S\r\n", doc.Value(), doc.ErrorDesc());
+		Scylla::windowLog.log(L"Load Tree :: Error parsing xml %S: %S\r\n", doc.Value(), doc.ErrorStr());
 		return false;
 	}
 
-	TiXmlElement * targetElement = doc.FirstChildElement();
+    tinyxml2::XMLElement * targetElement = doc.FirstChildElement();
 	if (!targetElement)
 	{
 		Scylla::windowLog.log(L"Load Tree :: Error getting first child element in xml %S\r\n", doc.Value());
@@ -55,7 +53,7 @@ bool TreeImportExport::importTreeList(std::map<DWORD_PTR, ImportModuleThunk> & m
 	return true;
 }
 
-void TreeImportExport::setTargetInformation(TiXmlElement * rootElement, const Process * process, DWORD_PTR addressOEP, DWORD_PTR addressIAT, DWORD sizeIAT)
+void TreeImportExport::setTargetInformation(tinyxml2::XMLElement * rootElement, const Process * process, DWORD_PTR addressOEP, DWORD_PTR addressIAT, DWORD sizeIAT)
 {
 	StringConversion::ToASCII(process->filename, xmlStringBuffer, _countof(xmlStringBuffer));
 	rootElement->SetAttribute("filename", xmlStringBuffer);
@@ -70,7 +68,7 @@ void TreeImportExport::setTargetInformation(TiXmlElement * rootElement, const Pr
 	rootElement->SetAttribute("iat_size", xmlStringBuffer);
 }
 
-bool TreeImportExport::readXmlFile(TiXmlDocument& doc, const WCHAR * xmlFilePath)
+bool TreeImportExport::readXmlFile(tinyxml2::XMLDocument& doc, const WCHAR * xmlFilePath)
 {
 	bool success = false;
 
@@ -84,12 +82,12 @@ bool TreeImportExport::readXmlFile(TiXmlDocument& doc, const WCHAR * xmlFilePath
 	return success;
 }
 
-bool TreeImportExport::saveXmlToFile(const TiXmlDocument& doc, const WCHAR * xmlFilePath)
+bool TreeImportExport::saveXmlToFile(tinyxml2::XMLDocument& doc, const WCHAR * xmlFilePath)
 {
 	FILE * pFile = 0;
 	if (_wfopen_s(&pFile, xmlFilePath, L"wb") == 0)
-	{
-		doc.Print(pFile);
+    {
+        doc.SaveFile(pFile);
 		fclose(pFile);
 		return true;
 	}
@@ -99,21 +97,21 @@ bool TreeImportExport::saveXmlToFile(const TiXmlDocument& doc, const WCHAR * xml
 	}
 }
 
-void TreeImportExport::addModuleListToRootElement(TiXmlElement * rootElement, const std::map<DWORD_PTR, ImportModuleThunk> & moduleList)
+void TreeImportExport::addModuleListToRootElement(tinyxml2::XMLDocument& doc, tinyxml2::XMLElement * rootElement, const std::map<DWORD_PTR, ImportModuleThunk> & moduleList)
 {
 	std::map<DWORD_PTR, ImportModuleThunk>::const_iterator it_mod;
 	for(it_mod = moduleList.begin(); it_mod != moduleList.end(); it_mod++)
 	{
 		const ImportModuleThunk& importModuleThunk = it_mod->second;
 
-		TiXmlElement* moduleElement = getModuleXmlElement(&importModuleThunk);
+        tinyxml2::XMLElement* moduleElement = getModuleXmlElement(doc, &importModuleThunk);
 
 		std::map<DWORD_PTR, ImportThunk>::const_iterator it_thunk;
 		for(it_thunk = importModuleThunk.thunkList.begin(); it_thunk != importModuleThunk.thunkList.end(); it_thunk++)
 		{
 			const ImportThunk& importThunk = it_thunk->second;
 
-			TiXmlElement* importElement = getImportXmlElement(&importThunk);
+            tinyxml2::XMLElement* importElement = getImportXmlElement(doc, &importThunk);
 
 			moduleElement->LinkEndChild(importElement);
 		}
@@ -122,9 +120,9 @@ void TreeImportExport::addModuleListToRootElement(TiXmlElement * rootElement, co
 	}
 }
 
-TiXmlElement * TreeImportExport::getModuleXmlElement(const ImportModuleThunk * importModuleThunk)
+tinyxml2::XMLElement * TreeImportExport::getModuleXmlElement(tinyxml2::XMLDocument& doc, const ImportModuleThunk * importModuleThunk)
 {
-	TiXmlElement * moduleElement = new TiXmlElement("module");
+    tinyxml2::XMLElement * moduleElement = doc.NewElement("module");
 
 	StringConversion::ToASCII(importModuleThunk->moduleName, xmlStringBuffer, _countof(xmlStringBuffer));
 	moduleElement->SetAttribute("filename", xmlStringBuffer);
@@ -135,13 +133,13 @@ TiXmlElement * TreeImportExport::getModuleXmlElement(const ImportModuleThunk * i
 	return moduleElement;
 }
 
-TiXmlElement * TreeImportExport::getImportXmlElement(const ImportThunk * importThunk)
+tinyxml2::XMLElement * TreeImportExport::getImportXmlElement(tinyxml2::XMLDocument& doc, const ImportThunk * importThunk)
 {
-	TiXmlElement * importElement = 0;
+    tinyxml2::XMLElement * importElement = 0;
 	
 	if (importThunk->valid)
 	{
-		importElement = new TiXmlElement("import_valid");
+		importElement = doc.NewElement("import_valid");
 
 		if(importThunk->name[0] != '\0')
 		{
@@ -159,7 +157,7 @@ TiXmlElement * TreeImportExport::getImportXmlElement(const ImportThunk * importT
 	}
 	else
 	{
-		importElement = new TiXmlElement("import_invalid");
+		importElement = doc.NewElement("import_invalid");
 	}
 
 	ConvertDwordPtrToString(importThunk->rva);
@@ -234,11 +232,11 @@ WORD TreeImportExport::ConvertStringToWord(const char * strValue)
 	return result;
 }
 
-void TreeImportExport::parseAllElementModules(TiXmlElement * targetElement, std::map<DWORD_PTR, ImportModuleThunk> & moduleList)
+void TreeImportExport::parseAllElementModules(tinyxml2::XMLElement * targetElement, std::map<DWORD_PTR, ImportModuleThunk> & moduleList)
 {
 	ImportModuleThunk importModuleThunk;
 
-	for(TiXmlElement * moduleElement = targetElement->FirstChildElement(); moduleElement; moduleElement = moduleElement->NextSiblingElement())
+	for(tinyxml2::XMLElement * moduleElement = targetElement->FirstChildElement(); moduleElement; moduleElement = moduleElement->NextSiblingElement())
 	{
 		const char * filename = moduleElement->Attribute("filename");
 		if (filename)
@@ -255,11 +253,11 @@ void TreeImportExport::parseAllElementModules(TiXmlElement * targetElement, std:
 	}
 }
 
-void TreeImportExport::parseAllElementImports(TiXmlElement * moduleElement, ImportModuleThunk * importModuleThunk)
+void TreeImportExport::parseAllElementImports(tinyxml2::XMLElement * moduleElement, ImportModuleThunk * importModuleThunk)
 {
 	ImportThunk importThunk;
 
-	for(TiXmlElement * importElement = moduleElement->FirstChildElement(); importElement; importElement = importElement->NextSiblingElement())
+	for(tinyxml2::XMLElement * importElement = moduleElement->FirstChildElement(); importElement; importElement = importElement->NextSiblingElement())
 	{
 		const char * temp = importElement->Value();
 

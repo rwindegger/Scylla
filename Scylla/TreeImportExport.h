@@ -3,7 +3,7 @@
 #include <windows.h>
 #include "ProcessLister.h"
 #include "Thunks.h"
-#include <tinyxml.h>
+#include <tinyxml2.h>
 
 class TreeImportExport
 {
@@ -20,17 +20,17 @@ private:
 
 	char xmlStringBuffer[MAX_PATH];
 
-	void setTargetInformation(TiXmlElement * rootElement, const Process * process, DWORD_PTR addressOEP, DWORD_PTR addressIAT, DWORD sizeIAT);
-	void addModuleListToRootElement(TiXmlElement * rootElement, const std::map<DWORD_PTR, ImportModuleThunk> & moduleList);
+	void setTargetInformation(tinyxml2::XMLElement * rootElement, const Process * process, DWORD_PTR addressOEP, DWORD_PTR addressIAT, DWORD sizeIAT);
+	void addModuleListToRootElement(tinyxml2::XMLDocument& doc, tinyxml2::XMLElement * rootElement, const std::map<DWORD_PTR, ImportModuleThunk> & moduleList);
 
-	void parseAllElementModules(TiXmlElement * targetElement, std::map<DWORD_PTR, ImportModuleThunk> & moduleList);
-	void parseAllElementImports(TiXmlElement * moduleElement, ImportModuleThunk * importModuleThunk);
+	void parseAllElementModules(tinyxml2::XMLElement * targetElement, std::map<DWORD_PTR, ImportModuleThunk> & moduleList);
+	void parseAllElementImports(tinyxml2::XMLElement * moduleElement, ImportModuleThunk * importModuleThunk);
 
-	TiXmlElement * getModuleXmlElement(const ImportModuleThunk * importModuleThunk);
-	TiXmlElement * getImportXmlElement(const ImportThunk * importThunk);
+	tinyxml2::XMLElement * getModuleXmlElement(tinyxml2::XMLDocument& doc, const ImportModuleThunk * importModuleThunk);
+    tinyxml2::XMLElement * getImportXmlElement(tinyxml2::XMLDocument& doc, const ImportThunk * importThunk);
 
-	bool saveXmlToFile(const TiXmlDocument& doc, const WCHAR * xmlFilePath);
-	bool readXmlFile(TiXmlDocument& doc, const WCHAR * xmlFilePath);
+	bool saveXmlToFile(tinyxml2::XMLDocument& doc, const WCHAR * xmlFilePath);
+	bool readXmlFile(tinyxml2::XMLDocument& doc, const WCHAR * xmlFilePath);
 
 	void ConvertBoolToString(const bool boolValue);
 	void ConvertWordToString(const WORD dwValue);
