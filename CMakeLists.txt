@@ -43,11 +43,11 @@ endif()
 message("-- Configuring project for arch ${ARCH}.")
 
 get_filename_component(src_dir		"${PROJECT_SOURCE_DIR}" 	REALPATH)
-set(tinyxml_dir	"${src_dir}/tinyxml")
+set(tinyxml_dir	"${src_dir}/vendor/ticpp")
 set(diStorm_dir	"${src_dir}/diStorm")
 set(Scylla_dir	"${src_dir}/Scylla" )
 set(ScyllaTest_dir	"${src_dir}/ScyllaDllTest" )
-set(WTL_dir		"${src_dir}/WTL")
+set(WTL_dir		"${src_dir}/vendor/WindowsTemplateLibrary")
 
 
 #### Dependencies
