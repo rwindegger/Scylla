@@ -60,12 +60,7 @@ int _tmain(int argc, TCHAR *argv[])
 	else
 		return false;
 
-
-#ifdef _WIN64
-	TCHAR *ScyllaDllPath = _T("ScyllaDllx64.dll");
-#else
-	TCHAR *ScyllaDllPath = _T("ScyllaDllx86.dll");
-#endif
+	TCHAR *ScyllaDllPath = _T("libScylla.dll");
 	
 	if (!ScyllaLoadDll(ScyllaDllPath, &ScyllaDll))
 	{
@@ -166,4 +161,3 @@ testIatSearch_END:
 	StopProcess(hDbgProcess);
 	return bIATCorrectlyRetrieved;
 }
-

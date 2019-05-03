@@ -12,7 +12,7 @@ extern "C" {
 #define SCYLLA_DECL_API _cdecl
 #pragma warning(disable: 4251)
 #endif
-#if defined(ScyllaDll_EXPORTS)
+#if defined(libScylla_EXPORTS)
 #define  SCYLLA_DLL_EXPORT __declspec(dllexport)
 #else
 #define  SCYLLA_DLL_EXPORT  /*__declspec(dllimport)*/

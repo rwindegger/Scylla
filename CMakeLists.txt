@@ -58,9 +58,8 @@ file (GLOB tinyxml_files
 		"${tinyxml_dir}/*.h"
 )
 add_library(tinyxml ${tinyxml_files})
-set_target_properties (tinyxml PROPERTIES
-	FOLDER "vendor"
-)
+target_include_directories(tinyxml PUBLIC "${tinyxml_dir}/")
+set_target_properties (tinyxml PROPERTIES FOLDER "vendor")
 
 # diStorm static library
 message("-- Configuring : diStorm")
@@ -70,55 +69,42 @@ file (GLOB diStorm_files
 			"${diStorm_dir}/include/*.h"
 )
 add_library(diStorm ${diStorm_files})
-set_target_properties (diStorm PROPERTIES
-	FOLDER "vendor"
+target_include_directories(diStorm PUBLIC "${diStorm_dir}/include")
+set_target_properties (diStorm PROPERTIES FOLDER "vendor")
+
+
+file (GLOB libScylla_files
+			"${Scylla_dir}/*.cpp"
 )
+list(REMOVE_ITEM libScylla_files "${Scylla_dir}/main.cpp")
+list(REMOVE_ITEM libScylla_files "${Scylla_dir}/MainDll.cpp")
+list(REMOVE_ITEM libScylla_files "${Scylla_dir}/FunctionExport.cpp")
+
+message("-- Configuring : libScylla_static")
+add_library(libScylla_static ${libScylla_files})
+target_link_libraries(libScylla_static tinyxml diStorm Psapi Psapi Imagehlp)
+target_include_directories(libScylla_static PUBLIC "${Scylla_dir}/")
+target_include_directories(libScylla_static PRIVATE "${WTL_dir}/Include")
+set_target_properties(libScylla_static PROPERTIES FOLDER "Scylla")
+
+message("-- Configuring : libScylla")
+add_library(libScylla SHARED "${Scylla_dir}/MainDll.cpp" "${Scylla_dir}/FunctionExport.cpp")
+target_link_libraries(libScylla libScylla_static)
+target_include_directories(libScylla PUBLIC "${Scylla_dir}/" "${WTL_dir}/Include")
+set_target_properties(libScylla PROPERTIES FOLDER "Scylla")
 
 #### Scylla targets
 # Scylla executable
 message("-- Configuring : Scylla")
 file (GLOB Scylla_files 
-			"${Scylla_dir}/*.cpp"
-			"${Scylla_dir}/*.h"
+			"${Scylla_dir}/main.cpp"
 			"${Scylla_dir}/*.ico"
 			"${Scylla_dir}/*.rc"
 )
-list(REMOVE_ITEM Scylla_files "${Scylla_dir}/MainDll.cpp")
 add_executable(Scylla ${Scylla_files})
-target_link_libraries(Scylla tinyxml diStorm )
-target_include_directories(Scylla PUBLIC 
-	"${tinyxml_dir}/"
-	"${diStorm_dir}/include"
-	"${WTL_dir}/Include"
-)
-set_target_properties(Scylla PROPERTIES
-	LINK_FLAGS "/SUBSYSTEM:WINDOWS /MANIFESTDEPENDENCY:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df'\" /DYNAMICBASE Psapi.lib Imagehlp.lib"
-	FOLDER "Scylla"
-)
-
-# Scylla dll
-message("-- Configuring : ScyllaDll")
-file (GLOB ScyllaDll_files 
-			"${Scylla_dir}/*.cpp"
-			"${Scylla_dir}/*.h"
-)
-list(REMOVE_ITEM ScyllaDll_files "${Scylla_dir}/main.cpp")
-add_library(ScyllaDll SHARED ${ScyllaDll_files})
-target_link_libraries(ScyllaDll tinyxml diStorm Psapi)
-target_include_directories(ScyllaDll PUBLIC 
-	"${Scylla_dir}/"
-)
-target_include_directories(ScyllaDll PRIVATE 
-	"${tinyxml_dir}/"
-	"${diStorm_dir}/include"
-	"${WTL_dir}/Include"
-)
-set_target_properties(ScyllaDll PROPERTIES
-	OUTPUT_NAME "ScyllaDll${ARCH}"
-	LINK_FLAGS "/DYNAMICBASE Psapi.lib Imagehlp.lib"
-	FOLDER "Scylla"
-)
-
+target_link_libraries(Scylla libScylla)
+set_target_properties(Scylla PROPERTIES FOLDER "Scylla"
+	LINK_FLAGS "/SUBSYSTEM:WINDOWS /MANIFESTDEPENDENCY:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df'\" /DYNAMICBASE")
 
 if (SCYLLA_USE_MINIDUMP_FOR_CRASH)
 	find_library(dbghelp_lib dbghelp ${WDK_LIBPATH}/${ARCH})
@@ -140,9 +126,7 @@ file (GLOB ScyllaDllTest_files
 			"${ScyllaTest_dir}/ScyllaDllTest/*.h"
 )
 add_executable(ScyllaDllTest ${ScyllaDllTest_files})
-set_target_properties (ScyllaDllTest PROPERTIES
-	FOLDER "tests"
-)
+set_target_properties (ScyllaDllTest PROPERTIES	FOLDER "tests")
 
 # X86 version of ScyllaDll can only create/open x86 process, and same for x64
 if (${ARCH} STREQUAL  "x86")
@@ -161,11 +145,8 @@ endif()
 
 # ScyllaExeTest
 add_executable(ScyllaExeTest "${ScyllaTest_dir}/ScyllaTestExe/main.cpp")
-set_target_properties (ScyllaExeTest PROPERTIES
-	FOLDER "tests"
-	LINK_FLAGS "/SUBSYSTEM:WINDOWS"
-)
+set_target_properties (ScyllaExeTest PROPERTIES	FOLDER "tests" LINK_FLAGS "/SUBSYSTEM:WINDOWS")
 
 # compile projects as unicode
-set(unicode_targets Scylla ScyllaDll)
+set(unicode_targets Scylla libScylla libScylla_static)
 set_msvc_unicode(unicode_targets)
