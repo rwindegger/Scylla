@@ -1,6 +1,6 @@
 [submodule "vendor/WindowsTemplateLibrary"]
 	path = vendor/WindowsTemplateLibrary
-	url = git@github.com:lucasg/WindowsTemplateLibrary.git
+url=git://git.code.sf.net/p/wtl/git
 	branch = master
 [submodule "vendor/ticpp"]
 	path = vendor/ticpp
