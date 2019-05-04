@@ -126,7 +126,7 @@ bool ProcessAccessHelp::readMemoryPartlyFromProcess(DWORD_PTR address, SIZE_T si
 
         do
         {
-            if (!VirtualQueryEx(ProcessAccessHelp::hProcess, reinterpret_cast<LPCVOID>(addressPart), &memBasic, sizeof(memBasic)))
+            if (!VirtualQueryEx(ProcessAccessHelp::hProcess, reinterpret_cast<LPCVOID>(addressPart), &memBasic, sizeof memBasic))
             {
                 Scylla::debugLog.log(TEXT("readMemoryPartlyFromProcess :: Error VirtualQueryEx %X %X err: %u"), addressPart, size, GetLastError());
                 break;
@@ -134,7 +134,7 @@ bool ProcessAccessHelp::readMemoryPartlyFromProcess(DWORD_PTR address, SIZE_T si
 
             DWORD_PTR bytesToRead = memBasic.RegionSize;
 
-            if ((readBytes + bytesToRead) > size)
+            if (readBytes + bytesToRead > size)
             {
                 bytesToRead = size - readBytes;
             }
@@ -182,7 +182,7 @@ bool ProcessAccessHelp::writeMemoryToProcess(DWORD_PTR address, SIZE_T size, LPV
     }
 
 
-    return (WriteProcessMemory(hProcess, reinterpret_cast<LPVOID>(address), dataBuffer, size, &lpNumberOfBytesWritten) != FALSE);
+    return WriteProcessMemory(hProcess, reinterpret_cast<LPVOID>(address), dataBuffer, size, &lpNumberOfBytesWritten) != FALSE;
 }
 
 bool ProcessAccessHelp::readMemoryFromProcess(DWORD_PTR address, SIZE_T size, LPVOID dataBuffer)
@@ -252,7 +252,7 @@ bool ProcessAccessHelp::decomposeMemory(const BYTE * dataBuffer, SIZE_T bufferSi
 
     decomposerInstructionsCount = 0;
 
-    if (distorm_decompose(&decomposerCi, decomposerResult, sizeof(decomposerResult) / sizeof(decomposerResult[0]), &decomposerInstructionsCount) == DECRES_INPUTERR)
+    if (distorm_decompose(&decomposerCi, decomposerResult, sizeof decomposerResult / sizeof decomposerResult[0], &decomposerInstructionsCount) == DECRES_INPUTERR)
     {
         Scylla::debugLog.log(TEXT("decomposeMemory :: distorm_decompose == DECRES_INPUTERR"));
         return false;
@@ -311,7 +311,7 @@ DWORD_PTR ProcessAccessHelp::findPattern(DWORD_PTR startOffset, DWORD size, cons
         {
             if (mask[pos + 1] == 0x00)
             {
-                return (retAddress - searchLen);
+                return retAddress - searchLen;
             }
             pos++;
         }
@@ -324,7 +324,7 @@ DWORD_PTR ProcessAccessHelp::findPattern(DWORD_PTR startOffset, DWORD size, cons
 
 bool ProcessAccessHelp::readHeaderFromCurrentFile(LPCTSTR filePath)
 {
-    return readHeaderFromFile(fileHeaderFromDisk, sizeof(fileHeaderFromDisk), filePath);
+    return readHeaderFromFile(fileHeaderFromDisk, sizeof fileHeaderFromDisk, filePath);
 }
 
 LONGLONG ProcessAccessHelp::getFileSize(LPCTSTR filePath)
@@ -346,7 +346,7 @@ LONGLONG ProcessAccessHelp::getFileSize(HANDLE hFile)
 {
     LARGE_INTEGER lpFileSize{};
 
-    if ((hFile != INVALID_HANDLE_VALUE) && (hFile != nullptr))
+    if (hFile != INVALID_HANDLE_VALUE && hFile != nullptr)
     {
         if (!GetFileSizeEx(hFile, &lpFileSize))
         {
@@ -375,7 +375,7 @@ bool ProcessAccessHelp::readMemoryFromFile(HANDLE hFile, LONG offset, DWORD size
         const DWORD retValue = SetFilePointer(hFile, offset, nullptr, FILE_BEGIN);
         const DWORD dwError = GetLastError();
 
-        if ((retValue == INVALID_SET_FILE_POINTER) && (dwError != NO_ERROR))
+        if (retValue == INVALID_SET_FILE_POINTER && dwError != NO_ERROR)
         {
             Scylla::debugLog.log(TEXT("readMemoryFromFile :: SetFilePointer failed error %u"), dwError);
             return false;
@@ -420,12 +420,12 @@ bool ProcessAccessHelp::writeMemoryToFile(HANDLE hFile, LONG offset, DWORD size,
 {
     DWORD lpNumberOfBytesWritten = 0;
 
-    if ((hFile != INVALID_HANDLE_VALUE) && dataBuffer)
+    if (hFile != INVALID_HANDLE_VALUE && dataBuffer)
     {
         const DWORD retValue = SetFilePointer(hFile, offset, nullptr, FILE_BEGIN);
         const DWORD dwError = GetLastError();
 
-        if ((retValue == INVALID_SET_FILE_POINTER) && (dwError != NO_ERROR))
+        if (retValue == INVALID_SET_FILE_POINTER && dwError != NO_ERROR)
         {
             Scylla::debugLog.log(TEXT("writeMemoryToFile :: SetFilePointer failed error %u"), dwError);
             return false;
@@ -454,7 +454,7 @@ bool ProcessAccessHelp::writeMemoryToFileEnd(HANDLE hFile, DWORD size, LPCVOID d
 {
     DWORD lpNumberOfBytesWritten = 0;
 
-    if ((hFile != INVALID_HANDLE_VALUE) && (hFile != nullptr))
+    if (hFile != INVALID_HANDLE_VALUE && hFile != nullptr)
     {
         SetFilePointer(hFile, 0, nullptr, FILE_END);
 
@@ -608,7 +608,7 @@ bool ProcessAccessHelp::getProcessModules(HANDLE hProcess, std::vector<ModuleInf
     {
         if (EnumProcessModules(hProcess, hMods, cbNeeded, &cbNeeded))
         {
-            for (unsigned int i = 1; i < (cbNeeded / sizeof(HMODULE)); i++) //skip first module!
+            for (unsigned int i = 1; i < cbNeeded / sizeof(HMODULE); i++) //skip first module!
             {
                 module.modBaseAddr = reinterpret_cast<DWORD_PTR>(hMods[i]);
                 module.modBaseSize = static_cast<DWORD>(getSizeOfImageProcess(hProcess, module.modBaseAddr));
@@ -773,7 +773,7 @@ DWORD ProcessAccessHelp::getModuleHandlesFromProcess(HANDLE hProcess, HMODULE **
             return 0;
         }
 
-        if ((count * sizeof(HMODULE)) < cbNeeded)
+        if (count * sizeof(HMODULE) < cbNeeded)
         {
             delete[] * hMods;
             count = cbNeeded / sizeof(HMODULE);

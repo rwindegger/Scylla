@@ -5,34 +5,27 @@
 
 bool IATSearch::searchImportAddressTableInProcess( DWORD_PTR startAddress, DWORD_PTR* addressIAT, size_t* sizeIAT, bool advanced )
 {
-	DWORD_PTR addressInIAT = 0;
-
-	*addressIAT = 0;
+    *addressIAT = 0;
 	*sizeIAT = 0;
 
 	if (advanced)
 	{
 		return findIATAdvanced(startAddress, addressIAT, sizeIAT);
 	}
-	
-	addressInIAT = findAPIAddressInIAT(startAddress);
-	
 
+    const DWORD_PTR addressInIAT = findAPIAddressInIAT(startAddress);
+	
 	if(!addressInIAT)
 	{
 		Scylla::debugLog.log(TEXT("searchImportAddressTableInProcess :: addressInIAT not found, startAddress ") PRINTF_DWORD_PTR_FULL, startAddress);
 		return false;
 	}
-	else
-	{
-		return findIATStartAndSize(addressInIAT, addressIAT, sizeIAT);
-	}
+    return findIATStartAndSize(addressInIAT, addressIAT, sizeIAT);
 }
 
 bool IATSearch::findIATAdvanced( DWORD_PTR startAddress, DWORD_PTR* addressIAT, size_t *sizeIAT )
 {
-	BYTE *dataBuffer;
-	DWORD_PTR baseAddress;
+    DWORD_PTR baseAddress;
 	SIZE_T memorySize;
 
 	findExecutableMemoryPagesByStartAddress(startAddress, &baseAddress, &memorySize);
@@ -40,9 +33,9 @@ bool IATSearch::findIATAdvanced( DWORD_PTR startAddress, DWORD_PTR* addressIAT, 
 	if (memorySize == 0)
 		return false;
 
-	dataBuffer = new BYTE[memorySize];
+    const auto dataBuffer = new BYTE[memorySize];
 
-	if (!readMemoryFromProcess((DWORD_PTR)baseAddress, memorySize,dataBuffer))
+	if (!readMemoryFromProcess(static_cast<DWORD_PTR>(baseAddress), memorySize,dataBuffer))
 	{
 		Scylla::debugLog.log(TEXT("findAPIAddressInIAT2 :: error reading memory"));
 
@@ -51,13 +44,12 @@ bool IATSearch::findIATAdvanced( DWORD_PTR startAddress, DWORD_PTR* addressIAT, 
 	}
 
 	std::set<DWORD_PTR> iatPointers;
-	DWORD_PTR next;
-	BYTE * tempBuf = dataBuffer;
-	while(decomposeMemory(tempBuf, memorySize, (DWORD_PTR)baseAddress) && decomposerInstructionsCount != 0)
+    BYTE * tempBuf = dataBuffer;
+	while(decomposeMemory(tempBuf, memorySize, static_cast<DWORD_PTR>(baseAddress)) && decomposerInstructionsCount != 0)
 	{
 		findIATPointers(iatPointers);
 
-		next = (DWORD_PTR)(decomposerResult[decomposerInstructionsCount - 1].addr - baseAddress);
+	    auto next = static_cast<DWORD_PTR>(decomposerResult[decomposerInstructionsCount - 1].addr - baseAddress);
 		next += decomposerResult[decomposerInstructionsCount - 1].size;
 		// Advance ptr and recalc offset.
 		tempBuf += next;
@@ -70,19 +62,19 @@ bool IATSearch::findIATAdvanced( DWORD_PTR startAddress, DWORD_PTR* addressIAT, 
 		baseAddress += next;
 	}
 
-	if (iatPointers.size() == 0)
+	if (iatPointers.empty())
 		return false;
 
 	filterIATPointersList(iatPointers);
 
-	if (iatPointers.size() == 0)
+	if (iatPointers.empty())
 		return false;
 
 	*addressIAT = *(iatPointers.begin());
-	*sizeIAT = (DWORD)(*(--iatPointers.end()) - *(iatPointers.begin()) + sizeof(DWORD_PTR));
+	*sizeIAT = static_cast<DWORD>(*(--iatPointers.end()) - *(iatPointers.begin()) + sizeof(DWORD_PTR));
 
 	//some check, more than 2 million addresses?
-	if ((DWORD)(2000000*sizeof(DWORD_PTR)) < *sizeIAT)
+	if (2000000 * sizeof(DWORD_PTR) < *sizeIAT)
 	{
 		*addressIAT = 0;
 		*sizeIAT = 0;
@@ -102,8 +94,7 @@ DWORD_PTR IATSearch::findAPIAddressInIAT(DWORD_PTR startAddress)
 	const size_t MEMORY_READ_SIZE = 200;
 	BYTE dataBuffer[MEMORY_READ_SIZE];
 
-	DWORD_PTR iatPointer = 0;
-	int counter = 0;
+    int counter = 0;
 
 	// to detect stolen api
 	memoryAddress = 0;
@@ -113,15 +104,15 @@ DWORD_PTR IATSearch::findAPIAddressInIAT(DWORD_PTR startAddress)
 	{
 		counter++;
 
-		if (!readMemoryFromProcess(startAddress, sizeof(dataBuffer), dataBuffer))
+		if (!readMemoryFromProcess(startAddress, sizeof dataBuffer, dataBuffer))
 		{
 			Scylla::debugLog.log(TEXT("findAPIAddressInIAT :: error reading memory ") PRINTF_DWORD_PTR_FULL, startAddress);
 			return 0;
 		}
 
-		if (decomposeMemory(dataBuffer, sizeof(dataBuffer), startAddress))
+		if (decomposeMemory(dataBuffer, sizeof dataBuffer, startAddress))
 		{
-			iatPointer = findIATPointer();
+		    const DWORD_PTR iatPointer = findIATPointer();
 			if (iatPointer)
 			{
 				if (isIATPointerValid(iatPointer, true))
@@ -159,7 +150,7 @@ DWORD_PTR IATSearch::findNextFunctionAddress()
 						distorm_format(&decomposerCi, &decomposerResult[i], &inst);
 						Scylla::debugLog.log(TEXT("%S %S %d %d - target address: ") PRINTF_DWORD_PTR_FULL, inst.mnemonic.p, inst.operands.p, decomposerResult[i].ops[0].type, decomposerResult[i].size, INSTRUCTION_GET_TARGET(&decomposerResult[i]));
 #endif
-						return (DWORD_PTR)INSTRUCTION_GET_TARGET(&decomposerResult[i]);
+						return static_cast<DWORD_PTR>(INSTRUCTION_GET_TARGET(&decomposerResult[i]));
 					}
 				}
 			}
@@ -227,30 +218,22 @@ bool IATSearch::isIATPointerValid(DWORD_PTR iatPointer, bool checkRedirects)
 	{
 		return true;
 	}
-	else
-	{
-
-        if (checkRedirects)
+    if (checkRedirects)
+    {
+        //maybe redirected import?
+        //if the address is 2 times inside a memory region it is possible a redirected api
+        if (apiAddress > memoryAddress && apiAddress < memoryAddress+memorySize)
         {
-            //maybe redirected import?
-            //if the address is 2 times inside a memory region it is possible a redirected api
-            if (apiAddress > memoryAddress && apiAddress < (memoryAddress+memorySize))
-            {
-                return true;
-            }
-            else
-            {
-                getMemoryRegionFromAddress(apiAddress, &memoryAddress, &memorySize);
-            }
-        } 
-	}
+            return true;
+        }
+        getMemoryRegionFromAddress(apiAddress, &memoryAddress, &memorySize);
+    }
 
     return false;
 }
 
 bool IATSearch::findIATStartAndSize(DWORD_PTR address, DWORD_PTR * addressIAT, size_t *sizeIAT)
 {
-	BYTE *dataBuffer = 0;
     DWORD_PTR baseAddress = 0;
     DWORD baseSize = 0;
 
@@ -259,7 +242,7 @@ bool IATSearch::findIATStartAndSize(DWORD_PTR address, DWORD_PTR * addressIAT, s
     if (!baseAddress)
         return false;
 
-	dataBuffer = new BYTE[baseSize * (sizeof(DWORD_PTR)*3)];
+    const auto dataBuffer = new BYTE[baseSize * (sizeof(DWORD_PTR)*3)];
 
     if (!dataBuffer)
         return false;
@@ -285,25 +268,23 @@ bool IATSearch::findIATStartAndSize(DWORD_PTR address, DWORD_PTR * addressIAT, s
 	return true;
 }
 
-DWORD_PTR IATSearch::findIATStartAddress(DWORD_PTR baseAddress, DWORD_PTR startAddress, BYTE * dataBuffer)
+DWORD_PTR IATSearch::findIATStartAddress(DWORD_PTR baseAddress, DWORD_PTR startAddress, BYTE * dataBuffer) const
 {
-	DWORD_PTR *pIATAddress = 0;
+    auto pIATAddress = reinterpret_cast<DWORD_PTR *>(startAddress - baseAddress + reinterpret_cast<DWORD_PTR>(dataBuffer));
 
-	pIATAddress = (DWORD_PTR *)((startAddress - baseAddress) + (DWORD_PTR)dataBuffer);
-
-	while((DWORD_PTR)pIATAddress != (DWORD_PTR)dataBuffer)
+	while(reinterpret_cast<DWORD_PTR>(pIATAddress) != reinterpret_cast<DWORD_PTR>(dataBuffer))
 	{
 		if (isInvalidMemoryForIat(*pIATAddress))
 		{
-            if ((DWORD_PTR)(pIATAddress - 1) >= (DWORD_PTR)dataBuffer)
+            if (reinterpret_cast<DWORD_PTR>(pIATAddress - 1) >= reinterpret_cast<DWORD_PTR>(dataBuffer))
             {
                 if (isInvalidMemoryForIat(*(pIATAddress - 1)))
                 {
-                    if ((DWORD_PTR)(pIATAddress - 2) >= (DWORD_PTR)dataBuffer)
+                    if (reinterpret_cast<DWORD_PTR>(pIATAddress - 2) >= reinterpret_cast<DWORD_PTR>(dataBuffer))
                     {
                         if (!isApiAddressValid(*(pIATAddress - 2)))
                         {
-                            return (((DWORD_PTR)pIATAddress - (DWORD_PTR)dataBuffer) + baseAddress);
+                            return reinterpret_cast<DWORD_PTR>(pIATAddress) - reinterpret_cast<DWORD_PTR>(dataBuffer) + baseAddress;
                         }
                     }
                 }
@@ -316,19 +297,18 @@ DWORD_PTR IATSearch::findIATStartAddress(DWORD_PTR baseAddress, DWORD_PTR startA
 	return baseAddress;
 }
 
-size_t IATSearch::findIATSize(DWORD_PTR baseAddress, DWORD_PTR iatAddress, BYTE * dataBuffer, size_t bufferSize)
+size_t IATSearch::findIATSize(DWORD_PTR baseAddress, DWORD_PTR iatAddress, BYTE * dataBuffer, size_t bufferSize) const
 {
-	size_t iatSize = 0;
-	size_t iatOffset = (iatAddress - baseAddress);
-	size_t iatMaxByteSize = bufferSize - iatOffset;
-	DWORD_PTR *pIATAddress = (DWORD_PTR *) (dataBuffer + iatOffset);
+    const size_t iatOffset = iatAddress - baseAddress;
+    const size_t iatMaxByteSize = bufferSize - iatOffset;
+    const auto pIATAddress = reinterpret_cast<DWORD_PTR *>(dataBuffer + iatOffset);
 	DWORD_PTR CurrentImportAddress;
 
 	Scylla::debugLog.log(TEXT("findIATSize :: baseAddress %X iatAddress %X dataBuffer %X pIATAddress %X"), baseAddress, iatAddress, dataBuffer, pIATAddress);
 	for (int iat_index = 0; iat_index * sizeof(DWORD_PTR) < iatMaxByteSize; iat_index++)
 	{
 		CurrentImportAddress = pIATAddress[iat_index];
-		Scylla::debugLog.log(TEXT("findIATSize :: %p %p %p"), (void*)&CurrentImportAddress, pIATAddress[iat_index + 1], pIATAddress[iat_index + 1]);
+		Scylla::debugLog.log(TEXT("findIATSize :: %p %p %p"), reinterpret_cast<LPCVOID>(&CurrentImportAddress), pIATAddress[iat_index + 1], pIATAddress[iat_index + 1]);
 		
 		// Heuristic for end of IAT
 		if (isInvalidMemoryForIat(pIATAddress[iat_index])
@@ -336,7 +316,7 @@ size_t IATSearch::findIATSize(DWORD_PTR baseAddress, DWORD_PTR iatAddress, BYTE 
 			&& !isApiAddressValid(pIATAddress[iat_index + 2]))
 		{
 			// IAT usually ends with a null pointer which we need to take into account.
-			iatSize = iat_index * sizeof(DWORD_PTR);
+			size_t iatSize = iat_index * sizeof(DWORD_PTR);
 			if (!CurrentImportAddress)
 				iatSize += sizeof(DWORD_PTR);
 
@@ -393,13 +373,13 @@ void IATSearch::findIATPointers(std::set<DWORD_PTR> & iatPointers)
 
 void IATSearch::findExecutableMemoryPagesByStartAddress( DWORD_PTR startAddress, DWORD_PTR* baseAddress, SIZE_T* memorySize )
 {
-	MEMORY_BASIC_INFORMATION memBasic = {0};
+    MEMORY_BASIC_INFORMATION memBasic{};
 	DWORD_PTR tempAddress;
 
 	*memorySize = 0;
 	*baseAddress = 0;
 
-	if (VirtualQueryEx(hProcess,(LPCVOID)startAddress, &memBasic, sizeof(MEMORY_BASIC_INFORMATION)) != sizeof(MEMORY_BASIC_INFORMATION))
+	if (VirtualQueryEx(hProcess,reinterpret_cast<LPCVOID>(startAddress), &memBasic, sizeof(MEMORY_BASIC_INFORMATION)) != sizeof(MEMORY_BASIC_INFORMATION))
 	{
 		Scylla::debugLog.log(TEXT("findIATStartAddress :: VirtualQueryEx error %u"), GetLastError());
 		return;
@@ -409,10 +389,10 @@ void IATSearch::findExecutableMemoryPagesByStartAddress( DWORD_PTR startAddress,
 	do
 	{
 		*memorySize = memBasic.RegionSize;
-		*baseAddress = (DWORD_PTR)memBasic.BaseAddress;
-		tempAddress = (DWORD_PTR)memBasic.BaseAddress - 1;
+		*baseAddress = reinterpret_cast<DWORD_PTR>(memBasic.BaseAddress);
+		tempAddress = reinterpret_cast<DWORD_PTR>(memBasic.BaseAddress) - 1;
 
-		if (VirtualQueryEx(hProcess, (LPCVOID)tempAddress, &memBasic, sizeof(MEMORY_BASIC_INFORMATION)) != sizeof(MEMORY_BASIC_INFORMATION))
+		if (VirtualQueryEx(hProcess, reinterpret_cast<LPCVOID>(tempAddress), &memBasic, sizeof(MEMORY_BASIC_INFORMATION)) != sizeof(MEMORY_BASIC_INFORMATION))
 		{
 			break;
 		}
@@ -427,7 +407,7 @@ void IATSearch::findExecutableMemoryPagesByStartAddress( DWORD_PTR startAddress,
 		tempAddress += memBasic.RegionSize;
 		*memorySize += memBasic.RegionSize;
 
-		if (VirtualQueryEx(hProcess, (LPCVOID)tempAddress, &memBasic, sizeof(MEMORY_BASIC_INFORMATION)) != sizeof(MEMORY_BASIC_INFORMATION))
+		if (VirtualQueryEx(hProcess, reinterpret_cast<LPCVOID>(tempAddress), &memBasic, sizeof(MEMORY_BASIC_INFORMATION)) != sizeof(MEMORY_BASIC_INFORMATION))
 		{
 			break;
 		}
@@ -436,14 +416,12 @@ void IATSearch::findExecutableMemoryPagesByStartAddress( DWORD_PTR startAddress,
 
 void IATSearch::filterIATPointersList( std::set<DWORD_PTR> & iatPointers )
 {
-	std::set<DWORD_PTR>::iterator iter;
-
-	if (iatPointers.size() <= 2)
+    if (iatPointers.size() <= 2)
 	{
 		return;
 	}
 
-	iter = iatPointers.begin();
+	std::set<DWORD_PTR>::iterator iter = iatPointers.begin();
 	std::advance(iter, iatPointers.size() / 2); //start in the middle, important!
 
 	DWORD_PTR lastPointer = *iter;
@@ -453,15 +431,12 @@ void IATSearch::filterIATPointersList( std::set<DWORD_PTR> & iatPointers )
 	{
 		if ((*iter - lastPointer) > 0x100) //check difference
 		{
-            if (isIATPointerValid(lastPointer, false) == false || isIATPointerValid(*iter, false) == false)
+            if (!isIATPointerValid(lastPointer, false) || !isIATPointerValid(*iter, false))
             {
                 iatPointers.erase(iter, iatPointers.end());
                 break;
             }
-            else
-            {
-                lastPointer = *iter;
-            }
+		    lastPointer = *iter;
 		}
 		else
 		{
@@ -490,11 +465,11 @@ void IATSearch::filterIATPointersList( std::set<DWORD_PTR> & iatPointers )
 		{
 			if ((*iter - lastPointer) > 0x100) //check pointer difference, a typical difference is 4 on 32bit systems
 			{
-				bool isLastValid = isIATPointerValid(lastPointer, false);
-				bool isCurrentValid = isIATPointerValid(*iter, false);
-                if (isLastValid == false || isCurrentValid == false)
+			    const bool isLastValid = isIATPointerValid(lastPointer, false);
+			    const bool isCurrentValid = isIATPointerValid(*iter, false);
+                if (!isLastValid || !isCurrentValid)
                 {
-					if (isLastValid == false)
+					if (!isLastValid)
 					{
 						iter--;
 					}
@@ -503,11 +478,8 @@ void IATSearch::filterIATPointersList( std::set<DWORD_PTR> & iatPointers )
                     erased = true;
                     break;
                 }
-                else
-                {
-                    erased = false;
-                    lastPointer = *iter;
-                }
+			    erased = false;
+			    lastPointer = *iter;
 			}
 			else
 			{
@@ -530,33 +502,32 @@ void adjustSizeForBigSections(DWORD * badValue)
 }
 
 bool isSectionSizeTooBig(SIZE_T sectionSize) {
-	return (sectionSize > 100000000);
+	return sectionSize > 100000000;
 }
 
 void IATSearch::getMemoryBaseAndSizeForIat( DWORD_PTR address, DWORD_PTR* baseAddress, DWORD* baseSize )
 {
-    MEMORY_BASIC_INFORMATION memBasic1 = {0};
-    MEMORY_BASIC_INFORMATION memBasic2 = {0};
-    MEMORY_BASIC_INFORMATION memBasic3 = {0};
+    MEMORY_BASIC_INFORMATION memBasic1{};
+    MEMORY_BASIC_INFORMATION memBasic2{};
+    MEMORY_BASIC_INFORMATION memBasic3{};
 
-    DWORD_PTR start = 0, end = 0;
     *baseAddress = 0;
     *baseSize = 0;
 
-    if (!VirtualQueryEx(hProcess,(LPCVOID)address, &memBasic2, sizeof(MEMORY_BASIC_INFORMATION)))
+    if (!VirtualQueryEx(hProcess,reinterpret_cast<LPCVOID>(address), &memBasic2, sizeof(MEMORY_BASIC_INFORMATION)))
     {
         return;
     }
 
-    *baseAddress = (DWORD_PTR)memBasic2.BaseAddress;
-    *baseSize = (DWORD)memBasic2.RegionSize;
+    *baseAddress = reinterpret_cast<DWORD_PTR>(memBasic2.BaseAddress);
+    *baseSize = static_cast<DWORD>(memBasic2.RegionSize);
 
 	adjustSizeForBigSections(baseSize);
 
     //Get the neighbours
-    if (VirtualQueryEx(hProcess,(LPCVOID)((DWORD_PTR)memBasic2.BaseAddress - 1), &memBasic1, sizeof(MEMORY_BASIC_INFORMATION)))
+    if (VirtualQueryEx(hProcess,reinterpret_cast<LPCVOID>(reinterpret_cast<DWORD_PTR>(memBasic2.BaseAddress) - 1), &memBasic1, sizeof(MEMORY_BASIC_INFORMATION)))
     {
-		if (VirtualQueryEx(hProcess,(LPCVOID)((DWORD_PTR)memBasic2.BaseAddress + (DWORD_PTR)memBasic2.RegionSize), &memBasic3, sizeof(MEMORY_BASIC_INFORMATION)))
+		if (VirtualQueryEx(hProcess,reinterpret_cast<LPCVOID>(reinterpret_cast<DWORD_PTR>(memBasic2.BaseAddress) + static_cast<DWORD_PTR>(memBasic2.RegionSize)), &memBasic3, sizeof(MEMORY_BASIC_INFORMATION)))
 		{
 			if (memBasic3.State != MEM_COMMIT || 
 				memBasic1.State != MEM_COMMIT || 
@@ -565,20 +536,17 @@ void IATSearch::getMemoryBaseAndSizeForIat( DWORD_PTR address, DWORD_PTR* baseAd
 			{
 				return;
 			}
-			else
-			{
-				if (isSectionSizeTooBig(memBasic1.RegionSize) || 
-					isSectionSizeTooBig(memBasic2.RegionSize) || 
-					isSectionSizeTooBig(memBasic3.RegionSize)) {
-					return;
-				}
+		    if (isSectionSizeTooBig(memBasic1.RegionSize) || 
+		        isSectionSizeTooBig(memBasic2.RegionSize) || 
+		        isSectionSizeTooBig(memBasic3.RegionSize)) {
+		        return;
+		    }
 
-				start = (DWORD_PTR)memBasic1.BaseAddress;
-				end = (DWORD_PTR)memBasic3.BaseAddress + (DWORD_PTR)memBasic3.RegionSize;
+		    const auto start = reinterpret_cast<DWORD_PTR>(memBasic1.BaseAddress);
+		    const auto end = reinterpret_cast<DWORD_PTR>(memBasic3.BaseAddress) + static_cast<DWORD_PTR>(memBasic3.RegionSize);
 
-				*baseAddress = start;
-				*baseSize = (DWORD)(end - start);
-			}
+		    *baseAddress = start;
+		    *baseSize = static_cast<DWORD>(end - start);
 		}
     }
 }

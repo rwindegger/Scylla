@@ -26,7 +26,7 @@ HMODULE DllInjection::dllInjection(HANDLE hProcess, LPCTSTR filename)
         return nullptr;
     }
 
-    if (WriteProcessMemory(hProcess, remoteMemory, filename, memorySize, &memorySize))
+    if (WriteProcessMemory(hProcess, const_cast<LPVOID>(remoteMemory), filename, memorySize, &memorySize))
     {
         const auto hThread = startRemoteThread(hProcess, reinterpret_cast<LPVOID>(LoadLibraryW), remoteMemory);
 
@@ -60,7 +60,7 @@ HMODULE DllInjection::dllInjection(HANDLE hProcess, LPCTSTR filename)
     }
 
 
-    VirtualFreeEx(hProcess, remoteMemory, 0, MEM_RELEASE);
+    VirtualFreeEx(hProcess, const_cast<LPVOID>(remoteMemory), 0, MEM_RELEASE);
 
     return hModule;
 }

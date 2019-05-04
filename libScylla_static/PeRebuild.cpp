@@ -46,7 +46,7 @@ DWORD PeRebuild::validAlignment(DWORD BadSize) const
     const div_t DivRes = div(BadSize, FileAlignmentConstant);
     if (DivRes.rem == 0)
         return BadSize;
-    return ((DivRes.quot + 1) * FileAlignmentConstant);
+    return (DivRes.quot + 1) * FileAlignmentConstant;
 }
 
 DWORD PeRebuild::validAlignmentNew(DWORD badAddress)
@@ -55,7 +55,7 @@ DWORD PeRebuild::validAlignmentNew(DWORD badAddress)
 
     if (moduloResult)
     {
-        return (FileAlignmentConstant - moduloResult);
+        return FileAlignmentConstant - moduloResult;
     }
     else
     {
@@ -65,7 +65,7 @@ DWORD PeRebuild::validAlignmentNew(DWORD badAddress)
 
 bool PeRebuild::isRoundedTo(DWORD_PTR dwTarNum, DWORD_PTR dwRoundNum)
 {
-    return (dwTarNum % dwRoundNum) == 0;
+    return dwTarNum % dwRoundNum == 0;
     // WTF:
     /*
     #ifdef _WIN64
@@ -105,7 +105,7 @@ DWORD PeRebuild::realignPE(LPVOID AddressOfMapFile, DWORD dwFsize)
     int i = 0;
     DWORD extraAlign = 0;
 
-    ZeroMemory(&pSections, sizeof(pSections));
+    ZeroMemory(&pSections, sizeof pSections);
 
     // get the other parameters
     pMap = AddressOfMapFile;
@@ -115,7 +115,7 @@ DWORD PeRebuild::realignPE(LPVOID AddressOfMapFile, DWORD dwFsize)
         return 1;
 
     // access the PE Header and check whether it's a valid one
-    pDosh = (PIMAGE_DOS_HEADER)(pMap);
+    pDosh = (PIMAGE_DOS_HEADER)pMap;
     pPeh = (PIMAGE_NT_HEADERS)((DWORD_PTR)pDosh + pDosh->e_lfanew);
 
     if (!validatePeHeaders(pDosh))
@@ -135,13 +135,13 @@ DWORD PeRebuild::realignPE(LPVOID AddressOfMapFile, DWORD dwFsize)
 
         /* Realign the PE Header */
         // get the size of all headers
-        dwTmpNum = FIELD_OFFSET(IMAGE_NT_HEADERS, OptionalHeader) + pPeh->FileHeader.SizeOfOptionalHeader + (pPeh->FileHeader.NumberOfSections * sizeof(IMAGE_SECTION_HEADER));
+        dwTmpNum = FIELD_OFFSET(IMAGE_NT_HEADERS, OptionalHeader) + pPeh->FileHeader.SizeOfOptionalHeader + pPeh->FileHeader.NumberOfSections * sizeof(IMAGE_SECTION_HEADER);
 
 
         // kill room between the "win32 pls" message and the PE signature
         // find the end of the message
         pW = (WORD*)(dwMapBase + ScanStartDS);
-        while (*pW != 0 || (!isRoundedTo((DWORD_PTR)pW, 0x10)))
+        while (*pW != 0 || !isRoundedTo((DWORD_PTR)pW, 0x10))
         {
             pW = (WORD*)((DWORD_PTR)pW + 1);
         }
@@ -172,7 +172,7 @@ DWORD PeRebuild::realignPE(LPVOID AddressOfMapFile, DWORD dwFsize)
             }
             // get a valid size
             dwTmpNum = pSectionh->SizeOfRawData;
-            if ((pSectionh->SizeOfRawData + pSectionh->PointerToRawData) > dwFsize)
+            if (pSectionh->SizeOfRawData + pSectionh->PointerToRawData > dwFsize)
             {
                 dwTmpNum = dwFsize - pSectionh->PointerToRawData;
             }
@@ -220,7 +220,7 @@ DWORD PeRebuild::realignPE(LPVOID AddressOfMapFile, DWORD dwFsize)
                 continue;
             }
             // let pCH point to the end of the current section
-            if ((pSectionh->PointerToRawData + pSectionh->SizeOfRawData) <= dwFsize)
+            if (pSectionh->PointerToRawData + pSectionh->SizeOfRawData <= dwFsize)
             {
                 pCH = (char*)(dwMapBase + pSectionh->PointerToRawData + pSectionh->SizeOfRawData - 1);
             }
@@ -234,7 +234,7 @@ DWORD PeRebuild::realignPE(LPVOID AddressOfMapFile, DWORD dwFsize)
                 --pCH;
             }
             // calculate the new RawSize
-            dwTmpNum = (DWORD)(((DWORD_PTR)pCH - dwMapBase) + MinSectionTerm - pSectionh->PointerToRawData);
+            dwTmpNum = (DWORD)((DWORD_PTR)pCH - dwMapBase + MinSectionTerm - pSectionh->PointerToRawData);
             if (dwTmpNum < pSectionh->SizeOfRawData)
             {
                 pSectionh->SizeOfRawData = dwTmpNum;
@@ -369,9 +369,9 @@ DWORD PeRebuild::wipeReloc(void* pMap, DWORD dwFsize)
 
                 // apply section name
                 memcpy(
-                    (void*)(pSH->Name),
-                    (const void*)(pSH2->Name),
-                    sizeof(pSH2->Name));
+                    (void*)pSH->Name,
+                    (const void*)pSH2->Name,
+                    sizeof pSH2->Name);
                 ++pSH;
                 ++pSH2;
             }
@@ -689,7 +689,7 @@ bool PeRebuild::validatePeHeaders(PIMAGE_DOS_HEADER pDosh)
 {
     PIMAGE_NT_HEADERS pNTHeader = (PIMAGE_NT_HEADERS)((DWORD_PTR)pDosh + pDosh->e_lfanew);
 
-    if ((pDosh != 0) && (pDosh->e_magic == IMAGE_DOS_SIGNATURE) && (pNTHeader->Signature == IMAGE_NT_SIGNATURE))
+    if (pDosh != 0 && pDosh->e_magic == IMAGE_DOS_SIGNATURE && pNTHeader->Signature == IMAGE_NT_SIGNATURE)
     {
 #ifdef _WIN64
         if (pNTHeader->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC)

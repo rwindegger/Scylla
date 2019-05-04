@@ -6,23 +6,23 @@
 #include "ApiReader.h"
 
 enum IATReferenceType {
-	IAT_REFERENCE_PTR_JMP,
-	IAT_REFERENCE_PTR_CALL,
-	IAT_REFERENCE_DIRECT_JMP,
-	IAT_REFERENCE_DIRECT_CALL,
-	IAT_REFERENCE_DIRECT_MOV,
-	IAT_REFERENCE_DIRECT_PUSH,
-	IAT_REFERENCE_DIRECT_LEA
+    IAT_REFERENCE_PTR_JMP,
+    IAT_REFERENCE_PTR_CALL,
+    IAT_REFERENCE_DIRECT_JMP,
+    IAT_REFERENCE_DIRECT_CALL,
+    IAT_REFERENCE_DIRECT_MOV,
+    IAT_REFERENCE_DIRECT_PUSH,
+    IAT_REFERENCE_DIRECT_LEA
 };
 
 class IATReference
 {
 public:
-	DWORD_PTR addressVA; //Address of reference
-	DWORD_PTR targetPointer; //Place inside IAT
-	DWORD_PTR targetAddressInIat; //WIN API?
-	BYTE instructionSize;
-	IATReferenceType type;
+    DWORD_PTR addressVA; //Address of reference
+    DWORD_PTR targetPointer; //Place inside IAT
+    DWORD_PTR targetAddressInIat; //WIN API?
+    BYTE instructionSize;
+    IATReferenceType type;
 };
 
 
@@ -30,80 +30,80 @@ class IATReferenceScan
 {
 public:
 
-	IATReferenceScan()
-	{
-		apiReader = 0;
-		IatAddressVA = 0;
-		IatSize = 0;
-		ImageBase = 0;
-		ImageSize = 0;
-		iatBackup = 0;
-		ScanForDirectImports = false;
-		ScanForNormalImports = true;
-	}
+    IATReferenceScan()
+    {
+        apiReader = nullptr;
+        IatAddressVA = 0;
+        IatSize = 0;
+        ImageBase = 0;
+        ImageSize = 0;
+        iatBackup = nullptr;
+        ScanForDirectImports = false;
+        ScanForNormalImports = true;
+    }
 
-	~IATReferenceScan()
-	{
-		iatReferenceList.clear();
-		iatDirectImportList.clear();
+    ~IATReferenceScan()
+    {
+        iatReferenceList.clear();
+        iatDirectImportList.clear();
 
-		if (iatBackup)
-		{
-			free(iatBackup);
-		}
-	}
+        if (iatBackup)
+        {
+            free(iatBackup);
+        }
+    }
 
-	bool ScanForDirectImports;
-	bool ScanForNormalImports;
-	bool JunkByteAfterInstruction;
-	ApiReader * apiReader;
+    bool ScanForDirectImports;
+    bool ScanForNormalImports;
+    bool JunkByteAfterInstruction{};
+    ApiReader * apiReader;
 
-	void startScan(DWORD_PTR imageBase, DWORD imageSize, DWORD_PTR iatAddress, DWORD iatSize);
-	//void patchNewIatBaseMemory(DWORD_PTR newIatBaseAddress);
-	//void patchNewIatBaseFile(DWORD_PTR newIatBaseAddress);
+    void startScan(DWORD_PTR imageBase, DWORD imageSize, DWORD_PTR iatAddress, DWORD iatSize);
+    //void patchNewIatBaseMemory(DWORD_PTR newIatBaseAddress);
+    //void patchNewIatBaseFile(DWORD_PTR newIatBaseAddress);
 
-	void patchNewIat(DWORD_PTR stdImagebase, DWORD_PTR newIatBaseAddress, PeParser * peParser);
-	void patchDirectJumpTable( DWORD_PTR stdImagebase, DWORD directImportsJumpTableRVA, PeParser * peParser, BYTE * jmpTableMemory, DWORD newIatBase);
-	void patchDirectImportsMemory(bool junkByteAfterInstruction);
-	int numberOfFoundDirectImports();
-	int numberOfFoundUniqueDirectImports();
-	int numberOfDirectImportApisNotInIat();
-	int getSizeInBytesOfJumpTableInSection();
-	static FileLog directImportLog;
-	void printDirectImportLog();
-	void changeIatBaseOfDirectImports( DWORD newIatBaseAddressRVA );
-	DWORD addAdditionalApisToList();
+    void patchNewIat(DWORD_PTR stdImagebase, DWORD_PTR newIatBaseAddress, PeParser * peParser);
+    void patchDirectJumpTable(DWORD_PTR stdImagebase, DWORD directImportsJumpTableRVA, PeParser * peParser, BYTE * jmpTableMemory, DWORD newIatBase);
+    void patchDirectImportsMemory(bool junkByteAfterInstruction);
+    int numberOfFoundDirectImports();
+    int numberOfFoundUniqueDirectImports();
+    int numberOfDirectImportApisNotInIat();
+    int getSizeInBytesOfJumpTableInSection();
+    static FileLog directImportLog;
+    void printDirectImportLog();
+    void changeIatBaseOfDirectImports(DWORD newIatBaseAddressRVA);
+    DWORD addAdditionalApisToList();
 private:
-	DWORD_PTR NewIatAddressRVA;
+    DWORD_PTR NewIatAddressRVA{};
 
-	DWORD_PTR IatAddressVA;
-	DWORD IatSize;
-	DWORD_PTR ImageBase;
-	DWORD ImageSize;
+    DWORD_PTR IatAddressVA;
+    DWORD IatSize;
+    DWORD_PTR ImageBase;
+    DWORD ImageSize;
 
 
-	DWORD_PTR * iatBackup;
+    DWORD_PTR * iatBackup;
 
-	std::vector<IATReference> iatReferenceList;
-	std::vector<IATReference> iatDirectImportList;
+    std::vector<IATReference> iatReferenceList;
+    std::vector<IATReference> iatDirectImportList;
 
-	void scanMemoryPage( PVOID BaseAddress, SIZE_T RegionSize );
-	void analyzeInstruction( _DInst * instruction );
-	void findNormalIatReference( _DInst * instruction );
-    static void getIatEntryAddress( IATReference* ref );
-	void findDirectIatReferenceCallJmp( _DInst * instruction );
-    static bool isAddressValidImageMemory( DWORD_PTR address );
-	void patchReferenceInMemory( IATReference * ref ) const;
-	void patchReferenceInFile( IATReference* ref );
-	void patchDirectImportInMemory( IATReference * iter ) const;
-	DWORD_PTR lookUpIatForPointer( DWORD_PTR addr );
-	void findDirectIatReferenceMov( _DInst * instruction );
-	void findDirectIatReferencePush( _DInst * instruction );
-	void checkMemoryRangeAndAddToList( IATReference * ref, _DInst * instruction );
-	void findDirectIatReferenceLea( _DInst * instruction );
-    static void patchDirectImportInDump32( int patchPreFixBytes, int instructionSize, DWORD patchBytes, BYTE * memory, DWORD memorySize, bool generateReloc, DWORD patchOffset, DWORD sectionRVA );
-    static void patchDirectImportInDump64( int patchPreFixBytes, int instructionSize, DWORD_PTR patchBytes, BYTE * memory, DWORD memorySize, bool generateReloc, DWORD patchOffset, DWORD sectionRVA );
-	void patchDirectJumpTableEntry(DWORD_PTR targetIatPointer, DWORD_PTR stdImagebase, DWORD directImportsJumpTableRVA, PeParser * peParser, BYTE * jmpTableMemory, DWORD newIatBase );
+    void scanMemoryPage(PVOID BaseAddress, SIZE_T RegionSize);
+    void analyzeInstruction(_DInst * instruction);
+    void findNormalIatReference(_DInst * instruction);
+    static void getIatEntryAddress(IATReference* ref);
+    void findDirectIatReferenceCallJmp(_DInst * instruction);
+    static bool isAddressValidImageMemory(DWORD_PTR address);
+    void patchReferenceInMemory(IATReference * ref) const;
+    void patchReferenceInFile(IATReference* ref);
+    void patchDirectImportInMemory(IATReference * ref) const;
+    DWORD_PTR lookUpIatForPointer(DWORD_PTR addr);
+    void findDirectIatReferenceMov(_DInst * instruction);
+    void findDirectIatReferencePush(_DInst * instruction);
+    void checkMemoryRangeAndAddToList(IATReference * ref, _DInst * instruction);
+    void findDirectIatReferenceLea(_DInst * instruction);
+    static void patchDirectImportInDump32(int patchPreFixBytes, int instructionSize, DWORD patchBytes, BYTE * memory, DWORD memorySize, bool generateReloc, DWORD patchOffset, DWORD sectionRVA);
+    static void patchDirectImportInDump64(int patchPreFixBytes, int instructionSize, DWORD_PTR patchBytes, BYTE * memory, DWORD memorySize, bool generateReloc, DWORD patchOffset, DWORD sectionRVA);
+    void patchDirectJumpTableEntry(DWORD_PTR targetIatPointer, DWORD_PTR stdImagebase, DWORD directImportsJumpTableRVA, PeParser * peParser, BYTE * jmpTableMemory, DWORD newIatBase);
 
 
 };

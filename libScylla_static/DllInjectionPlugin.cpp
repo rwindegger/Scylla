@@ -15,10 +15,10 @@ void DllInjectionPlugin::injectPlugin(Plugin & plugin, std::map<DWORD_PTR, Impor
         return;
     }
 
-    if (!createFileMapping(static_cast<DWORD>(sizeof(SCYLLA_EXCHANGE) + sizeof(UNRESOLVED_IMPORT) + (sizeof(UNRESOLVED_IMPORT) *
-        numberOfUnresolvedImports))))
+    if (!createFileMapping(static_cast<DWORD>(sizeof(SCYLLA_EXCHANGE) + sizeof(UNRESOLVED_IMPORT) + sizeof(UNRESOLVED_IMPORT) *
+        numberOfUnresolvedImports)))
     {
-        Scylla::debugLog.log(TEXT("injectPlugin :: createFileMapping %X failed"), sizeof(SCYLLA_EXCHANGE) + sizeof(UNRESOLVED_IMPORT) + (sizeof(UNRESOLVED_IMPORT) * numberOfUnresolvedImports));
+        Scylla::debugLog.log(TEXT("injectPlugin :: createFileMapping %X failed"), sizeof(SCYLLA_EXCHANGE) + sizeof(UNRESOLVED_IMPORT) + sizeof(UNRESOLVED_IMPORT) * numberOfUnresolvedImports);
         return;
     }
 

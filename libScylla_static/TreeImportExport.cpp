@@ -265,7 +265,7 @@ void TreeImportExport::parseAllElementImports(tinyxml2::XMLElement * moduleEleme
 
         if (!_tcscmp(temp, TEXT("import_valid")))
         {
-            delete[](temp);
+            delete[]temp;
             temp_len = strlen(importElement->Attribute("name"));
             temp = new TCHAR[temp_len];
             StringConversion::ToTStr(importElement->Attribute("name"), temp, temp_len);
@@ -292,7 +292,7 @@ void TreeImportExport::parseAllElementImports(tinyxml2::XMLElement * moduleEleme
             importThunk.suspect = true;
         }
 
-        delete[](temp);
+        delete[]temp;
 
         importThunk.apiAddressVA = ConvertStringToDwordPtr(importElement->Attribute("address_va"));
         importThunk.rva = ConvertStringToDwordPtr(importElement->Attribute("iat_rva"));

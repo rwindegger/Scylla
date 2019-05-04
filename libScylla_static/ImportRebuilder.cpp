@@ -233,7 +233,7 @@ DWORD ImportRebuilder::fillImportSection(std::map<DWORD_PTR, ImportModuleThunk> 
 				return 0;
 			}
 
-			if ((lastRVA + sizeof(DWORD_PTR)) != importThunk->rva)
+			if (lastRVA + sizeof(DWORD_PTR) != importThunk->rva)
 			{
 				//add additional import desc
 				addSpecialImportDescriptor(importThunk->rva, offsetOFTArray);
@@ -313,7 +313,7 @@ void ImportRebuilder::calculateImportSizes(std::map<DWORD_PTR, ImportModuleThunk
 
 		for (auto& mapIt2 : mapIt.second.thunkList)
 		{
-			if ((lastRVA + sizeof(DWORD_PTR)) != mapIt2.second.rva)
+			if (lastRVA + sizeof(DWORD_PTR) != mapIt2.second.rva)
 			{
 				numberOfImportDescriptors++; //add additional import desc
 				sizeOfOFTArray += sizeof(DWORD_PTR) + sizeof(DWORD_PTR);
@@ -335,7 +335,7 @@ void ImportRebuilder::calculateImportSizes(std::map<DWORD_PTR, ImportModuleThunk
 		sizeOfOFTArray += sizeof(DWORD_PTR);
 	}
 
-	sizeOfImportSection = sizeOfOFTArray + sizeOfApiAndModuleNames + (numberOfImportDescriptors * sizeof(IMAGE_IMPORT_DESCRIPTOR));
+	sizeOfImportSection = sizeOfOFTArray + sizeOfApiAndModuleNames + numberOfImportDescriptors * sizeof(IMAGE_IMPORT_DESCRIPTOR);
 }
 
 size_t ImportRebuilder::addImportToImportTable( ImportThunk * pImport, PIMAGE_THUNK_DATA pThunk, PIMAGE_IMPORT_BY_NAME pImportByName, DWORD sectionOffset)
@@ -344,113 +344,113 @@ size_t ImportRebuilder::addImportToImportTable( ImportThunk * pImport, PIMAGE_TH
 
 	if(pImport->name[0] == '\0')
 	{
-		pThunk->u1.AddressOfData = (IMAGE_ORDINAL(pImport->ordinal) | IMAGE_ORDINAL_FLAG);
-	}
-	else
-	{
-		pImportByName->Hint = pImport->hint;
-
-		stringLength = (_tcslen(pImport->name) + 1);
-        StringConversion::ToCStr(pImport->name, pImportByName->Name, stringLength);
-		pThunk->u1.AddressOfData = convertOffsetToRVAVector(listPeSection[importSectionIndex].sectionHeader.PointerToRawData + sectionOffset);
-
-		if (!pThunk->u1.AddressOfData)
+		pThunk->u1.AddressOfData = IMAGE_ORDINAL(pImport->ordinal) | IMAGE_ORDINAL_FLAG;
+		}
+		else
 		{
-			Scylla::debugLog.log(TEXT("addImportToImportTable :: failed to get AddressOfData %X %X"), listPeSection[importSectionIndex].sectionHeader.PointerToRawData, sectionOffset);
+		    pImportByName->Hint = pImport->hint;
+
+		    stringLength = _tcslen(pImport->name) + 1;
+		    StringConversion::ToCStr(pImport->name, pImportByName->Name, stringLength);
+		    pThunk->u1.AddressOfData = convertOffsetToRVAVector(listPeSection[importSectionIndex].sectionHeader.PointerToRawData + sectionOffset);
+
+		    if (!pThunk->u1.AddressOfData)
+		    {
+		        Scylla::debugLog.log(TEXT("addImportToImportTable :: failed to get AddressOfData %X %X"), listPeSection[importSectionIndex].sectionHeader.PointerToRawData, sectionOffset);
+		    }
+
+		    //next import should be nulled
+		    pThunk++;
+		    pThunk->u1.AddressOfData = 0;
+
+		    Scylla::debugLog.log(TEXT("addImportToImportTable :: pThunk->u1.AddressOfData %X %X %X"), pThunk->u1.AddressOfData, pThunk, listPeSection[importSectionIndex].sectionHeader.PointerToRawData + sectionOffset);
+		    stringLength += sizeof(WORD);
 		}
 
-		//next import should be nulled
-		pThunk++;
-		pThunk->u1.AddressOfData = 0;
-
-		Scylla::debugLog.log(TEXT("addImportToImportTable :: pThunk->u1.AddressOfData %X %X %X"), pThunk->u1.AddressOfData, pThunk, listPeSection[importSectionIndex].sectionHeader.PointerToRawData + sectionOffset);
-		stringLength += sizeof(WORD);
-	}
-
-	return stringLength;
-}
-
-BYTE * ImportRebuilder::getMemoryPointerFromRVA(DWORD_PTR dwRVA)
-{
-    const int peSectionIndex = convertRVAToOffsetVectorIndex(dwRVA);
-
-	if (peSectionIndex == -1)
-	{
-		return nullptr;
-	}
-
-    const DWORD rvaPointer = (static_cast<DWORD>(dwRVA) - listPeSection[peSectionIndex].sectionHeader.VirtualAddress);
-	DWORD minSectionSize = rvaPointer + (sizeof(DWORD_PTR) * 2); //add space for 1 IAT address
-
-	if (listPeSection[peSectionIndex].data == 0 || listPeSection[peSectionIndex].dataSize == 0)
-	{
-		listPeSection[peSectionIndex].dataSize = minSectionSize; 
-		listPeSection[peSectionIndex].normalSize = minSectionSize;
-		listPeSection[peSectionIndex].data = new BYTE[listPeSection[peSectionIndex].dataSize];
-
-		listPeSection[peSectionIndex].sectionHeader.SizeOfRawData = listPeSection[peSectionIndex].dataSize;
-	}
-	else if(listPeSection[peSectionIndex].dataSize < minSectionSize)
-	{
-	    auto temp = new BYTE[minSectionSize];
-		memcpy(temp, listPeSection[peSectionIndex].data, listPeSection[peSectionIndex].dataSize);
-		delete [] listPeSection[peSectionIndex].data;
-
-		listPeSection[peSectionIndex].data = temp;
-		listPeSection[peSectionIndex].dataSize = minSectionSize;
-		listPeSection[peSectionIndex].normalSize = minSectionSize;
-
-		listPeSection[peSectionIndex].sectionHeader.SizeOfRawData = listPeSection[peSectionIndex].dataSize;
-	}
-
-    return reinterpret_cast<BYTE *>(reinterpret_cast<DWORD_PTR>(listPeSection[peSectionIndex].data) + rvaPointer);
-}
-
-void ImportRebuilder::enableOFTSupport()
-{
-	useOFT = true;
-}
-
-void ImportRebuilder::enableNewIatInSection(DWORD_PTR iatAddress, DWORD iatSize)
-{
-	newIatInSection = true;
-	IatAddress = iatAddress;
-	IatSize = iatSize;
-
-	iatReferenceScan->ScanForDirectImports = false;
-	iatReferenceScan->ScanForNormalImports = true;
-
-	iatReferenceScan->startScan(ProcessAccessHelp::targetImageBase, static_cast<DWORD>(ProcessAccessHelp::targetSizeOfImage), IatAddress, IatSize);
-}
-
-void ImportRebuilder::patchFileForNewIatLocation()
-{
-	iatReferenceScan->patchNewIat(getStandardImagebase(), newIatBaseAddressRVA, static_cast<PeParser *>(this));
-}
-
-void ImportRebuilder::changeIatBaseAddress( std::map<DWORD_PTR, ImportModuleThunk> & moduleList )
-{
-    const DWORD_PTR oldIatRva = IatAddress - ProcessAccessHelp::targetImageBase;
-
-	for ( std::map<DWORD_PTR, ImportModuleThunk>::iterator mapIt = moduleList.begin() ; mapIt != moduleList.end(); mapIt++ )
-	{
-		(*mapIt).second.firstThunk = (*mapIt).second.firstThunk - oldIatRva + newIatBaseAddressRVA;
-
-		for ( std::map<DWORD_PTR, ImportThunk>::iterator mapIt2 = (*mapIt).second.thunkList.begin() ; mapIt2 != (*mapIt).second.thunkList.end(); mapIt2++ )
-		{
-			(*mapIt2).second.rva = (*mapIt2).second.rva - oldIatRva + newIatBaseAddressRVA;
+		return stringLength;
 		}
-	}
-}
 
-void ImportRebuilder::patchFileForDirectImportJumpTable()
-{
-	if (newIatInSection)
-	{
-		iatReferenceScan->patchDirectJumpTable(getStandardImagebase(), directImportsJumpTableRVA, static_cast<PeParser *>(this), JMPTableMemory, newIatBaseAddressRVA);
-	}
-	else
-	{
-		iatReferenceScan->patchDirectJumpTable(getStandardImagebase(), directImportsJumpTableRVA, static_cast<PeParser *>(this), JMPTableMemory, 0);
-	}
-}
+		BYTE * ImportRebuilder::getMemoryPointerFromRVA(DWORD_PTR dwRVA)
+		{
+		    const int peSectionIndex = convertRVAToOffsetVectorIndex(dwRVA);
+
+		    if (peSectionIndex == -1)
+		    {
+		        return nullptr;
+		    }
+
+		    const DWORD rvaPointer = (static_cast<DWORD>(dwRVA) - listPeSection[peSectionIndex].sectionHeader.VirtualAddress);
+		    DWORD minSectionSize = rvaPointer + sizeof(DWORD_PTR) * 2; //add space for 1 IAT address
+
+		    if (listPeSection[peSectionIndex].data == 0 || listPeSection[peSectionIndex].dataSize == 0)
+		    {
+		        listPeSection[peSectionIndex].dataSize = minSectionSize; 
+		        listPeSection[peSectionIndex].normalSize = minSectionSize;
+		        listPeSection[peSectionIndex].data = new BYTE[listPeSection[peSectionIndex].dataSize];
+
+		        listPeSection[peSectionIndex].sectionHeader.SizeOfRawData = listPeSection[peSectionIndex].dataSize;
+		    }
+		    else if(listPeSection[peSectionIndex].dataSize < minSectionSize)
+		    {
+		        auto temp = new BYTE[minSectionSize];
+		        memcpy(temp, listPeSection[peSectionIndex].data, listPeSection[peSectionIndex].dataSize);
+		        delete [] listPeSection[peSectionIndex].data;
+
+		        listPeSection[peSectionIndex].data = temp;
+		        listPeSection[peSectionIndex].dataSize = minSectionSize;
+		        listPeSection[peSectionIndex].normalSize = minSectionSize;
+
+		        listPeSection[peSectionIndex].sectionHeader.SizeOfRawData = listPeSection[peSectionIndex].dataSize;
+		    }
+
+		    return reinterpret_cast<BYTE *>(reinterpret_cast<DWORD_PTR>(listPeSection[peSectionIndex].data) + rvaPointer);
+		}
+
+		void ImportRebuilder::enableOFTSupport()
+		{
+		    useOFT = true;
+		}
+
+		void ImportRebuilder::enableNewIatInSection(DWORD_PTR iatAddress, DWORD iatSize)
+		{
+		    newIatInSection = true;
+		    IatAddress = iatAddress;
+		    IatSize = iatSize;
+
+		    iatReferenceScan->ScanForDirectImports = false;
+		    iatReferenceScan->ScanForNormalImports = true;
+
+		    iatReferenceScan->startScan(ProcessAccessHelp::targetImageBase, static_cast<DWORD>(ProcessAccessHelp::targetSizeOfImage), IatAddress, IatSize);
+		}
+
+		void ImportRebuilder::patchFileForNewIatLocation()
+		{
+		    iatReferenceScan->patchNewIat(getStandardImagebase(), newIatBaseAddressRVA, static_cast<PeParser *>(this));
+		}
+
+		void ImportRebuilder::changeIatBaseAddress( std::map<DWORD_PTR, ImportModuleThunk> & moduleList )
+		{
+		    const DWORD_PTR oldIatRva = IatAddress - ProcessAccessHelp::targetImageBase;
+
+		    for ( std::map<DWORD_PTR, ImportModuleThunk>::iterator mapIt = moduleList.begin() ; mapIt != moduleList.end(); mapIt++ )
+		    {
+		        (*mapIt).second.firstThunk = (*mapIt).second.firstThunk - oldIatRva + newIatBaseAddressRVA;
+
+		        for ( std::map<DWORD_PTR, ImportThunk>::iterator mapIt2 = (*mapIt).second.thunkList.begin() ; mapIt2 != (*mapIt).second.thunkList.end(); mapIt2++ )
+		        {
+		            (*mapIt2).second.rva = (*mapIt2).second.rva - oldIatRva + newIatBaseAddressRVA;
+		        }
+		    }
+		}
+
+		void ImportRebuilder::patchFileForDirectImportJumpTable()
+		{
+		    if (newIatInSection)
+		    {
+		        iatReferenceScan->patchDirectJumpTable(getStandardImagebase(), directImportsJumpTableRVA, static_cast<PeParser *>(this), JMPTableMemory, newIatBaseAddressRVA);
+		    }
+		    else
+		    {
+		        iatReferenceScan->patchDirectJumpTable(getStandardImagebase(), directImportsJumpTableRVA, static_cast<PeParser *>(this), JMPTableMemory, 0);
+		    }
+		}

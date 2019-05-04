@@ -93,9 +93,9 @@ void ApiReader::parseModuleWithMapping(ModuleInfo *moduleInfo) const
 
 inline bool ApiReader::isApiForwarded(DWORD_PTR rva, PIMAGE_NT_HEADERS pNtHeader)
 {
-    return (rva > pNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress) &&
-        (rva < (pNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress +
-            pNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size));
+    return rva > pNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress &&
+        rva < pNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress +
+        pNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size;
 }
 
 void ApiReader::handleForwardedApi(DWORD_PTR vaStringPointer, LPCTSTR functionNameParent, DWORD_PTR rvaParent, WORD ordinalParent, ModuleInfo *moduleParent) const
@@ -235,7 +235,7 @@ void ApiReader::addApi(LPCTSTR functionName, WORD hint, WORD ordinal, DWORD_PTR 
 {
     auto apiInfo = new ApiInfo();
 
-    if ((functionName != nullptr) && (_tcslen(functionName) < _countof(apiInfo->name)))
+    if (functionName != nullptr && _tcslen(functionName) < _countof(apiInfo->name))
     {
         _tcscpy_s(apiInfo->name, functionName);
     }
@@ -290,7 +290,7 @@ BYTE * ApiReader::getExportTableFromProcess(ModuleInfo * module, PIMAGE_NT_HEADE
 {
     DWORD readSize = pNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size;
 
-    if (readSize < (sizeof(IMAGE_EXPORT_DIRECTORY) + 8))
+    if (readSize < sizeof(IMAGE_EXPORT_DIRECTORY) + 8)
     {
         //Something is wrong with the PE Header
         Scylla::debugLog.log(TEXT("Something is wrong with the PE Header here Export table size %d"), readSize);
@@ -398,7 +398,7 @@ void ApiReader::parseExportTable(ModuleInfo *module, PIMAGE_NT_HEADERS pNtHeader
             {
                 ordinal = static_cast<WORD>(i + pExportDir->Base);
                 RVA = addressOfFunctionsArray[i];
-                VA = (addressOfFunctionsArray[i] + module->modBaseAddr);
+                VA = addressOfFunctionsArray[i] + module->modBaseAddr;
 
                 if (!isApiForwarded(RVA, pNtHeader))
                 {
@@ -444,8 +444,8 @@ void ApiReader::findApiByModule(ModuleInfo * module, LPCTSTR searchFunctionName,
                     *vaApi = reinterpret_cast<DWORD_PTR>(GetProcAddress(hModule, func_name));
                 }
 
-                *rvaApi = (*vaApi) - reinterpret_cast<DWORD_PTR>(hModule);
-                *vaApi = (*rvaApi) + module->modBaseAddr;
+                *rvaApi = *vaApi - reinterpret_cast<DWORD_PTR>(hModule);
+                *vaApi = *rvaApi + module->modBaseAddr;
             }
             else
             {
@@ -507,7 +507,7 @@ bool ApiReader::isPeAndExportTableValid(PIMAGE_NT_HEADERS pNtHeader)
         return false;
     }
 
-    if ((pNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress == 0) || (pNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size == 0))
+    if (pNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress == 0 || pNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size == 0)
     {
         Scylla::Log->log(TEXT("-> No export table."));
         return false;
@@ -565,10 +565,10 @@ bool ApiReader::findApiInExportTable(ModuleInfo *module, PIMAGE_EXPORT_DIRECTORY
     {
         for (DWORD i = 0; i < pExportDir->NumberOfFunctions; i++)
         {
-            if (ordinal == (i + pExportDir->Base))
+            if (ordinal == i + pExportDir->Base)
             {
                 *rvaApi = addressOfFunctionsArray[i];
-                *vaApi = (addressOfFunctionsArray[i] + module->modBaseAddr);
+                *vaApi = addressOfFunctionsArray[i] + module->modBaseAddr;
                 return true;
             }
         }
@@ -868,7 +868,7 @@ void ApiReader::parseIAT(DWORD_PTR addressIAT, BYTE * iatBuffer, SIZE_T size)
         if (!isInvalidMemoryForIat(pIATAddress[i]))
         {
             Scylla::debugLog.log(TEXT("min %p max %p address %p"), minApiAddress, maxApiAddress, pIATAddress[i]);
-            if ((pIATAddress[i] > minApiAddress) && (pIATAddress[i] < maxApiAddress))
+            if (pIATAddress[i] > minApiAddress && pIATAddress[i] < maxApiAddress)
             {
 
                 ApiInfo *apiFound = getApiByVirtualAddress(pIATAddress[i], &isSuspect);
@@ -1144,7 +1144,7 @@ bool ApiReader::isInvalidMemoryForIat(DWORD_PTR address)
 
     if (VirtualQueryEx(ProcessAccessHelp::hProcess, reinterpret_cast<LPCVOID>(address), &memBasic, sizeof(MEMORY_BASIC_INFORMATION)))
     {
-        return !((memBasic.State == MEM_COMMIT) && ProcessAccessHelp::isPageAccessable(memBasic.Protect));
+        return !(memBasic.State == MEM_COMMIT && ProcessAccessHelp::isPageAccessable(memBasic.Protect));
     }
     else
     {

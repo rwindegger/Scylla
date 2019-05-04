@@ -3,6 +3,7 @@
 #include <shlwapi.h>
 #include "Architecture.h"
 #include "Scylla.h"
+#include <tchar.h>
 
 const TCHAR ConfigurationHolder::CONFIG_FILE_SECTION_NAME[] = TEXT("SCYLLA_CONFIG");
 
@@ -188,7 +189,7 @@ bool ConfigurationHolder::saveConfig(const Configuration & configObject) const
 
 bool ConfigurationHolder::buildConfigFilePath(LPCTSTR fileName)
 {
-	ZeroMemory(configPath, sizeof(configPath));
+	ZeroMemory(configPath, sizeof configPath);
 
 	if (!GetModuleFileName(nullptr, configPath, _countof(configPath)))
 	{

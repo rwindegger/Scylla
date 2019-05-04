@@ -88,7 +88,7 @@ bool PluginLoader::searchForPlugin(std::vector<Plugin> & newPluginList, LPCTSTR 
 		if ( !(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) )
 		{
 
-			if ((ffd.nFileSizeHigh != 0) || (ffd.nFileSizeLow < 200))
+			if (ffd.nFileSizeHigh != 0 || ffd.nFileSizeLow < 200)
 			{
 				Scylla::debugLog.log(TEXT("findAllPlugins :: Plugin invalid file size: %s"), ffd.cFileName);
 
@@ -136,7 +136,7 @@ bool PluginLoader::searchForPlugin(std::vector<Plugin> & newPluginList, LPCTSTR 
 
 	FindClose(hFind);
 
-	return (dwError == ERROR_NO_MORE_FILES);
+	return dwError == ERROR_NO_MORE_FILES;
 }
 
 bool PluginLoader::getScyllaPluginName(Plugin *pluginData) const
@@ -171,8 +171,8 @@ bool PluginLoader::getScyllaPluginName(Plugin *pluginData) const
 
 bool PluginLoader::buildSearchString()
 {
-	ZeroMemory(dirSearchString, sizeof(dirSearchString));
-	ZeroMemory(baseDirPath, sizeof(baseDirPath));
+	ZeroMemory(dirSearchString, sizeof dirSearchString);
+	ZeroMemory(baseDirPath, sizeof baseDirPath);
 
 	if (!GetModuleFileName(NULL, dirSearchString, _countof(dirSearchString)))
 	{
@@ -198,7 +198,7 @@ bool PluginLoader::isValidDllFile(LPCTSTR fullpath )
 {
 	PeParser peFile(fullpath, false);
 
-	return (peFile.isTargetFileSamePeFormat() && peFile.hasExportDirectory());
+	return peFile.isTargetFileSamePeFormat() && peFile.hasExportDirectory();
 }
 
 bool PluginLoader::isValidImprecPlugin(LPCTSTR fullpath)
@@ -254,5 +254,5 @@ bool PluginLoader::buildSearchStringImprecPlugins()
 
 bool PluginLoader::fileExists(LPCTSTR fileName)
 {
-	return (GetFileAttributes(fileName) != INVALID_FILE_ATTRIBUTES);
+	return GetFileAttributes(fileName) != INVALID_FILE_ATTRIBUTES;
 }

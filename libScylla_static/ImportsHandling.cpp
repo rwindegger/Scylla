@@ -61,7 +61,7 @@ ImportsHandling::ImportsHandling(CMultiSelectTreeViewCtrl& TreeImports)
     CDCHandle dc = CWindow(::GetDesktopWindow()).GetDC();
     const int bits = dc.GetDeviceCaps(BITSPIXEL);
 
-    const UINT FLAGS = bits > 16 ? ILC_COLOR32 : (ILC_COLOR24 | ILC_MASK);
+    const UINT FLAGS = bits > 16 ? ILC_COLOR32 : ILC_COLOR24 | ILC_MASK;
 
     TreeIcons.Create(16, 16, FLAGS, 3, 1);
     TreeIcons.AddIcon(hIconCheck);
@@ -78,12 +78,12 @@ ImportsHandling::~ImportsHandling()
 
 bool ImportsHandling::isModule(const CTreeItem& item)
 {
-    return (nullptr != getModuleThunk(item));
+    return nullptr != getModuleThunk(item);
 }
 
 bool ImportsHandling::isImport(const CTreeItem& item)
 {
-    return (nullptr != getImportThunk(item));
+    return nullptr != getImportThunk(item);
 }
 
 ImportModuleThunk * ImportsHandling::getModuleThunk(CTreeItem item)
@@ -308,7 +308,7 @@ void ImportsHandling::selectImports(bool invalid, bool suspect)
         {
             ImportThunk &importThunk = it_import->second;
 
-            if ((invalid && !importThunk.valid) || (suspect && importThunk.suspect))
+            if (invalid && !importThunk.valid || suspect && importThunk.suspect)
             {
                 TreeImports.SelectItem(importThunk.hTreeItem, TRUE);
                 importThunk.hTreeItem.EnsureVisible();

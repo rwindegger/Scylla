@@ -96,7 +96,7 @@ bool PeParser::isPE64()
 {
 	if (isValidPeFile())
 	{
-		return (pNTHeader32->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC);
+		return pNTHeader32->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC;
 	}
 	else
 	{
@@ -108,7 +108,7 @@ bool PeParser::isPE32()
 {
 	if (isValidPeFile())
 	{
-		return (pNTHeader32->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC);
+		return pNTHeader32->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC;
 	}
 	else
 	{
@@ -150,11 +150,11 @@ bool PeParser::hasDirectory(const int directoryIndex)
 {
 	if (isPE32())
 	{
-		return (pNTHeader32->OptionalHeader.DataDirectory[directoryIndex].VirtualAddress != 0);
+		return pNTHeader32->OptionalHeader.DataDirectory[directoryIndex].VirtualAddress != 0;
 	}
 	else if (isPE64())
 	{
-		return (pNTHeader64->OptionalHeader.DataDirectory[directoryIndex].VirtualAddress != 0);
+		return pNTHeader64->OptionalHeader.DataDirectory[directoryIndex].VirtualAddress != 0;
 	}
 	else
 	{
@@ -368,7 +368,7 @@ bool PeParser::getSectionName(const int sectionIndex, LPTSTR output, const int o
 
 	memcpy(sectionNameA, listPeSection[sectionIndex].sectionHeader.Name, IMAGE_SIZEOF_SHORT_NAME); //not null terminated
 
-	return (_stprintf_s(output, outputLen, TEXT("%s"), sectionNameA) != -1);
+	return _stprintf_s(output, outputLen, TEXT("%s"), sectionNameA) != -1;
 }
 
 WORD PeParser::getNumberOfSections()
@@ -457,14 +457,14 @@ DWORD PeParser::getSectionHeaderBasedFileSize()
 	//this is needed if the sections aren't sorted by their RawOffset (e.g. Petite)
 	for (WORD i = 0; i < getNumberOfSections(); i++)
 	{
-		if ((listPeSection[i].sectionHeader.PointerToRawData + listPeSection[i].sectionHeader.SizeOfRawData) > (lastRawOffset + lastRawSize))
+		if ((listPeSection[i].sectionHeader.PointerToRawData + listPeSection[i].sectionHeader.SizeOfRawData) > lastRawOffset + lastRawSize)
 		{
 			lastRawOffset = listPeSection[i].sectionHeader.PointerToRawData;
 			lastRawSize = listPeSection[i].sectionHeader.SizeOfRawData;
 		}
 	}
 
-	return (lastRawSize + lastRawOffset);
+	return lastRawSize + lastRawOffset;
 }
 
 DWORD PeParser::getSectionHeaderBasedSizeOfImage()
@@ -474,14 +474,14 @@ DWORD PeParser::getSectionHeaderBasedSizeOfImage()
 	//this is needed if the sections aren't sorted by their RawOffset (e.g. Petite)
 	for (WORD i = 0; i < getNumberOfSections(); i++)
 	{
-		if ((listPeSection[i].sectionHeader.VirtualAddress + listPeSection[i].sectionHeader.Misc.VirtualSize) > (lastVirtualOffset + lastVirtualSize))
+		if ((listPeSection[i].sectionHeader.VirtualAddress + listPeSection[i].sectionHeader.Misc.VirtualSize) > lastVirtualOffset + lastVirtualSize)
 		{
 			lastVirtualOffset = listPeSection[i].sectionHeader.VirtualAddress;
 			lastVirtualSize = listPeSection[i].sectionHeader.Misc.VirtualSize;
 		}
 	}
 
-	return (lastVirtualSize + lastVirtualOffset);
+	return lastVirtualSize + lastVirtualOffset;
 }
 
 bool PeParser::openFileHandle()
@@ -498,7 +498,7 @@ bool PeParser::openFileHandle()
 		}
 	}
 
-	return (hFile != INVALID_HANDLE_VALUE);
+	return hFile != INVALID_HANDLE_VALUE;
 }
 
 bool PeParser::openWriteFileHandle(LPCTSTR newFile)
@@ -512,7 +512,7 @@ bool PeParser::openWriteFileHandle(LPCTSTR newFile)
 		hFile = INVALID_HANDLE_VALUE;
 	}
 
-	return (hFile != INVALID_HANDLE_VALUE);
+	return hFile != INVALID_HANDLE_VALUE;
 }
 
 
@@ -644,7 +644,7 @@ bool PeParser::readSectionFrom(const DWORD_PTR readOffset, PeFileSection & peFil
 
 DWORD PeParser::isMemoryNotNull( BYTE * data, int dataSize )
 {
-	for (int i = (dataSize - 1); i >= 0; i--)
+	for (int i = dataSize - 1; i >= 0; i--)
 	{
 		if (data[i] != 0)
 		{
@@ -812,7 +812,7 @@ bool PeParser::readPeSectionFromFile(DWORD readOffset, PeFileSection & peFileSec
 
 	SetFilePointer(hFile, readOffset, 0, FILE_BEGIN);
 
-	return (ReadFile(hFile, peFileSection.data, peFileSection.dataSize, &bytesRead, 0) != FALSE);
+	return ReadFile(hFile, peFileSection.data, peFileSection.dataSize, &bytesRead, 0) != FALSE;
 }
 
 bool PeParser::readPeSectionFromProcess(DWORD_PTR readOffset, PeFileSection & peFileSection)
@@ -824,7 +824,7 @@ bool PeParser::readPeSectionFromProcess(DWORD_PTR readOffset, PeFileSection & pe
 
 DWORD PeParser::alignValue(DWORD badValue, DWORD alignTo)
 {
-	return (((badValue + alignTo - 1) / alignTo) * alignTo);
+	return (badValue + alignTo - 1) / alignTo * alignTo;
 }
 
 bool PeParser::addNewLastSection(LPCSTR sectionName, DWORD sectionSize, BYTE * sectionData)
@@ -972,7 +972,7 @@ void PeParser::fixPeHeader()
 			pNTHeader32->OptionalHeader.ImageBase = (DWORD)moduleBaseAddress;
 		}
 		
-		pNTHeader32->OptionalHeader.SizeOfHeaders = alignValue(dwSize + pNTHeader32->FileHeader.SizeOfOptionalHeader + (getNumberOfSections() * sizeof(IMAGE_SECTION_HEADER)), pNTHeader32->OptionalHeader.FileAlignment);
+		pNTHeader32->OptionalHeader.SizeOfHeaders = alignValue(dwSize + pNTHeader32->FileHeader.SizeOfOptionalHeader + getNumberOfSections() * sizeof(IMAGE_SECTION_HEADER), pNTHeader32->OptionalHeader.FileAlignment);
 	}
 	else
 	{
@@ -997,7 +997,7 @@ void PeParser::fixPeHeader()
 			pNTHeader64->OptionalHeader.ImageBase = moduleBaseAddress;
 		}
 
-		pNTHeader64->OptionalHeader.SizeOfHeaders = alignValue(dwSize + pNTHeader64->FileHeader.SizeOfOptionalHeader + (getNumberOfSections() * sizeof(IMAGE_SECTION_HEADER)), pNTHeader64->OptionalHeader.FileAlignment);
+		pNTHeader64->OptionalHeader.SizeOfHeaders = alignValue(dwSize + pNTHeader64->FileHeader.SizeOfOptionalHeader + getNumberOfSections() * sizeof(IMAGE_SECTION_HEADER), pNTHeader64->OptionalHeader.FileAlignment);
 	}
 
 	removeIatDirectory();
@@ -1076,7 +1076,7 @@ void PeParser::alignAllSectionHeaders()
 
 	std::sort(listPeSection.begin(), listPeSection.end(), PeFileSectionSortByPointerToRawData); //sort by PointerToRawData ascending
 
-	newFileSize = pDosHeader->e_lfanew + sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER) + pNTHeader32->FileHeader.SizeOfOptionalHeader + (getNumberOfSections() * sizeof(IMAGE_SECTION_HEADER));
+	newFileSize = pDosHeader->e_lfanew + sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER) + pNTHeader32->FileHeader.SizeOfOptionalHeader + getNumberOfSections() * sizeof(IMAGE_SECTION_HEADER);
 
 
 	for (WORD i = 0; i < getNumberOfSections(); i++)
@@ -1118,7 +1118,7 @@ bool PeParser::dumpProcess(DWORD_PTR modBase, DWORD_PTR entryPoint, LPCTSTR dump
 {
 	if (listPeSection.size() == sectionList.size())
 	{
-		for (int i = (getNumberOfSections() - 1); i >= 0; i--)
+		for (int i = getNumberOfSections() - 1; i >= 0; i--)
 		{
 			if (!sectionList[i].isDumped)
 			{
@@ -1196,7 +1196,7 @@ bool PeParser::hasOverlayData()
 	{
 		DWORD fileSize = (DWORD)ProcessAccessHelp::getFileSize(filename);
 
-		return (fileSize > getSectionHeaderBasedFileSize());
+		return fileSize > getSectionHeaderBasedFileSize();
 	}
 	else
 	{
