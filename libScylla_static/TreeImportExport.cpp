@@ -33,14 +33,14 @@ bool TreeImportExport::importTreeList(std::map<DWORD_PTR, ImportModuleThunk> & m
     tinyxml2::XMLDocument doc;
 	if(!readXmlFile(doc, xmlPath))
 	{
-		Scylla::windowLog.log(L"Load Tree :: Error parsing xml %S: %S\r\n", doc.Value(), doc.ErrorStr());
+		Scylla::Log->log(L"Load Tree :: Error parsing xml %S: %S\r\n", doc.Value(), doc.ErrorStr());
 		return false;
 	}
 
     tinyxml2::XMLElement * targetElement = doc.FirstChildElement();
 	if (!targetElement)
 	{
-		Scylla::windowLog.log(L"Load Tree :: Error getting first child element in xml %S\r\n", doc.Value());
+		Scylla::Log->log(L"Load Tree :: Error getting first child element in xml %S\r\n", doc.Value());
 		return false;
 	}
 

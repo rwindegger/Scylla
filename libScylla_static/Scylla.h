@@ -14,8 +14,6 @@
 #define APPNAME TEXT(APPNAME_S)
 #define APPVERSION TEXT(APPVERSION_S)
 
-#define CONSOLE_LOG
-
 /* Scylla current context. */
 typedef size_t SCY_HANDLE, *PSCY_HANDLE;
 
@@ -25,7 +23,7 @@ public:
     static const wchar_t* get_version_w();
     static const char* get_version_a();
     static const DWORD get_version();
-    static void initialize(bool isStandalone);
+    static void initialize(Logger *log, bool isStandalone);
     static bool initialize_context(PSCY_HANDLE phCtxt, DWORD_PTR TargetProcessPid);
     static bool deinitialize_context(SCY_HANDLE hCtxt);
     static int iat_search(SCY_HANDLE hScyllaContext, DWORD_PTR * iatStart, DWORD * iatSize, DWORD_PTR searchStart, BOOL advancedSearch);
@@ -34,11 +32,8 @@ public:
     static PluginLoader plugins;
 
     static ProcessLister processLister;
-#ifndef CONSOLE_LOG    
-    static ListboxLog windowLog;
-#else
-    static ConsoleLogger windowLog;
-#endif
+
+    static Logger *Log;
 
 #ifndef DEBUG_COMMENTS
     static DummyLogger debugLog;

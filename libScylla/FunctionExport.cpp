@@ -145,7 +145,7 @@ BOOL  ScyllaDumpProcessExW(DWORD_PTR pid, const WCHAR * fileResult)
 
     process.entryPoint = ProcessAccessHelp::getEntryPointFromFile(process.fullPath);
 
-    Scylla::windowLog.log(L"%s ImageBase 0x" PRINTF_DWORD_PTR_FULL L" ImageSize 0x%08X EntryPoint 0x" PRINTF_DWORD_PTR_FULL, process.filename, process.imageBase, process.imageSize, process.entryPoint + process.imageBase);
+    Scylla::Log->log(L"%s ImageBase 0x" PRINTF_DWORD_PTR_FULL L" ImageSize 0x%08X EntryPoint 0x" PRINTF_DWORD_PTR_FULL, process.filename, process.imageBase, process.imageSize, process.entryPoint + process.imageBase);
 
     PeParser peFileD(process.imageBase, true);
 
@@ -171,26 +171,26 @@ BOOL  ScyllaDumpProcessExW(DWORD_PTR pid, const WCHAR * fileResult)
 
                     if (Scylla::config[UPDATE_HEADER_CHECKSUM].isTrue())
                     {
-                        Scylla::windowLog.log(L"Generating PE header checksum");
+                        Scylla::Log->log(L"Generating PE header checksum");
                         if (!PeParser::updatePeHeaderChecksum(fileResult, newSize))
                         {
-                            Scylla::windowLog.log(L"Generating PE header checksum FAILED!");
+                            Scylla::Log->log(L"Generating PE header checksum FAILED!");
                         }
                     }
 
-                    Scylla::windowLog.log(L"Rebuild success %s", fileResult);
-                    Scylla::windowLog.log(L"-> Old file size 0x%08X new file size 0x%08X (%d %%)", fileSize, newSize, ((newSize * 100) / fileSize));
+                    Scylla::Log->log(L"Rebuild success %s", fileResult);
+                    Scylla::Log->log(L"-> Old file size 0x%08X new file size 0x%08X (%d %%)", fileSize, newSize, ((newSize * 100) / fileSize));
                 }
                 else
                 {
-                    Scylla::windowLog.log(L"Rebuild failed, cannot save file %s", fileResult);
+                    Scylla::Log->log(L"Rebuild failed, cannot save file %s", fileResult);
                 }
             }
         }
     }
     else
     {
-        Scylla::windowLog.log(L"Error: Invalid PE file or invalid PE header. Try reading PE header from disk/process.");
+        Scylla::Log->log(L"Error: Invalid PE file or invalid PE header. Try reading PE header from disk/process.");
     }
 
     ScyllaUnInitContext(hScyllaContext);

@@ -15,7 +15,7 @@ void DllInjectionPlugin::injectPlugin(Plugin & plugin, std::map<DWORD_PTR, Impor
 
 	if (numberOfUnresolvedImports == 0)
 	{
-		Scylla::windowLog.log(L"No unresolved Imports");
+		Scylla::Log->log(L"No unresolved Imports");
 		return;
 	}
 
@@ -42,10 +42,10 @@ void DllInjectionPlugin::injectPlugin(Plugin & plugin, std::map<DWORD_PTR, Impor
 	HMODULE hDll = dllInjection(hProcess, plugin.fullpath);
 	if (hDll)
 	{
-		Scylla::windowLog.log(L"Plugin injection was successful");
+		Scylla::Log->log(L"Plugin injection was successful");
 		if (!unloadDllInProcess(hProcess,hDll))
 		{
-			Scylla::windowLog.log(L"Plugin unloading failed");
+			Scylla::Log->log(L"Plugin unloading failed");
 		}
 		lpViewOfFile = MapViewOfFile(hMapFile, FILE_MAP_ALL_ACCESS, 0, 0, 0);
 
@@ -58,7 +58,7 @@ void DllInjectionPlugin::injectPlugin(Plugin & plugin, std::map<DWORD_PTR, Impor
 	}
 	else
 	{
-		Scylla::windowLog.log(L"Plugin injection failed");
+		Scylla::Log->log(L"Plugin injection failed");
 	}
 
 	closeAllHandles();
@@ -217,25 +217,25 @@ void DllInjectionPlugin::handlePluginResults( PSCYLLA_EXCHANGE scyllaExchange, s
 	switch (scyllaExchange->status)
 	{
 	case SCYLLA_STATUS_SUCCESS:
-		Scylla::windowLog.log(L"Plugin was successful");
+		Scylla::Log->log(L"Plugin was successful");
 		updateImportsWithPluginResult(unresImp, moduleList);
 		break;
 	case SCYLLA_STATUS_UNKNOWN_ERROR:
-		Scylla::windowLog.log(L"Plugin reported Unknown Error");
+		Scylla::Log->log(L"Plugin reported Unknown Error");
 		break;
 	case SCYLLA_STATUS_UNSUPPORTED_PROTECTION:
-		Scylla::windowLog.log(L"Plugin detected unknown protection");
+		Scylla::Log->log(L"Plugin detected unknown protection");
 		updateImportsWithPluginResult(unresImp, moduleList);
 		break;
 	case SCYLLA_STATUS_IMPORT_RESOLVING_FAILED:
-		Scylla::windowLog.log(L"Plugin import resolving failed");
+		Scylla::Log->log(L"Plugin import resolving failed");
 		updateImportsWithPluginResult(unresImp, moduleList);
 		break;
 	case SCYLLA_STATUS_MAPPING_FAILED:
-		Scylla::windowLog.log(L"Plugin file mapping failed");
+		Scylla::Log->log(L"Plugin file mapping failed");
 		break;
 	default:
-		Scylla::windowLog.log(L"Plugin failed without reason");
+		Scylla::Log->log(L"Plugin failed without reason");
 	}
 }
 

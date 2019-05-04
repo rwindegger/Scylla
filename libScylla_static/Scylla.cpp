@@ -19,11 +19,7 @@ FileLog Scylla::debugLog(DEBUG_LOG_FILENAME);
 #endif /* DEBUG_COMMENTS */
 
 const WCHAR Scylla::DEBUG_LOG_FILENAME[] = L"Scylla_debug.log";
-#ifndef CONSOLE_LOG
-ListboxLog Scylla::windowLog;
-#else
-ConsoleLogger Scylla::windowLog;
-#endif
+Logger* Scylla::Log;
 
 // Internal structure of a SCY_HANDLE
 typedef struct SCY_CONTEXT_T_
@@ -47,8 +43,10 @@ const DWORD Scylla::get_version()
     return APPVERSIONDWORD;
 }
 
-void Scylla::initialize(bool isStandalone)
+void Scylla::initialize(Logger *log, bool isStandalone)
 {
+    Log = log;
+
     if(isStandalone)
     {
         config.loadConfiguration();

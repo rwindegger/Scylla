@@ -34,7 +34,7 @@ void ApiReader::readApisFromModuleList()
 			maxValidAddress = moduleList[i].modBaseAddr + moduleList[i].modBaseSize;
 		}
 
-		Scylla::windowLog.log(L"Module parsing: %s",moduleList[i].fullPath);
+		Scylla::Log->log(L"Module parsing: %s",moduleList[i].fullPath);
 
 		if (!moduleList[i].isAlreadyParsed)
 		{
@@ -528,12 +528,12 @@ bool ApiReader::isPeAndExportTableValid(PIMAGE_NT_HEADERS pNtHeader)
 {
 	if (pNtHeader->Signature != IMAGE_NT_SIGNATURE)
 	{
-		Scylla::windowLog.log(L"-> IMAGE_NT_SIGNATURE doesn't match.");
+        Scylla::Log->log(L"-> IMAGE_NT_SIGNATURE doesn't match.");
 		return false;
 	}
 	else if ((pNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress == 0) || (pNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size == 0))
 	{
-		Scylla::windowLog.log(L"-> No export table.");
+        Scylla::Log->log(L"-> No export table.");
 		return false;
 	}
 	else
@@ -731,11 +731,11 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 	}
 
 	// There is a equal number of legit imports going by the same virtual address => log every one of them and return the last one.
-	Scylla::windowLog.log(L"getApiByVirtualAddress :: There is a api resolving bug, VA: " PRINTF_DWORD_PTR_FULL, virtualAddress);
+    Scylla::Log->log(L"getApiByVirtualAddress :: There is a api resolving bug, VA: " PRINTF_DWORD_PTR_FULL, virtualAddress);
 	for (size_t c = 0; c < countDuplicates; c++, it1++)
 	{
 		apiFound = (ApiInfo *)((*it1).second);
-		Scylla::windowLog.log(L"-> Possible API: %S ord: %d ", apiFound->name, apiFound->ordinal);
+        Scylla::Log->log(L"-> Possible API: %S ord: %d ", apiFound->name, apiFound->ordinal);
 	}
 
 	return (ApiInfo *) apiFound;
@@ -908,7 +908,7 @@ void ApiReader::parseIAT(DWORD_PTR addressIAT, BYTE * iatBuffer, SIZE_T size)
 
 	for (SIZE_T i = 0; i < sizeIAT; i++)
 	{
-		//Scylla::windowLog.log(L"%08X %08X %d von %d", addressIAT + (DWORD_PTR)&pIATAddress[i] - (DWORD_PTR)iatBuffer, pIATAddress[i],i,sizeIAT);
+		//Scylla::Log->log(L"%08X %08X %d von %d", addressIAT + (DWORD_PTR)&pIATAddress[i] - (DWORD_PTR)iatBuffer, pIATAddress[i],i,sizeIAT);
 
         if (!isInvalidMemoryForIat(pIATAddress[i]))
         {
@@ -924,7 +924,7 @@ void ApiReader::parseIAT(DWORD_PTR addressIAT, BYTE * iatBuffer, SIZE_T size)
 				Scylla::debugLog.log(L"apiFound %p address %p", apiFound, pIATAddress[i]);
                 if (apiFound == 0)
                 {
-                    Scylla::windowLog.log(L"getApiByVirtualAddress :: No Api found " PRINTF_DWORD_PTR_FULL, pIATAddress[i]);
+                    Scylla::Log->log(L"getApiByVirtualAddress :: No Api found " PRINTF_DWORD_PTR_FULL, pIATAddress[i]);
                 }
                 if (apiFound == (ApiInfo *)1)
                 {
@@ -962,7 +962,7 @@ void ApiReader::parseIAT(DWORD_PTR addressIAT, BYTE * iatBuffer, SIZE_T size)
 
 	}
 
-	Scylla::windowLog.log(L"IAT parsing finished, found %d valid APIs, missed %d APIs", countApiFound, countApiNotFound);
+    Scylla::Log->log(L"IAT parsing finished, found %d valid APIs, missed %d APIs", countApiFound, countApiNotFound);
 }
 
 void ApiReader::addFoundApiToModuleList(DWORD_PTR iatAddressVA, ApiInfo * apiFound, bool isNewModule, bool isSuspect)

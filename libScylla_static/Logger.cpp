@@ -5,8 +5,6 @@
 #include <atlbase.h> 
 #include <atlconv.h>
 
-extern bool IsDllMode;
-
 void Logger::log(const WCHAR * format, ...)
 {
 	static WCHAR buf[300];
@@ -87,16 +85,4 @@ void FileLog::write(const WCHAR * str)
 		fputws(L"\r\n", pFile);
 		fclose(pFile);
 	}
-}
-
-void ListboxLog::setWindow(HWND window)
-{
-	this->window = window;
-}
-
-void ListboxLog::write(const WCHAR* str)
-{	
-	LRESULT index = SendMessageW(window, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(str));
-	SendMessage(window, LB_SETCURSEL, index, 0);
-	UpdateWindow(window);
 }

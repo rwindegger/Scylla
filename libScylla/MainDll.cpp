@@ -4,12 +4,13 @@
 
 HINSTANCE hDllModule = 0;
 
+ConsoleLogger logger;
+
 void InitializeDll(HINSTANCE hinstDLL)
 {
 	hDllModule = hinstDLL;
-	Scylla::initialize(false);
+	Scylla::initialize(&logger, false);
 }
-
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {

@@ -16,6 +16,7 @@
 #include "DonateGui.h"
 #include "OptionsGui.h"
 #include "TreeImportExport.h"
+#include "ListboxLog.h"
 
 // Globals
 CAppModule _Module;
@@ -27,6 +28,7 @@ const WCHAR MainGui::filterTxt[]    = L"Text file (*.txt)\0*.txt\0All files\0*.*
 const WCHAR MainGui::filterXml[]    = L"XML file (*.xml)\0*.xml\0All files\0*.*\0";
 const WCHAR MainGui::filterMem[]    = L"MEM file (*.mem)\0*.mem\0All files\0*.*\0";
 
+ListboxLog logger;
 
 int InitializeGui(HINSTANCE hInstance, LPARAM param)
 {
@@ -34,12 +36,10 @@ int InitializeGui(HINSTANCE hInstance, LPARAM param)
 
 	AtlInitCommonControls(ICC_LISTVIEW_CLASSES | ICC_TREEVIEW_CLASSES);
 
-	Scylla::initialize(true);
+	Scylla::initialize(&logger, true);
 
 	HRESULT hRes = _Module.Init(NULL, hInstance);
 	ATLASSERT(SUCCEEDED(hRes));
-
-
 
 	int nRet = 0;
 	// BLOCK: Run application
@@ -156,8 +156,8 @@ void MainGui::InitDllStartWithPreSelect( PGUI_DLL_PARAMETER guiParam )
 
 				EditOEPAddress.SetValue(modEntryPoint + ProcessAccessHelp::targetImageBase);
 
-				Scylla::windowLog.log(L"->>> Module %s selected.", ProcessAccessHelp::selectedModule->getFilename());
-				Scylla::windowLog.log(L"Imagebase: " PRINTF_DWORD_PTR_FULL L" Size: %08X EntryPoint: %08X", ProcessAccessHelp::selectedModule->modBaseAddr, ProcessAccessHelp::selectedModule->modBaseSize, modEntryPoint);
+				Scylla::Log->log(L"->>> Module %s selected.", ProcessAccessHelp::selectedModule->getFilename());
+				Scylla::Log->log(L"Imagebase: " PRINTF_DWORD_PTR_FULL L" Size: %08X EntryPoint: %08X", ProcessAccessHelp::selectedModule->modBaseAddr, ProcessAccessHelp::selectedModule->modBaseSize, modEntryPoint);
 			}
 		}
 	}
@@ -185,7 +185,7 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	DoDataExchange(); // attach controls
 	DlgResize_Init(true, true); // init CDialogResize
 
-	Scylla::windowLog.setWindow(ListLog);
+	logger.setWindow(ListLog);
 
 	appendPluginListToMenu(hMenuImports.GetSubMenu(0));
 	appendPluginListToMenu(CMenuHandle(GetMenu()).GetSubMenu(MenuImportsOffsetTrace));
@@ -586,8 +586,8 @@ void MainGui::pickDllActionHandler()
 
 		EditOEPAddress.SetValue(modEntryPoint + ProcessAccessHelp::targetImageBase);
 
-		Scylla::windowLog.log(L"->>> Module %s selected.", ProcessAccessHelp::selectedModule->getFilename());
-		Scylla::windowLog.log(L"Imagebase: " PRINTF_DWORD_PTR_FULL L" Size: %08X EntryPoint: %08X", ProcessAccessHelp::selectedModule->modBaseAddr, ProcessAccessHelp::selectedModule->modBaseSize, modEntryPoint);
+		Scylla::Log->log(L"->>> Module %s selected.", ProcessAccessHelp::selectedModule->getFilename());
+		Scylla::Log->log(L"Imagebase: " PRINTF_DWORD_PTR_FULL L" Size: %08X EntryPoint: %08X", ProcessAccessHelp::selectedModule->modBaseAddr, ProcessAccessHelp::selectedModule->modBaseSize, modEntryPoint);
 	}
 	else
 	{
@@ -649,13 +649,13 @@ void MainGui::processSelectedActionHandler(int index)
 	clearImportsActionHandler();
 	Scylla::deinitialize_context(hProcessContext);
 
-	Scylla::windowLog.log(L"Analyzing %s", process.fullPath);
+	Scylla::Log->log(L"Analyzing %s", process.fullPath);
 
 	// Open Scylla handle on current process
 	if (!Scylla::initialize_context(&hProcessContext, process.PID))
 	{
 		enableDialogControls(FALSE);
-		Scylla::windowLog.log(L"Error: Cannot open process handle.");
+		Scylla::Log->log(L"Error: Cannot open process handle.");
 		updateStatusBar();
 		return;
 	}
@@ -664,7 +664,7 @@ void MainGui::processSelectedActionHandler(int index)
 
 	apiReader.readApisFromModuleList();
 
-	Scylla::windowLog.log(L"Loading modules done.");
+	Scylla::Log->log(L"Loading modules done.");
 
 	//TODO improve
 	ProcessAccessHelp::selectedModule = 0;
@@ -675,7 +675,7 @@ void MainGui::processSelectedActionHandler(int index)
 	process.imageSize = (DWORD)ProcessAccessHelp::targetSizeOfImage;
 
 
-	Scylla::windowLog.log(L"Imagebase: " PRINTF_DWORD_PTR_FULL L" Size: %08X", process.imageBase, process.imageSize);
+	Scylla::Log->log(L"Imagebase: " PRINTF_DWORD_PTR_FULL L" Size: %08X", process.imageBase, process.imageSize);
 
 	process.entryPoint = ProcessAccessHelp::getEntryPointFromFile(process.fullPath);
 
@@ -824,7 +824,7 @@ void MainGui::loadTreeActionHandler()
 
 		if(!treeIO.importTreeList(importsHandling.moduleList, &addrOEP, &addrIAT, &sizeIAT))
 		{
-			Scylla::windowLog.log(L"Loading tree file failed %s", selectedFilePath);
+			Scylla::Log->log(L"Loading tree file failed %s", selectedFilePath);
 			MessageBox(L"Loading tree file failed.", L"Failure", MB_ICONERROR);
 		}
 		else
@@ -836,9 +836,9 @@ void MainGui::loadTreeActionHandler()
 			importsHandling.displayAllImports();
 			updateStatusBar();
 
-			Scylla::windowLog.log(L"Loaded tree file %s", selectedFilePath);
-			Scylla::windowLog.log(L"-> OEP: " PRINTF_DWORD_PTR_FULL, addrOEP);
-			Scylla::windowLog.log(L"-> IAT: " PRINTF_DWORD_PTR_FULL L" Size: " PRINTF_DWORD_PTR, addrIAT, sizeIAT);
+			Scylla::Log->log(L"Loaded tree file %s", selectedFilePath);
+			Scylla::Log->log(L"-> OEP: " PRINTF_DWORD_PTR_FULL, addrOEP);
+			Scylla::Log->log(L"-> IAT: " PRINTF_DWORD_PTR_FULL L" Size: " PRINTF_DWORD_PTR, addrIAT, sizeIAT);
 		}
 	}
 }
@@ -859,12 +859,12 @@ void MainGui::saveTreeActionHandler()
 
 		if(!treeIO.exportTreeList(importsHandling.moduleList, selectedProcess, addrOEP, addrIAT, sizeIAT))
 		{
-			Scylla::windowLog.log(L"Saving tree file failed %s", selectedFilePath);
+			Scylla::Log->log(L"Saving tree file failed %s", selectedFilePath);
 			MessageBox(L"Saving tree file failed.", L"Failure", MB_ICONERROR);
 		}
 		else
 		{
-			Scylla::windowLog.log(L"Saved tree file %s", selectedFilePath);
+			Scylla::Log->log(L"Saved tree file %s", selectedFilePath);
 		}
 	}
 }
@@ -890,11 +890,11 @@ void MainGui::iatAutosearchActionHandler()
 	// Normal search
 	if (SCY_ERROR_SUCCESS == Scylla::iat_search(hProcessContext, &addressIAT, &sizeIAT, searchAddress, false))
 	{
-		Scylla::windowLog.log(L"IAT Search Nor: IAT VA " PRINTF_DWORD_PTR_FULL L" RVA " PRINTF_DWORD_PTR_FULL L" Size 0x%04X (%d)", addressIAT, addressIAT - ProcessAccessHelp::targetImageBase, sizeIAT, sizeIAT);
+		Scylla::Log->log(L"IAT Search Nor: IAT VA " PRINTF_DWORD_PTR_FULL L" RVA " PRINTF_DWORD_PTR_FULL L" Size 0x%04X (%d)", addressIAT, addressIAT - ProcessAccessHelp::targetImageBase, sizeIAT, sizeIAT);
 	}
 	else
 	{
-		Scylla::windowLog.log(L"IAT Search Nor: IAT not found at OEP " PRINTF_DWORD_PTR_FULL L"!", searchAddress);
+		Scylla::Log->log(L"IAT Search Nor: IAT not found at OEP " PRINTF_DWORD_PTR_FULL L"!", searchAddress);
 	}
 
 	// optional advanced search
@@ -903,11 +903,11 @@ void MainGui::iatAutosearchActionHandler()
 	{
 		if (SCY_ERROR_SUCCESS == Scylla::iat_search(hProcessContext, &addressIATAdv, &sizeIATAdv, searchAddress, true))
 		{
-			Scylla::windowLog.log(L"IAT Search Adv: IAT VA " PRINTF_DWORD_PTR_FULL L" RVA " PRINTF_DWORD_PTR_FULL L" Size 0x%04X (%d)", addressIATAdv, addressIATAdv - ProcessAccessHelp::targetImageBase, sizeIATAdv, sizeIATAdv);
+			Scylla::Log->log(L"IAT Search Adv: IAT VA " PRINTF_DWORD_PTR_FULL L" RVA " PRINTF_DWORD_PTR_FULL L" Size 0x%04X (%d)", addressIATAdv, addressIATAdv - ProcessAccessHelp::targetImageBase, sizeIATAdv, sizeIATAdv);
 		}
 		else
 		{
-			Scylla::windowLog.log(L"IAT Search Adv: IAT not found at OEP " PRINTF_DWORD_PTR_FULL L"!", searchAddress);
+			Scylla::Log->log(L"IAT Search Adv: IAT not found at OEP " PRINTF_DWORD_PTR_FULL L"!", searchAddress);
 		}
 	}
 
@@ -965,15 +965,15 @@ void MainGui::getImportsActionHandler()
 			iatReferenceScan.apiReader = &apiReader;
 			iatReferenceScan.startScan(ProcessAccessHelp::targetImageBase, (DWORD)ProcessAccessHelp::targetSizeOfImage, addressIAT, sizeIAT);
 
-			Scylla::windowLog.log(L"DIRECT IMPORTS - Found %d possible direct imports with %d unique APIs!", iatReferenceScan.numberOfFoundDirectImports(), iatReferenceScan.numberOfFoundUniqueDirectImports());
+			Scylla::Log->log(L"DIRECT IMPORTS - Found %d possible direct imports with %d unique APIs!", iatReferenceScan.numberOfFoundDirectImports(), iatReferenceScan.numberOfFoundUniqueDirectImports());
 
 			if (iatReferenceScan.numberOfFoundDirectImports() > 0)
 			{
 				if (iatReferenceScan.numberOfDirectImportApisNotInIat() > 0)
 				{
-					Scylla::windowLog.log(L"DIRECT IMPORTS - Found %d additional api addresses!", iatReferenceScan.numberOfDirectImportApisNotInIat());
+					Scylla::Log->log(L"DIRECT IMPORTS - Found %d additional api addresses!", iatReferenceScan.numberOfDirectImportApisNotInIat());
 					DWORD sizeIatNew = iatReferenceScan.addAdditionalApisToList();
-					Scylla::windowLog.log(L"DIRECT IMPORTS - Old IAT size 0x%08X new IAT size 0x%08X!", sizeIAT, sizeIatNew);
+					Scylla::Log->log(L"DIRECT IMPORTS - Old IAT size 0x%08X new IAT size 0x%08X!", sizeIAT, sizeIatNew);
 					EditIATSize.SetValue(sizeIatNew);
 					importsHandling.scanAndFixModuleList();
 					importsHandling.displayAllImports();
@@ -998,7 +998,7 @@ void MainGui::getImportsActionHandler()
 						}
 
 						iatReferenceScan.patchDirectImportsMemory(isAfter);
-						Scylla::windowLog.log(L"DIRECT IMPORTS - Patched! Please dump target.");
+						Scylla::Log->log(L"DIRECT IMPORTS - Patched! Please dump target.");
 					}
 
 				}
@@ -1009,7 +1009,7 @@ void MainGui::getImportsActionHandler()
 
 		if (isIATOutsidePeImage(addressIAT))
 		{
-			Scylla::windowLog.log(L"WARNING! IAT is not inside the PE image, requires rebasing!");
+			Scylla::Log->log(L"WARNING! IAT is not inside the PE image, requires rebasing!");
 		}
 	}
 }
@@ -1183,11 +1183,11 @@ void MainGui::dumpMemoryActionHandler()
 		{
 			if (ProcessAccessHelp::writeMemoryToNewFile(selectedFilePath,dlgDumpMemory.dumpedMemorySize,dlgDumpMemory.dumpedMemory))
 			{
-				Scylla::windowLog.log(L"Memory dump saved %s", selectedFilePath);
+				Scylla::Log->log(L"Memory dump saved %s", selectedFilePath);
 			}
 			else
 			{
-				Scylla::windowLog.log(L"Error! Cannot write memory dump to disk");
+				Scylla::Log->log(L"Error! Cannot write memory dump to disk");
 			}
 		}
 	}
@@ -1245,11 +1245,11 @@ void MainGui::dumpSectionActionHandler()
 
 			if (peFile->dumpProcess(dlgDumpSection.imageBase, dlgDumpSection.entryPoint, selectedFilePath, sectionList))
 			{
-				Scylla::windowLog.log(L"Dump success %s", selectedFilePath);
+				Scylla::Log->log(L"Dump success %s", selectedFilePath);
 			}
 			else
 			{
-				Scylla::windowLog.log(L"Error: Cannot dump image.");
+				Scylla::Log->log(L"Error: Cannot dump image.");
 				MessageBox(L"Cannot dump image.", L"Failure", MB_ICONERROR);
 			}
 
@@ -1317,17 +1317,17 @@ void MainGui::dumpActionHandler()
 		{
 			if (peFile->dumpProcess(modBase, entrypoint, selectedFilePath))
 			{
-				Scylla::windowLog.log(L"Dump success %s", selectedFilePath);
+				Scylla::Log->log(L"Dump success %s", selectedFilePath);
 			}
 			else
 			{
-				Scylla::windowLog.log(L"Error: Cannot dump image.");
+				Scylla::Log->log(L"Error: Cannot dump image.");
 				MessageBox(L"Cannot dump image.", L"Failure", MB_ICONERROR);
 			}
 		}
 		else
 		{
-			Scylla::windowLog.log(L"Error: Invalid PE file or invalid PE header. Try reading PE header from disk/process.");
+			Scylla::Log->log(L"Error: Invalid PE file or invalid PE header. Try reading PE header from disk/process.");
 		}
 
 		delete peFile;
@@ -1346,7 +1346,7 @@ void MainGui::peRebuildActionHandler()
 		{
 			if (!ProcessAccessHelp::createBackupFile(selectedFilePath))
 			{
-				Scylla::windowLog.log(L"Creating backup file failed %s", selectedFilePath);
+				Scylla::Log->log(L"Creating backup file failed %s", selectedFilePath);
 			}
 		}
 
@@ -1356,7 +1356,7 @@ void MainGui::peRebuildActionHandler()
 
 		if (!peFile.isValidPeFile())
 		{
-			Scylla::windowLog.log(L"This is not a valid PE file %s", selectedFilePath);
+			Scylla::Log->log(L"This is not a valid PE file %s", selectedFilePath);
 			MessageBox(L"Not a valid PE file.", L"Failure", MB_ICONERROR);
 			return;
 		}
@@ -1379,25 +1379,25 @@ void MainGui::peRebuildActionHandler()
 
 				if (Scylla::config[UPDATE_HEADER_CHECKSUM].isTrue())
 				{
-					Scylla::windowLog.log(L"Generating PE header checksum");
+					Scylla::Log->log(L"Generating PE header checksum");
 					if (!PeParser::updatePeHeaderChecksum(selectedFilePath, newSize))
 					{
-						Scylla::windowLog.log(L"Generating PE header checksum FAILED!");
+						Scylla::Log->log(L"Generating PE header checksum FAILED!");
 					}
 				}
 
-				Scylla::windowLog.log(L"Rebuild success %s", selectedFilePath);
-				Scylla::windowLog.log(L"-> Old file size 0x%08X new file size 0x%08X (%d %%)", fileSize, newSize, ((newSize * 100) / fileSize) );
+				Scylla::Log->log(L"Rebuild success %s", selectedFilePath);
+				Scylla::Log->log(L"-> Old file size 0x%08X new file size 0x%08X (%d %%)", fileSize, newSize, ((newSize * 100) / fileSize) );
 			}
 			else
 			{
-				Scylla::windowLog.log(L"Rebuild failed, cannot save file %s", selectedFilePath);
+				Scylla::Log->log(L"Rebuild failed, cannot save file %s", selectedFilePath);
 				MessageBox(L"Rebuild failed. Cannot save file.", L"Failure", MB_ICONERROR);
 			}
 		}
 		else
 		{
-			Scylla::windowLog.log(L"Rebuild failed, cannot read file %s", selectedFilePath);
+			Scylla::Log->log(L"Rebuild failed, cannot read file %s", selectedFilePath);
 			MessageBox(L"Rebuild failed. Cannot read file.", L"Failure", MB_ICONERROR);
 		}
 
@@ -1411,7 +1411,7 @@ void MainGui::dumpFixActionHandler()
 
 	if (TreeImports.GetCount() < 2)
 	{
-		Scylla::windowLog.log(L"Nothing to rebuild");
+		Scylla::Log->log(L"Nothing to rebuild");
 		return;
 	}
 
@@ -1486,11 +1486,11 @@ void MainGui::dumpFixActionHandler()
 
 		if (importRebuild.rebuildImportTable(newFilePath, importsHandling.moduleList))
 		{
-			Scylla::windowLog.log(L"Import Rebuild success %s", newFilePath);
+			Scylla::Log->log(L"Import Rebuild success %s", newFilePath);
 		}
 		else
 		{
-			Scylla::windowLog.log(L"Import Rebuild failed %s", selectedFilePath);
+			Scylla::Log->log(L"Import Rebuild failed %s", selectedFilePath);
 			MessageBox(L"Import Rebuild failed", L"Failure", MB_ICONERROR);
 		}
 	}
@@ -1580,17 +1580,17 @@ void MainGui::dllInjectActionHandler()
 		{
 			if (!dllInjection.unloadDllInProcess(ProcessAccessHelp::hProcess, hMod))
 			{
-				Scylla::windowLog.log(L"DLL unloading failed, target %s", selectedFilePath);
+				Scylla::Log->log(L"DLL unloading failed, target %s", selectedFilePath);
 			}
 		}
 
 		if (hMod)
 		{
-			Scylla::windowLog.log(L"DLL Injection was successful, target %s", selectedFilePath);
+			Scylla::Log->log(L"DLL Injection was successful, target %s", selectedFilePath);
 		}
 		else
 		{
-			Scylla::windowLog.log(L"DLL Injection failed, target %s", selectedFilePath);
+			Scylla::Log->log(L"DLL Injection failed, target %s", selectedFilePath);
 		}
 	}
 }
@@ -1679,12 +1679,12 @@ void MainGui::checkSuspendProcess()
 	{
 		if (!ProcessAccessHelp::suspendProcess())
 		{
-			Scylla::windowLog.log(L"Error: Cannot suspend process.");
+			Scylla::Log->log(L"Error: Cannot suspend process.");
 		}
 		else
 		{
 			isProcessSuspended = true;
-			Scylla::windowLog.log(L"Suspending process successful, please resume manually.");
+			Scylla::Log->log(L"Suspending process successful, please resume manually.");
 		}
 	}
 }
