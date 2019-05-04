@@ -7,30 +7,28 @@
 
 HMODULE DllInjection::dllInjection(HANDLE hProcess, LPCTSTR filename)
 {
-    LPVOID remoteMemory = 0;
-    SIZE_T memorySize = 0;
-    HANDLE hThread = 0;
-    HMODULE hModule = 0;
+    SIZE_T memorySize;
+    HMODULE hModule = nullptr;
 
     memorySize = (_tcslen(filename) + 1) * sizeof(TCHAR);
 
     if (memorySize < 7)
     {
         Scylla::debugLog.log(TEXT("dllInjection :: memorySize invalid"));
-        return 0;
+        return nullptr;
     }
 
-    remoteMemory = VirtualAllocEx(hProcess, NULL, memorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    const LPCVOID remoteMemory = VirtualAllocEx(hProcess, nullptr, memorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
-    if (remoteMemory == 0)
+    if (remoteMemory == nullptr)
     {
         Scylla::debugLog.log(TEXT("dllInjection :: VirtualAllocEx failed 0x%X"), GetLastError());
-        return 0;
+        return nullptr;
     }
 
     if (WriteProcessMemory(hProcess, remoteMemory, filename, memorySize, &memorySize))
     {
-        hThread = startRemoteThread(hProcess, LoadLibraryW, remoteMemory);
+        const auto hThread = startRemoteThread(hProcess, reinterpret_cast<LPVOID>(LoadLibraryW), remoteMemory);
 
         if (hThread)
         {
@@ -69,18 +67,15 @@ HMODULE DllInjection::dllInjection(HANDLE hProcess, LPCTSTR filename)
 
 bool DllInjection::unloadDllInProcess(HANDLE hProcess, HMODULE hModule)
 {
-    HANDLE hThread = 0;
-    DWORD lpThreadId = 0;
-    BOOL freeLibraryRet = 0;
+    BOOL freeLibraryRet;
 
-
-    hThread = startRemoteThread(hProcess, FreeLibrary, hModule);
+    const auto hThread = startRemoteThread(hProcess, reinterpret_cast<LPVOID>(FreeLibrary), hModule);
 
     if (hThread)
     {
         WaitForSingleObject(hThread, INFINITE);
 
-        if (!GetExitCodeThread(hThread, (LPDWORD)&freeLibraryRet))
+        if (!GetExitCodeThread(hThread, reinterpret_cast<LPDWORD>(&freeLibraryRet)))
         {
             Scylla::debugLog.log(TEXT("unloadDllInProcess :: GetExitCodeThread failed 0x%X"), GetLastError());
             freeLibraryRet = 0;
@@ -98,14 +93,14 @@ bool DllInjection::unloadDllInProcess(HANDLE hProcess, HMODULE hModule)
 
 HMODULE DllInjection::getModuleHandleByFilename(HANDLE hProcess, LPCTSTR filename)
 {
-    HMODULE * hMods = 0;
-    HMODULE hModResult = 0;
+    HMODULE * hMods = nullptr;
+    HMODULE hModResult = nullptr;
     TCHAR target[MAX_PATH];
 
-    DWORD numHandles = ProcessAccessHelp::getModuleHandlesFromProcess(hProcess, &hMods);
+    const DWORD numHandles = ProcessAccessHelp::getModuleHandlesFromProcess(hProcess, &hMods);
     if (numHandles == 0)
     {
-        return 0;
+        return nullptr;
     }
 
     for (DWORD i = 0; i < numHandles; i++)
@@ -145,7 +140,7 @@ void DllInjection::specialThreadSettings(HANDLE hThread)
 
         if (NativeWinApi::NtSetInformationThread)
         {
-            if (NativeWinApi::NtSetInformationThread(hThread, ThreadHideFromDebugger, 0, 0) != STATUS_SUCCESS)
+            if (NativeWinApi::NtSetInformationThread(hThread, ThreadHideFromDebugger, nullptr, 0) != STATUS_SUCCESS)
             {
                 Scylla::debugLog.log(TEXT("specialThreadSettings :: NtSetInformationThread ThreadHideFromDebugger failed"));
             }
@@ -153,11 +148,9 @@ void DllInjection::specialThreadSettings(HANDLE hThread)
     }
 }
 
-HANDLE DllInjection::startRemoteThread(HANDLE hProcess, LPVOID lpStartAddress, LPVOID lpParameter)
+HANDLE DllInjection::startRemoteThread(HANDLE hProcess, LPCVOID lpStartAddress, LPCVOID lpParameter)
 {
-    HANDLE hThread = 0;
-
-    hThread = customCreateRemoteThread(hProcess, lpStartAddress, lpParameter);
+    const auto hThread = customCreateRemoteThread(hProcess, lpStartAddress, lpParameter);
 
     if (hThread)
     {
@@ -168,30 +161,23 @@ HANDLE DllInjection::startRemoteThread(HANDLE hProcess, LPVOID lpStartAddress, L
     return hThread;
 }
 
-HANDLE DllInjection::customCreateRemoteThread(HANDLE hProcess, LPVOID lpStartAddress, LPVOID lpParameter)
+HANDLE DllInjection::customCreateRemoteThread(HANDLE hProcess, LPCVOID lpStartAddress, LPCVOID lpParameter)
 {
     DWORD lpThreadId = 0;
-    HANDLE hThread = 0;
-    NTSTATUS ntStatus = 0;
+    HANDLE hThread = nullptr;
 
     if (NativeWinApi::NtCreateThreadEx)
     {
 #define THREAD_ALL_ACCESS_VISTA_7 (STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFFF)
 
         //for windows vista/7
-        ntStatus = NativeWinApi::NtCreateThreadEx(&hThread, THREAD_ALL_ACCESS_VISTA_7, 0, hProcess, (LPTHREAD_START_ROUTINE)lpStartAddress, (LPVOID)lpParameter, NtCreateThreadExFlagCreateSuspended | NtCreateThreadExFlagHideFromDebugger, 0, 0, 0, 0);
+        const NTSTATUS ntStatus = NativeWinApi::NtCreateThreadEx(&hThread, THREAD_ALL_ACCESS_VISTA_7, nullptr, hProcess, reinterpret_cast<LPTHREAD_START_ROUTINE>(const_cast<LPVOID>(lpStartAddress)), const_cast<LPVOID>(lpParameter), NtCreateThreadExFlagCreateSuspended | NtCreateThreadExFlagHideFromDebugger, 0, nullptr, nullptr, nullptr);
         if (NT_SUCCESS(ntStatus))
         {
             return hThread;
         }
-        else
-        {
-            Scylla::debugLog.log(TEXT("customCreateRemoteThread :: NtCreateThreadEx failed 0x%X"), NativeWinApi::RtlNtStatusToDosError(ntStatus));
-            return 0;
-        }
+        Scylla::debugLog.log(TEXT("customCreateRemoteThread :: NtCreateThreadEx failed 0x%X"), NativeWinApi::RtlNtStatusToDosError(ntStatus));
+        return nullptr;
     }
-    else
-    {
-        return CreateRemoteThread(hProcess, NULL, NULL, (LPTHREAD_START_ROUTINE)lpStartAddress, lpParameter, CREATE_SUSPENDED, &lpThreadId);
-    }
+    return CreateRemoteThread(hProcess, nullptr, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(const_cast<LPVOID>(lpStartAddress)), const_cast<LPVOID>(lpParameter), CREATE_SUSPENDED, &lpThreadId);
 }

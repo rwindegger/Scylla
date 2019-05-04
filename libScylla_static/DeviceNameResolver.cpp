@@ -15,9 +15,9 @@ DeviceNameResolver::~DeviceNameResolver()
 
 void DeviceNameResolver::initDeviceNameList()
 {
-	TCHAR shortName[3] = {0};
-	TCHAR longName[MAX_PATH] = {0};
-	HardDisk hardDisk;
+	TCHAR shortName[3]{};
+	TCHAR longName[MAX_PATH]{};
+	HardDisk hardDisk{};
 
 	shortName[1] = TEXT(':');
 
@@ -45,13 +45,13 @@ void DeviceNameResolver::initDeviceNameList()
 
 bool DeviceNameResolver::resolveDeviceLongNameToShort(LPCTSTR sourcePath, LPTSTR targetPath)
 {
-	for (unsigned int i = 0; i < deviceNameList.size(); i++)
+	for (auto& i : deviceNameList)
 	{
-		if (!_tcsnicmp(deviceNameList[i].longName, sourcePath, deviceNameList[i].longNameLength) && sourcePath[deviceNameList[i].longNameLength] == TEXT('\\'))
+		if (!_tcsnicmp(i.longName, sourcePath, i.longNameLength) && sourcePath[i.longNameLength] == TEXT('\\'))
 		{
-			_tcscpy_s(targetPath, MAX_PATH, deviceNameList[i].shortName);
+			_tcscpy_s(targetPath, MAX_PATH, i.shortName);
 
-			_tcscat_s(targetPath, MAX_PATH, sourcePath + deviceNameList[i].longNameLength);
+			_tcscat_s(targetPath, MAX_PATH, sourcePath + i.longNameLength);
 			return true;
 		}
 	}
@@ -63,14 +63,14 @@ void DeviceNameResolver::fixVirtualDevices()
 {
     const USHORT BufferSize = MAX_PATH * 2 * sizeof(WCHAR);
     WCHAR longCopy[MAX_PATH] = {0};
-    OBJECT_ATTRIBUTES oa = {0};
-    UNICODE_STRING unicodeInput = {0};
-    UNICODE_STRING unicodeOutput = {0};
-    HANDLE hFile = 0;
+    OBJECT_ATTRIBUTES oa{};
+    UNICODE_STRING unicodeInput{};
+    UNICODE_STRING unicodeOutput{};
+    HANDLE hFile = nullptr;
     ULONG retLen = 0;
-    HardDisk hardDisk;
+    HardDisk hardDisk{};
 
-    unicodeOutput.Buffer = (PWSTR)malloc(BufferSize);
+    unicodeOutput.Buffer = static_cast<PWSTR>(malloc(BufferSize));
     if (!unicodeOutput.Buffer)
         return;
 

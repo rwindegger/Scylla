@@ -43,9 +43,9 @@ public:
 
 	DllInjectionPlugin()
 	{
-		hMapFile = 0;
-		lpViewOfFile = 0;
-		apiReader = 0;
+		hMapFile = nullptr;
+		lpViewOfFile = nullptr;
+		apiReader = nullptr;
 	}
 
 	~DllInjectionPlugin()

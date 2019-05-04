@@ -37,9 +37,9 @@ public:
 
 private:
 
-	TCHAR name[CONFIG_NAME_LENGTH];
+	TCHAR name[CONFIG_NAME_LENGTH]{};
 	Type type;
 
 	DWORD_PTR valueNumeric;
-	TCHAR valueString[CONFIG_STRING_LENGTH];
+	TCHAR valueString[CONFIG_STRING_LENGTH]{};
 };

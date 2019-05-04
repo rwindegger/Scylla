@@ -114,7 +114,6 @@ bool ImportRebuilder::buildNewImportTable(std::map<DWORD_PTR, ImportModuleThunk>
 		pNTHeader64->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size = static_cast<DWORD>(numberOfImportDescriptors * sizeof(IMAGE_IMPORT_DESCRIPTOR));
 	}
 
-
 	return true;
 }
 

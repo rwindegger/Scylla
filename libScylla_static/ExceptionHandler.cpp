@@ -51,13 +51,12 @@ LONG WINAPI ScyllaHandleUnknownException(struct _EXCEPTION_POINTERS *ExceptionIn
 	TCHAR file[MAX_PATH] = {0};
 	TCHAR message[MAX_PATH + 200 + _countof(registerInfo)];
 	TCHAR osInfo[100];
-	DWORD_PTR baseAddress = 0;
-	DWORD_PTR address = (DWORD_PTR)ExceptionInfo->ExceptionRecord->ExceptionAddress;
+    const auto address = reinterpret_cast<DWORD_PTR>(ExceptionInfo->ExceptionRecord->ExceptionAddress);
 
 	_tcscpy_s(filepath, TEXT("unknown"));
 	_tcscpy_s(file, TEXT("unknown"));
 
-	if (GetMappedFileName(GetCurrentProcess(), (LPVOID)address, filepath, _countof(filepath)) > 0)
+	if (GetMappedFileName(GetCurrentProcess(), reinterpret_cast<LPVOID>(address), filepath, _countof(filepath)) > 0)
 	{
 		TCHAR *temp = _tcsrchr(filepath, TEXT('\\'));
 		if (temp)
@@ -69,7 +68,7 @@ LONG WINAPI ScyllaHandleUnknownException(struct _EXCEPTION_POINTERS *ExceptionIn
 
 	_stprintf_s(osInfo, _countof(osInfo), TEXT("Exception! Please report it! OS: %X"), GetVersion());
 
-	DWORD_PTR moduleBase = (DWORD_PTR)GetModuleHandle(file);
+    const auto moduleBase = reinterpret_cast<DWORD_PTR>(GetModuleHandle(file));
 	
 	_stprintf_s(message, _countof(message), TEXT("ExceptionCode %08X\r\nExceptionFlags %08X\r\nNumberParameters %08X\r\nExceptionAddress VA ") PRINTF_DWORD_PTR_FULL TEXT(" - Base ") PRINTF_DWORD_PTR_FULL TEXT("\r\nExceptionAddress module %s\r\n\r\n"), 
 	ExceptionInfo->ExceptionRecord->ExceptionCode,
@@ -109,7 +108,7 @@ LONG WINAPI ScyllaHandleUnknownException(struct _EXCEPTION_POINTERS *ExceptionIn
 
 	_tcscat_s(message, _countof(message), registerInfo);
 
-	MessageBox(0, message, osInfo, MB_ICONERROR);
+	MessageBox(nullptr, message, osInfo, MB_ICONERROR);
 
 	return EXCEPTION_CONTINUE_SEARCH;
 }

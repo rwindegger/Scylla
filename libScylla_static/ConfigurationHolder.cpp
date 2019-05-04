@@ -30,16 +30,14 @@ ConfigurationHolder::ConfigurationHolder(LPCTSTR fileName)
 
 bool ConfigurationHolder::loadConfiguration()
 {
-	std::map<ConfigOption, Configuration>::iterator mapIter;
-
-	if (configPath[0] == '\0')
+    if (configPath[0] == TEXT('\0'))
 	{
 		return false;
 	}
 
-	for (mapIter = config.begin() ; mapIter != config.end(); mapIter++)
+	for (auto& mapIter : config)
 	{
-		Configuration& configObject = mapIter->second;
+		Configuration& configObject = mapIter.second;
 		loadConfig(configObject);
 	}
 
@@ -48,16 +46,14 @@ bool ConfigurationHolder::loadConfiguration()
 
 bool ConfigurationHolder::saveConfiguration() const
 {
-	std::map<ConfigOption, Configuration>::const_iterator mapIter;
-
-	if (configPath[0] == '\0')
+    if (configPath[0] == TEXT('\0'))
 	{
 		return false;
 	}
 
-	for (mapIter = config.begin() ; mapIter != config.end(); mapIter++)
+	for (const auto& mapIter : config)
 	{
-		const Configuration& configObject = mapIter->second;
+		const Configuration& configObject = mapIter.second;
 		if (!saveConfig(configObject))
 		{
 			return false;
@@ -101,19 +97,19 @@ bool ConfigurationHolder::saveNumericToConfigFile(const Configuration & configOb
 		_stprintf_s(buf, PRINTF_INTEGER, configObject.getNumeric());
 	}
 
-	BOOL ret = WritePrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), buf, configPath);
+    const BOOL ret = WritePrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), buf, configPath);
 	return !!ret;
 }
 
-bool ConfigurationHolder::readNumericFromConfigFile(Configuration & configObject, int nBase)
+bool ConfigurationHolder::readNumericFromConfigFile(Configuration & configObject, int nBase) const
 {
 	TCHAR buf[21]; // UINT64_MAX in dec has 20 digits
-	DWORD read = GetPrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), TEXT(""), buf, _countof(buf), configPath);
+    const DWORD read = GetPrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), TEXT(""), buf, _countof(buf), configPath);
 
 	if (read > 0 && _tcslen(buf) > 0)
 	{
 #ifdef _WIN64
-		configObject.setNumeric(_tcstoui64(buf, NULL, nBase));
+		configObject.setNumeric(_tcstoui64(buf, nullptr, nBase));
 #else
 		configObject.setNumeric(_tcstoul(buf, NULL, nBase));
 #endif
@@ -125,14 +121,14 @@ bool ConfigurationHolder::readNumericFromConfigFile(Configuration & configObject
 
 bool ConfigurationHolder::saveStringToConfigFile(const Configuration & configObject) const
 {
-	BOOL ret = WritePrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), configObject.getString(), configPath);
+    const BOOL ret = WritePrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), configObject.getString(), configPath);
 	return !!ret;
 }
 
-bool ConfigurationHolder::readStringFromConfigFile(Configuration & configObject)
+bool ConfigurationHolder::readStringFromConfigFile(Configuration & configObject) const
 {
 	TCHAR buf[Configuration::CONFIG_STRING_LENGTH];
-	DWORD read = GetPrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), TEXT(""), buf, _countof(buf), configPath);
+    const DWORD read = GetPrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), TEXT(""), buf, _countof(buf), configPath);
 	if(read > 0 && _tcslen(buf) > 0)
 	{
 		configObject.setString(buf);
@@ -142,9 +138,9 @@ bool ConfigurationHolder::readStringFromConfigFile(Configuration & configObject)
 	return false;
 }
 
-bool ConfigurationHolder::readBooleanFromConfigFile(Configuration & configObject)
+bool ConfigurationHolder::readBooleanFromConfigFile(Configuration & configObject) const
 {
-	UINT val = GetPrivateProfileInt(CONFIG_FILE_SECTION_NAME, configObject.getName(), 0, configPath);
+    const UINT val = GetPrivateProfileInt(CONFIG_FILE_SECTION_NAME, configObject.getName(), 0, configPath);
 	configObject.setBool(val != 0);
 	return true;
 }
@@ -152,11 +148,11 @@ bool ConfigurationHolder::readBooleanFromConfigFile(Configuration & configObject
 bool ConfigurationHolder::saveBooleanToConfigFile(const Configuration & configObject) const
 {
     const TCHAR *boolValue = configObject.isTrue() ? TEXT("1") : TEXT("0");
-	BOOL ret = WritePrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), boolValue, configPath);
+    const BOOL ret = WritePrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), boolValue, configPath);
 	return !!ret;
 }
 
-bool ConfigurationHolder::loadConfig(Configuration & configObject)
+bool ConfigurationHolder::loadConfig(Configuration & configObject) const
 {
 	switch (configObject.getType())
 	{
@@ -194,7 +190,7 @@ bool ConfigurationHolder::buildConfigFilePath(LPCTSTR fileName)
 {
 	ZeroMemory(configPath, sizeof(configPath));
 
-	if (!GetModuleFileName(NULL, configPath, _countof(configPath)))
+	if (!GetModuleFileName(nullptr, configPath, _countof(configPath)))
 	{
 		Scylla::debugLog.log(TEXT("buildConfigFilePath :: GetModuleFileName failed %d"), GetLastError());
 		return false;

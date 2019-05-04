@@ -63,7 +63,7 @@ public:
 	//void patchNewIatBaseFile(DWORD_PTR newIatBaseAddress);
 
 	void patchNewIat(DWORD_PTR stdImagebase, DWORD_PTR newIatBaseAddress, PeParser * peParser);
-	void patchDirectJumpTable( DWORD_PTR imageBase, DWORD directImportsJumpTableRVA, PeParser * peParser, BYTE * jmpTableMemory, DWORD newIatBase);
+	void patchDirectJumpTable( DWORD_PTR stdImagebase, DWORD directImportsJumpTableRVA, PeParser * peParser, BYTE * jmpTableMemory, DWORD newIatBase);
 	void patchDirectImportsMemory(bool junkByteAfterInstruction);
 	int numberOfFoundDirectImports();
 	int numberOfFoundUniqueDirectImports();
@@ -90,19 +90,19 @@ private:
 	void scanMemoryPage( PVOID BaseAddress, SIZE_T RegionSize );
 	void analyzeInstruction( _DInst * instruction );
 	void findNormalIatReference( _DInst * instruction );
-	void getIatEntryAddress( IATReference* ref );
+    static void getIatEntryAddress( IATReference* ref );
 	void findDirectIatReferenceCallJmp( _DInst * instruction );
-	bool isAddressValidImageMemory( DWORD_PTR address );
-	void patchReferenceInMemory( IATReference * ref );
+    static bool isAddressValidImageMemory( DWORD_PTR address );
+	void patchReferenceInMemory( IATReference * ref ) const;
 	void patchReferenceInFile( IATReference* ref );
-	void patchDirectImportInMemory( IATReference * iter );
+	void patchDirectImportInMemory( IATReference * iter ) const;
 	DWORD_PTR lookUpIatForPointer( DWORD_PTR addr );
 	void findDirectIatReferenceMov( _DInst * instruction );
 	void findDirectIatReferencePush( _DInst * instruction );
 	void checkMemoryRangeAndAddToList( IATReference * ref, _DInst * instruction );
 	void findDirectIatReferenceLea( _DInst * instruction );
-	void patchDirectImportInDump32( int patchPreFixBytes, int instructionSize, DWORD patchBytes, BYTE * memory, DWORD memorySize, bool generateReloc, DWORD patchOffset, DWORD sectionRVA );
-	void patchDirectImportInDump64( int patchPreFixBytes, int instructionSize, DWORD_PTR patchBytes, BYTE * memory, DWORD memorySize, bool generateReloc, DWORD patchOffset, DWORD sectionRVA );
+    static void patchDirectImportInDump32( int patchPreFixBytes, int instructionSize, DWORD patchBytes, BYTE * memory, DWORD memorySize, bool generateReloc, DWORD patchOffset, DWORD sectionRVA );
+    static void patchDirectImportInDump64( int patchPreFixBytes, int instructionSize, DWORD_PTR patchBytes, BYTE * memory, DWORD memorySize, bool generateReloc, DWORD patchOffset, DWORD sectionRVA );
 	void patchDirectJumpTableEntry(DWORD_PTR targetIatPointer, DWORD_PTR stdImagebase, DWORD directImportsJumpTableRVA, PeParser * peParser, BYTE * jmpTableMemory, DWORD newIatBase );
 
 

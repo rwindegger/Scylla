@@ -1140,7 +1140,7 @@ bool ApiReader::isInvalidMemoryForIat(DWORD_PTR address)
     if (address == static_cast<DWORD_PTR>(-1))
         return true;
 
-    MEMORY_BASIC_INFORMATION memBasic = { nullptr };
+    MEMORY_BASIC_INFORMATION memBasic{};
 
     if (VirtualQueryEx(ProcessAccessHelp::hProcess, reinterpret_cast<LPCVOID>(address), &memBasic, sizeof(MEMORY_BASIC_INFORMATION)))
     {

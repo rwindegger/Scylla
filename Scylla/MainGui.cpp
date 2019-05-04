@@ -1,5 +1,5 @@
 #include "MainGui.h"
-#include <inttypes.h>
+#include <cinttypes>
 #include <VersionHelpers.h>
 
 #include "Architecture.h"
@@ -63,9 +63,14 @@ int InitializeGui(HINSTANCE hInstance, LPARAM param)
     return nRet;
 }
 
-
 MainGui::MainGui()
-    : importsHandling(TreeImports), selectedProcess(0), isProcessSuspended(false), hProcessContext(NULL), TreeImportsSubclass(this, IDC_TREE_IMPORTS)
+    : m_bMsgHandled(false)
+    , stringBuffer{}
+    , importsHandling(TreeImports)
+    , selectedProcess(nullptr)
+    , isProcessSuspended(false)
+    , hProcessContext(NULL)
+    , TreeImportsSubclass(this, IDC_TREE_IMPORTS)
 {
     /*
     Logger::getDebugLogFilePath();
@@ -222,6 +227,7 @@ void MainGui::OnContextMenu(CWindow wnd, CPoint point)
     case IDC_LIST_LOG:
         DisplayContextMenuLog(wnd, point);
         return;
+    default: ;
     }
 
     SetMsgHandled(FALSE);
@@ -259,7 +265,7 @@ LRESULT MainGui::OnTreeImportsDoubleClick(const NMHDR* pnmh)
 
 LRESULT MainGui::OnTreeImportsKeyDown(const NMHDR* pnmh)
 {
-    const NMTVKEYDOWN * tkd = reinterpret_cast<const NMTVKEYDOWN *>(pnmh);
+    const auto tkd = reinterpret_cast<const NMTVKEYDOWN *>(pnmh);
     switch (tkd->wVKey)
     {
     case VK_RETURN:
@@ -269,11 +275,12 @@ LRESULT MainGui::OnTreeImportsKeyDown(const NMHDR* pnmh)
         {
             pickApiActionHandler(selected);
         }
+        return 1;
     }
-    return 1;
     case VK_DELETE:
         deleteSelectedImportsActionHandler();
         return 1;
+    default: ;
     }
 
     SetMsgHandled(FALSE);
@@ -288,6 +295,7 @@ UINT MainGui::OnTreeImportsSubclassGetDlgCode(const MSG * lpMsg)
         {
         case VK_RETURN:
             return DLGC_WANTMESSAGE;
+        default: ;
         }
     }
 
@@ -492,8 +500,8 @@ void MainGui::updateStatusBar()
 
     if (selectedProcess)
     {
-        DWORD_PTR imageBase = 0;
-        const TCHAR * fileName = 0;
+        DWORD_PTR imageBase;
+        LPCTSTR fileName;
 
         if (ProcessAccessHelp::selectedModule)
         {
@@ -520,7 +528,7 @@ void MainGui::updateStatusBar()
 
 bool MainGui::showFileDialog(LPTSTR selectedFile, bool save, LPCTSTR defFileName, LPCTSTR filter, LPCTSTR defExtension, LPCTSTR directory) const
 {
-    OPENFILENAME ofn = { 0 };
+    OPENFILENAME ofn{};
 
     // WTL doesn't support new explorer styles on Vista and up
     // This is because it uses a custom hook, we could remove it or derive
@@ -598,7 +606,7 @@ void MainGui::pickDllActionHandler()
     updateStatusBar();
 }
 
-void MainGui::pickApiActionHandler(CTreeItem item)
+void MainGui::pickApiActionHandler(const CTreeItem& item)
 {
     if (!importsHandling.isImport(item))
         return;
@@ -618,7 +626,7 @@ void MainGui::pickApiActionHandler(CTreeItem item)
     updateStatusBar();
 }
 
-void MainGui::startDisassemblerGui(CTreeItem selectedTreeNode)
+void MainGui::startDisassemblerGui(const CTreeItem& selectedTreeNode)
 {
     if (!selectedProcess)
         return;
@@ -668,7 +676,7 @@ void MainGui::processSelectedActionHandler(int index)
     Scylla::Log->log(TEXT("Loading modules done."));
 
     //TODO improve
-    ProcessAccessHelp::selectedModule = 0;
+    ProcessAccessHelp::selectedModule = nullptr;
 
     ProcessAccessHelp::targetImageBase = process.imageBase;
     ProcessAccessHelp::targetSizeOfImage = process.imageSize;
@@ -721,13 +729,13 @@ void MainGui::clearOutputLog()
     }
 }
 
-bool MainGui::saveLogToFile(LPCTSTR file)
+bool MainGui::saveLogToFile(LPCTSTR file) const
 {
     const BYTE BOM[] = { 0xFF, 0xFE }; // UTF-16 little-endian
     const TCHAR newLine[] = TEXT("\r\n");
     bool success = true;
 
-    HANDLE hFile = CreateFile(file, GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+    const auto hFile = CreateFile(file, GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (hFile != INVALID_HANDLE_VALUE)
     {
         ProcessAccessHelp::writeMemoryToFileEnd(hFile, sizeof(BOM), BOM);
@@ -757,7 +765,7 @@ bool MainGui::saveLogToFile(LPCTSTR file)
             ListLog.GetText(i, buffer);
             _tcscat_s(buffer, bufsize, newLine);
 
-            ProcessAccessHelp::writeMemoryToFileEnd(hFile, static_cast<DWORD>(size * sizeof(WCHAR)), buffer);
+            ProcessAccessHelp::writeMemoryToFileEnd(hFile, size * sizeof(TCHAR), buffer);
         }
         delete[] buffer;
         CloseHandle(hFile);
@@ -872,10 +880,9 @@ void MainGui::saveTreeActionHandler()
 
 void MainGui::iatAutosearchActionHandler()
 {
-    DWORD_PTR searchAddress = 0;
-    DWORD_PTR addressIAT = 0, addressIATAdv = 0;
+    DWORD_PTR addressIAT = 0;
+    DWORD_PTR addressIATAdv = 0;
     size_t sizeIAT = 0, sizeIATAdv = 0;
-    bool bAdvancedSearch = false;
 
     if (!selectedProcess)
         return;
@@ -883,7 +890,7 @@ void MainGui::iatAutosearchActionHandler()
     if (EditOEPAddress.GetWindowTextLength() == 0)
         return;
 
-    searchAddress = EditOEPAddress.GetValue();
+    const DWORD_PTR searchAddress = EditOEPAddress.GetValue();
     if (!searchAddress)
         return;
 
@@ -899,7 +906,7 @@ void MainGui::iatAutosearchActionHandler()
     }
 
     // optional advanced search
-    bAdvancedSearch = Scylla::config[USE_ADVANCED_IAT_SEARCH].isTrue();
+    const bool bAdvancedSearch = Scylla::config[USE_ADVANCED_IAT_SEARCH].isTrue();
     if (bAdvancedSearch)
     {
         if (SCY_ERROR_SUCCESS == Scylla::iat_search(hProcessContext, &addressIATAdv, &sizeIATAdv, searchAddress, true))
@@ -1034,7 +1041,7 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
     if (TreeImports.GetCount() < 1)
         return;
 
-    CTreeItem over, parent;
+    CTreeItem over;
 
     if (pt.x == -1 && pt.y == -1) // invoked by keyboard
     {
@@ -1096,6 +1103,7 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
         case ID__DELETETREENODE:
             importsHandling.cutModule(importsHandling.isImport(over) ? over.GetParent() : over);
             break;
+        default: ;
         }
     }
 
@@ -1128,6 +1136,7 @@ void MainGui::DisplayContextMenuLog(CWindow hwnd, CPoint pt)
         case ID__CLEAR:
             clearOutputLog();
             break;
+        default: ;
         }
     }
 }
@@ -1195,7 +1204,7 @@ void MainGui::dumpSectionActionHandler()
     DumpSectionGui dlgDumpSection;
     LPCTSTR fileFilter;
     LPCTSTR defExtension;
-    PeParser * peFile = 0;
+    PeParser * peFile;
 
     dlgDumpSection.entryPoint = EditOEPAddress.GetValue();
 
@@ -1262,10 +1271,9 @@ void MainGui::dumpActionHandler()
     TCHAR defaultFilename[MAX_PATH] = { 0 };
     LPCTSTR fileFilter;
     LPCTSTR defExtension;
-    DWORD_PTR modBase = 0;
-    DWORD_PTR entrypoint = 0;
-    LPTSTR filename = 0;
-    PeParser * peFile = 0;
+    DWORD_PTR modBase;
+    LPTSTR filename;
+    PeParser * peFile;
 
     if (ProcessAccessHelp::selectedModule)
     {
@@ -1282,7 +1290,7 @@ void MainGui::dumpActionHandler()
     getCurrentDefaultDumpFilename(defaultFilename, _countof(defaultFilename));
     if (showFileDialog(selectedFilePath, true, defaultFilename, fileFilter, defExtension, stringBuffer))
     {
-        entrypoint = EditOEPAddress.GetValue();
+        const DWORD_PTR entrypoint = EditOEPAddress.GetValue();
 
         checkSuspendProcess();
 
@@ -1331,7 +1339,6 @@ void MainGui::dumpActionHandler()
 
 void MainGui::peRebuildActionHandler()
 {
-    DWORD newSize = 0;
     TCHAR selectedFilePath[MAX_PATH];
 
     getCurrentModulePath(stringBuffer, _countof(stringBuffer));
@@ -1345,7 +1352,7 @@ void MainGui::peRebuildActionHandler()
             }
         }
 
-        DWORD fileSize = static_cast<DWORD>(ProcessAccessHelp::getFileSize(selectedFilePath));
+        const auto fileSize = static_cast<DWORD>(ProcessAccessHelp::getFileSize(selectedFilePath));
 
         PeParser peFile(selectedFilePath, true);
 
@@ -1370,7 +1377,7 @@ void MainGui::peRebuildActionHandler()
 
             if (peFile.savePeFileToDisk(selectedFilePath))
             {
-                newSize = static_cast<DWORD>(ProcessAccessHelp::getFileSize(selectedFilePath));
+                const auto newSize = static_cast<DWORD>(ProcessAccessHelp::getFileSize(selectedFilePath));
 
                 if (Scylla::config[UPDATE_HEADER_CHECKSUM].isTrue())
                 {
@@ -1413,8 +1420,8 @@ void MainGui::dumpFixActionHandler()
     TCHAR newFilePath[MAX_PATH];
     TCHAR selectedFilePath[MAX_PATH];
     LPCTSTR fileFilter;
-    DWORD_PTR modBase = 0;
-    DWORD_PTR entrypoint = EditOEPAddress.GetValue();
+    DWORD_PTR modBase;
+    const DWORD_PTR entrypoint = EditOEPAddress.GetValue();
 
     if (ProcessAccessHelp::selectedModule)
     {
@@ -1564,12 +1571,11 @@ void MainGui::dllInjectActionHandler()
         return;
 
     TCHAR selectedFilePath[MAX_PATH];
-    HMODULE hMod = nullptr;
 
     getCurrentModulePath(stringBuffer, _countof(stringBuffer));
     if (showFileDialog(selectedFilePath, false, nullptr, filterDll, nullptr, stringBuffer))
     {
-        hMod = DllInjection::dllInjection(ProcessAccessHelp::hProcess, selectedFilePath);
+        const auto hMod = DllInjection::dllInjection(ProcessAccessHelp::hProcess, selectedFilePath);
         if (hMod && Scylla::config[DLL_INJECTION_AUTO_UNLOAD].isTrue())
         {
             if (!DllInjection::unloadDllInProcess(ProcessAccessHelp::hProcess, hMod))
@@ -1694,7 +1700,7 @@ void MainGui::setDialogIATAddressAndSize(DWORD_PTR addressIAT, DWORD sizeIAT)
 
 bool MainGui::isIATOutsidePeImage(DWORD_PTR addressIAT) const
 {
-    DWORD_PTR minAdd = 0, maxAdd = 0;
+    DWORD_PTR minAdd, maxAdd;
 
     if (ProcessAccessHelp::selectedModule)
     {
@@ -1707,14 +1713,7 @@ bool MainGui::isIATOutsidePeImage(DWORD_PTR addressIAT) const
         maxAdd = minAdd + selectedProcess->imageSize;
     }
 
-    if (addressIAT > minAdd && addressIAT < maxAdd)
-    {
-        return false; //inside pe image
-    }
-    else
-    {
-        return true; //outside pe image, requires rebasing iat
-    }
+    return !(addressIAT > minAdd && addressIAT < maxAdd);
 }
 
 bool MainGui::getCurrentDefaultDumpFilename(LPTSTR buffer, size_t bufferSize) const

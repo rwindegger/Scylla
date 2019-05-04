@@ -7,27 +7,27 @@ FileLog IATReferenceScan::directImportLog(TEXT("Scylla_direct_imports.log"));
 
 int IATReferenceScan::numberOfFoundDirectImports()
 {
-	return (int)iatDirectImportList.size();
+	return static_cast<int>(iatDirectImportList.size());
 }
 
 int IATReferenceScan::numberOfFoundUniqueDirectImports()
 {
 	std::set<DWORD_PTR> apiPointers;
-	for (std::vector<IATReference>::iterator iter = iatDirectImportList.begin(); iter != iatDirectImportList.end(); iter++)
+	for (auto& iter : iatDirectImportList)
 	{
-		IATReference * ref = &(*iter);
+		IATReference * ref = &iter;
 		apiPointers.insert(ref->targetAddressInIat);
 	}
 
-	return (int)apiPointers.size();
+	return static_cast<int>(apiPointers.size());
 }
 
 int IATReferenceScan::numberOfDirectImportApisNotInIat()
 {
 	std::set<DWORD_PTR> apiPointers;
-	for (std::vector<IATReference>::iterator iter = iatDirectImportList.begin(); iter != iatDirectImportList.end(); iter++)
+	for (auto& iter : iatDirectImportList)
 	{
-		IATReference * ref = &(*iter);
+		IATReference * ref = &iter;
 
 		if (ref->targetPointer == 0)
 		{
@@ -35,7 +35,7 @@ int IATReferenceScan::numberOfDirectImportApisNotInIat()
 		}
 	}
 
-	return (int)apiPointers.size();
+	return static_cast<int>(apiPointers.size());
 }
 
 int IATReferenceScan::getSizeInBytesOfJumpTableInSection()
@@ -45,7 +45,7 @@ int IATReferenceScan::getSizeInBytesOfJumpTableInSection()
 
 void IATReferenceScan::startScan(DWORD_PTR imageBase, DWORD imageSize, DWORD_PTR iatAddress, DWORD iatSize)
 {
-	MEMORY_BASIC_INFORMATION memBasic = {0};
+	MEMORY_BASIC_INFORMATION memBasic{};
 
 	IatAddressVA = iatAddress;
 	IatSize = iatSize;
@@ -63,13 +63,11 @@ void IATReferenceScan::startScan(DWORD_PTR imageBase, DWORD imageSize, DWORD_PTR
 		iatDirectImportList.reserve(50);
 	}
 
-
-
 	DWORD_PTR section = imageBase;
 
 	do
 	{
-		if (!VirtualQueryEx(ProcessAccessHelp::hProcess, (LPCVOID)section, &memBasic, sizeof(MEMORY_BASIC_INFORMATION)))
+		if (!VirtualQueryEx(ProcessAccessHelp::hProcess, reinterpret_cast<LPCVOID>(section), &memBasic, sizeof(MEMORY_BASIC_INFORMATION)))
 		{
 			Scylla::debugLog.log(TEXT("VirtualQueryEx failed %d"), GetLastError());
 
@@ -85,7 +83,7 @@ void IATReferenceScan::startScan(DWORD_PTR imageBase, DWORD imageSize, DWORD_PTR
 			}
 		}
 
-		section = (DWORD_PTR)((SIZE_T)section + memBasic.RegionSize);
+		section = static_cast<DWORD_PTR>(static_cast<SIZE_T>(section) + memBasic.RegionSize);
 
 	} while (section < (imageBase + imageSize));
 
@@ -115,27 +113,26 @@ void IATReferenceScan::startScan(DWORD_PTR imageBase, DWORD imageSize, DWORD_PTR
 void IATReferenceScan::patchDirectImportsMemory( bool junkByteAfterInstruction )
 {
 	JunkByteAfterInstruction = junkByteAfterInstruction;
-	for (std::vector<IATReference>::iterator iter = iatDirectImportList.begin(); iter != iatDirectImportList.end(); iter++)
+	for (auto& iter : iatDirectImportList)
 	{
-		patchDirectImportInMemory(&(*iter));
+		patchDirectImportInMemory(&iter);
 	}
 }
 
 void IATReferenceScan::scanMemoryPage( PVOID BaseAddress, SIZE_T RegionSize )
 {
-	BYTE * dataBuffer = (BYTE *)calloc(RegionSize, 1);
+    const auto dataBuffer = reinterpret_cast<BYTE *>(calloc(RegionSize, 1));
 	BYTE * currentPos = dataBuffer;
-	int currentSize = (int)RegionSize;
-	DWORD_PTR currentOffset = (DWORD_PTR)BaseAddress;
-	_DecodeResult res;
-	unsigned int instructionsCount = 0, next = 0;
+    auto currentSize = static_cast<int>(RegionSize);
+    auto currentOffset = reinterpret_cast<DWORD_PTR>(BaseAddress);
+    unsigned int instructionsCount=0;
 
 	if (!dataBuffer)
 		return;
 
-	if (ProcessAccessHelp::readMemoryFromProcess((DWORD_PTR)BaseAddress, RegionSize, (LPVOID)dataBuffer))
+	if (ProcessAccessHelp::readMemoryFromProcess(reinterpret_cast<DWORD_PTR>(BaseAddress), RegionSize, static_cast<LPVOID>(dataBuffer)))
 	{
-		while (1)
+		while (true)
 		{
 			ZeroMemory(&ProcessAccessHelp::decomposerCi, sizeof(_CodeInfo));
 			ProcessAccessHelp::decomposerCi.code = currentPos;
@@ -145,7 +142,7 @@ void IATReferenceScan::scanMemoryPage( PVOID BaseAddress, SIZE_T RegionSize )
 
 			instructionsCount = 0;
 
-			res = distorm_decompose(&ProcessAccessHelp::decomposerCi, ProcessAccessHelp::decomposerResult, sizeof(ProcessAccessHelp::decomposerResult)/sizeof(ProcessAccessHelp::decomposerResult[0]), &instructionsCount);
+		    const _DecodeResult res = distorm_decompose(&ProcessAccessHelp::decomposerCi, ProcessAccessHelp::decomposerResult, sizeof(ProcessAccessHelp::decomposerResult)/sizeof(ProcessAccessHelp::decomposerResult[0]), &instructionsCount);
 
 			if (res == DECRES_INPUTERR)
 			{
@@ -163,7 +160,8 @@ void IATReferenceScan::scanMemoryPage( PVOID BaseAddress, SIZE_T RegionSize )
 			if (res == DECRES_SUCCESS) break; // All instructions were decoded.
 			else if (instructionsCount == 0) break;
 
-			next = (unsigned long)(ProcessAccessHelp::decomposerResult[instructionsCount-1].addr - ProcessAccessHelp::decomposerResult[0].addr);
+			unsigned int next = static_cast<unsigned long>(ProcessAccessHelp::decomposerResult[instructionsCount - 1].addr - ProcessAccessHelp::
+			    decomposerResult[0].addr);
 
 			if (ProcessAccessHelp::decomposerResult[instructionsCount-1].flags != FLAG_NOT_DECODABLE)
 			{
@@ -204,7 +202,7 @@ void IATReferenceScan::findNormalIatReference( _DInst * instruction )
 	_DecodedInst inst;
 #endif
 
-	IATReference ref;
+	IATReference ref{};
 
 
 	if (META_GET_FC(instruction->meta) == FC_CALL || META_GET_FC(instruction->meta) == FC_UNC_BRANCH)
@@ -219,7 +217,7 @@ void IATReferenceScan::findNormalIatReference( _DInst * instruction )
 			{
 				ref.type = IAT_REFERENCE_PTR_JMP;
 			}
-			ref.addressVA = (DWORD_PTR)instruction->addr;
+			ref.addressVA = static_cast<DWORD_PTR>(instruction->addr);
 			ref.instructionSize = instruction->size;
 
 #ifdef _WIN64
@@ -278,9 +276,9 @@ void IATReferenceScan::getIatEntryAddress( IATReference * ref )
 
 bool IATReferenceScan::isAddressValidImageMemory( DWORD_PTR address )
 {
-	MEMORY_BASIC_INFORMATION memBasic = {0};
+	MEMORY_BASIC_INFORMATION memBasic{};
 
-	if (!VirtualQueryEx(ProcessAccessHelp::hProcess, (LPCVOID)address, &memBasic, sizeof(MEMORY_BASIC_INFORMATION)))
+	if (!VirtualQueryEx(ProcessAccessHelp::hProcess, reinterpret_cast<LPCVOID>(address), &memBasic, sizeof(MEMORY_BASIC_INFORMATION)))
 	{
 		return false;
 	}
@@ -288,23 +286,23 @@ bool IATReferenceScan::isAddressValidImageMemory( DWORD_PTR address )
 	return (memBasic.Type == MEM_IMAGE && ProcessAccessHelp::isPageExecutable(memBasic.Protect));
 }
 
-void IATReferenceScan::patchReferenceInMemory( IATReference * ref )
+void IATReferenceScan::patchReferenceInMemory( IATReference * ref ) const
 {
-	DWORD_PTR newIatAddressPointer = ref->targetPointer - IatAddressVA + NewIatAddressRVA;
+    const DWORD_PTR newIatAddressPointer = ref->targetPointer - IatAddressVA + NewIatAddressRVA;
 
-	DWORD patchBytes = 0;
+	DWORD patchBytes;
 
 #ifdef _WIN64
-	patchBytes = (DWORD)(newIatAddressPointer - ref->addressVA - 6);
+	patchBytes = static_cast<DWORD>(newIatAddressPointer - ref->addressVA - 6);
 #else
 	patchBytes = newIatAddressPointer;
 #endif
 	ProcessAccessHelp::writeMemoryToProcess(ref->addressVA + 2, sizeof(DWORD), &patchBytes);
 }
 
-void IATReferenceScan::patchDirectImportInMemory( IATReference * ref )
+void IATReferenceScan::patchDirectImportInMemory( IATReference * ref ) const
 {
-	DWORD patchBytes = 0;
+	DWORD patchBytes;
 	BYTE patchPreBytes[2];
 
 	if (ref->targetPointer)
@@ -332,7 +330,7 @@ void IATReferenceScan::patchDirectImportInMemory( IATReference * ref )
 		ProcessAccessHelp::writeMemoryToProcess(ref->addressVA, 2, patchPreBytes);
 
 #ifdef _WIN64
-		patchBytes = (DWORD)(ref->targetPointer - ref->addressVA - 6);
+		patchBytes = static_cast<DWORD>(ref->targetPointer - ref->addressVA - 6);
 #else
 		patchBytes = ref->targetPointer;
 #endif
@@ -344,7 +342,7 @@ DWORD_PTR IATReferenceScan::lookUpIatForPointer( DWORD_PTR addr )
 {
 	if (!iatBackup)
 	{
-		iatBackup = (DWORD_PTR *)calloc(IatSize + sizeof(DWORD_PTR), 1);
+		iatBackup = reinterpret_cast<DWORD_PTR *>(calloc(IatSize + sizeof(DWORD_PTR), 1));
 		if (!iatBackup)
 		{
 			return 0;
@@ -352,16 +350,16 @@ DWORD_PTR IATReferenceScan::lookUpIatForPointer( DWORD_PTR addr )
 		if (!ProcessAccessHelp::readMemoryFromProcess(IatAddressVA, IatSize, iatBackup))
 		{
 			free(iatBackup);
-			iatBackup = 0;
+			iatBackup = nullptr;
 			return 0;
 		}
 	}
 
-	for (int i = 0; i < ((int)IatSize / (int)sizeof(DWORD_PTR));i++)
+	for (int i = 0; i < (static_cast<int>(IatSize) / static_cast<int>(sizeof(DWORD_PTR)));i++)
 	{
 		if (iatBackup[i] == addr)
 		{
-			return (DWORD_PTR)&iatBackup[i] - (DWORD_PTR)iatBackup + IatAddressVA;
+			return reinterpret_cast<DWORD_PTR>(&iatBackup[i]) - reinterpret_cast<DWORD_PTR>(iatBackup) + IatAddressVA;
 		}
 	}
 
@@ -371,26 +369,26 @@ DWORD_PTR IATReferenceScan::lookUpIatForPointer( DWORD_PTR addr )
 void IATReferenceScan::patchNewIat(DWORD_PTR stdImagebase, DWORD_PTR newIatBaseAddress, PeParser * peParser)
 {
 	NewIatAddressRVA = newIatBaseAddress;
-	DWORD patchBytes = 0;
+	DWORD patchBytes;
 
-	for (std::vector<IATReference>::iterator iter = iatReferenceList.begin(); iter != iatReferenceList.end(); iter++)
+	for (auto& iter : iatReferenceList)
 	{
-		IATReference * ref = &(*iter);
+		IATReference * ref = &iter;
 
-		DWORD_PTR newIatAddressPointer = (ref->targetPointer - IatAddressVA) + NewIatAddressRVA + stdImagebase;
+	    const DWORD_PTR newIatAddressPointer = (ref->targetPointer - IatAddressVA) + NewIatAddressRVA + stdImagebase;
 
 #ifdef _WIN64
-		patchBytes = (DWORD)(newIatAddressPointer - (ref->addressVA - ImageBase + stdImagebase) - 6);
+		patchBytes = static_cast<DWORD>(newIatAddressPointer - (ref->addressVA - ImageBase + stdImagebase) - 6);
 #else
 		patchBytes = newIatAddressPointer;
 #endif
-		DWORD_PTR patchOffset = peParser->convertRVAToOffsetRelative(ref->addressVA - ImageBase);
-		int index = peParser->convertRVAToOffsetVectorIndex(ref->addressVA - ImageBase);
+	    const DWORD_PTR patchOffset = peParser->convertRVAToOffsetRelative(ref->addressVA - ImageBase);
+		const int index = peParser->convertRVAToOffsetVectorIndex(ref->addressVA - ImageBase);
 		BYTE * memory = peParser->getSectionMemoryByIndex(index);
-		DWORD memorySize = peParser->getSectionMemorySizeByIndex(index);
+		const DWORD memorySize = peParser->getSectionMemorySizeByIndex(index);
 
 
-		if (memorySize < (DWORD)(patchOffset + 6))
+		if (memorySize < static_cast<DWORD>(patchOffset + 6))
 		{
 			Scylla::debugLog.log(TEXT("Error - Cannot fix IAT reference RVA: ") PRINTF_DWORD_PTR_FULL, ref->addressVA - ImageBase);
 		}
@@ -398,7 +396,7 @@ void IATReferenceScan::patchNewIat(DWORD_PTR stdImagebase, DWORD_PTR newIatBaseA
 		{
 			memory += patchOffset + 2;		
 
-			*((DWORD *)memory) = patchBytes;
+			*reinterpret_cast<DWORD *>(memory) = patchBytes;
 		}
 		//Scylla::debugLog.log(L"address %X old %X new %X",ref->addressVA, ref->targetPointer, newIatAddressPointer);
 
@@ -412,14 +410,14 @@ void IATReferenceScan::printDirectImportLog()
 	int count = 0;
 	bool isSuspect = false;
 
-	for (std::vector<IATReference>::iterator iter = iatDirectImportList.begin(); iter != iatDirectImportList.end(); iter++)
+	for (auto& iter : iatDirectImportList)
 	{
-		IATReference * ref = &(*iter);
+		IATReference * ref = &iter;
 		
 		ApiInfo * apiInfo = apiReader->getApiByVirtualAddress(ref->targetAddressInIat, &isSuspect);
 
 		count++;
-		TCHAR * type = TEXT("U");
+		LPCTSTR type = TEXT("U");
 
 		if (ref->type == IAT_REFERENCE_DIRECT_CALL)
 		{
@@ -451,7 +449,7 @@ void IATReferenceScan::printDirectImportLog()
 
 void IATReferenceScan::findDirectIatReferenceCallJmp( _DInst * instruction )
 {
-	IATReference ref;
+	IATReference ref{};
 
 	if (META_GET_FC(instruction->meta) == FC_CALL || META_GET_FC(instruction->meta) == FC_UNC_BRANCH)
 	{
@@ -466,7 +464,7 @@ void IATReferenceScan::findDirectIatReferenceCallJmp( _DInst * instruction )
 				ref.type = IAT_REFERENCE_DIRECT_JMP;
 			}
 			
-			ref.targetAddressInIat = (DWORD_PTR)INSTRUCTION_GET_TARGET(instruction);
+			ref.targetAddressInIat = static_cast<DWORD_PTR>(INSTRUCTION_GET_TARGET(instruction));
 
 			checkMemoryRangeAndAddToList(&ref, instruction);
 		}
@@ -475,7 +473,7 @@ void IATReferenceScan::findDirectIatReferenceCallJmp( _DInst * instruction )
 
 void IATReferenceScan::findDirectIatReferenceMov( _DInst * instruction )
 {
-	IATReference ref;
+	IATReference ref{};
 	ref.type = IAT_REFERENCE_DIRECT_MOV;
 
 	if (instruction->opcode == I_MOV)
@@ -488,7 +486,7 @@ void IATReferenceScan::findDirectIatReferenceMov( _DInst * instruction )
 		{
 			if (instruction->ops[0].type == O_REG && instruction->ops[1].type == O_IMM)
 			{
-				ref.targetAddressInIat = (DWORD_PTR)instruction->imm.qword;
+				ref.targetAddressInIat = static_cast<DWORD_PTR>(instruction->imm.qword);
 
 				checkMemoryRangeAndAddToList(&ref, instruction);
 			}
@@ -498,12 +496,12 @@ void IATReferenceScan::findDirectIatReferenceMov( _DInst * instruction )
 
 void IATReferenceScan::findDirectIatReferencePush( _DInst * instruction )
 {
-	IATReference ref;
+	IATReference ref{};
 	ref.type = IAT_REFERENCE_DIRECT_PUSH;
 
 	if (instruction->size >= 5 && instruction->opcode == I_PUSH)
 	{
-		ref.targetAddressInIat = (DWORD_PTR)instruction->imm.qword;
+		ref.targetAddressInIat = static_cast<DWORD_PTR>(instruction->imm.qword);
 
 		checkMemoryRangeAndAddToList(&ref, instruction);
 	}
@@ -511,14 +509,14 @@ void IATReferenceScan::findDirectIatReferencePush( _DInst * instruction )
 
 void IATReferenceScan::findDirectIatReferenceLea( _DInst * instruction )
 {
-	IATReference ref;
+	IATReference ref{};
 	ref.type = IAT_REFERENCE_DIRECT_LEA;
 
 	if (instruction->size >= 5 && instruction->opcode == I_LEA)
 	{
 		if (instruction->ops[0].type == O_REG && instruction->ops[1].type == O_DISP) //LEA EDX, [0xb58bb8]
 		{
-			ref.targetAddressInIat = (DWORD_PTR)instruction->disp;
+			ref.targetAddressInIat = static_cast<DWORD_PTR>(instruction->disp);
 
 			checkMemoryRangeAndAddToList(&ref, instruction);
 		}
@@ -531,16 +529,16 @@ void IATReferenceScan::checkMemoryRangeAndAddToList( IATReference * ref, _DInst 
 	_DecodedInst inst;
 #endif
 
-	if (ref->targetAddressInIat > 0x000FFFFF && ref->targetAddressInIat != (DWORD_PTR)-1)
+	if (ref->targetAddressInIat > 0x000FFFFF && ref->targetAddressInIat != static_cast<DWORD_PTR>(-1))
 	{
 		if ((ref->targetAddressInIat < ImageBase) || (ref->targetAddressInIat > (ImageBase+ImageSize))) //outside pe image
 		{
 			//if (isAddressValidImageMemory(ref->targetAddressInIat))
 			{
 				bool isSuspect = false;
-				if (apiReader->getApiByVirtualAddress(ref->targetAddressInIat, &isSuspect) != 0)
+				if (apiReader->getApiByVirtualAddress(ref->targetAddressInIat, &isSuspect) != nullptr)
 				{
-					ref->addressVA = (DWORD_PTR)instruction->addr;
+					ref->addressVA = static_cast<DWORD_PTR>(instruction->addr);
 					ref->instructionSize = instruction->size;
 					ref->targetPointer = lookUpIatForPointer(ref->targetAddressInIat);
 
@@ -557,20 +555,19 @@ void IATReferenceScan::checkMemoryRangeAndAddToList( IATReference * ref, _DInst 
 
 void IATReferenceScan::patchDirectJumpTableEntry(DWORD_PTR targetIatPointer, DWORD_PTR stdImagebase, DWORD directImportsJumpTableRVA, PeParser * peParser, BYTE * jmpTableMemory, DWORD newIatBase )
 {
-	DWORD patchBytes = 0;
-	for (std::vector<IATReference>::iterator iter = iatDirectImportList.begin(); iter != iatDirectImportList.end(); iter++)
+	for (auto& iter : iatDirectImportList)
 	{
-		IATReference * ref = &(*iter);
+		IATReference * ref = &iter;
 
 		//only one jmp in table for different direct imports with same iat address
 		if (ref->targetPointer == targetIatPointer)
 		{
 			//patch dump
-			DWORD patchOffset = (DWORD)peParser->convertRVAToOffsetRelative(ref->addressVA - ImageBase);
-			int index = peParser->convertRVAToOffsetVectorIndex(ref->addressVA - ImageBase);
+		    const auto patchOffset = static_cast<DWORD>(peParser->convertRVAToOffsetRelative(ref->addressVA - ImageBase));
+			const int index = peParser->convertRVAToOffsetVectorIndex(ref->addressVA - ImageBase);
 			BYTE * memory = peParser->getSectionMemoryByIndex(index);
-			DWORD memorySize = peParser->getSectionMemorySizeByIndex(index);
-			DWORD sectionRVA = peParser->getSectionAddressRVAByIndex(index);
+			const DWORD memorySize = peParser->getSectionMemorySizeByIndex(index);
+			const DWORD sectionRVA = peParser->getSectionAddressRVAByIndex(index);
 
 			if (ref->type == IAT_REFERENCE_DIRECT_CALL || ref->type == IAT_REFERENCE_DIRECT_JMP)
 			{
@@ -593,7 +590,7 @@ void IATReferenceScan::patchDirectJumpTableEntry(DWORD_PTR targetIatPointer, DWO
 #else
 				if (ref->instructionSize == 10) //for x64
 				{
-					DWORD_PTR patchBytes64 = directImportsJumpTableRVA + stdImagebase;
+				    const DWORD_PTR patchBytes64 = directImportsJumpTableRVA + stdImagebase;
 					patchDirectImportInDump64(2, 10, patchBytes64, memory, memorySize, true, patchOffset, sectionRVA);
 				}
 #endif
@@ -616,26 +613,27 @@ void IATReferenceScan::patchDirectJumpTable( DWORD_PTR stdImagebase, DWORD direc
 {
 
 	std::set<DWORD_PTR> apiPointers;
-	for (std::vector<IATReference>::iterator iter = iatDirectImportList.begin(); iter != iatDirectImportList.end(); iter++)
+	for (auto& iter : iatDirectImportList)
 	{
-		IATReference * ref = &(*iter);
+		IATReference * ref = &iter;
 		apiPointers.insert(ref->targetPointer);
 	}
 
 	DWORD patchBytes;
 
-	for (std::set<DWORD_PTR>::iterator apiIter = apiPointers.begin(); apiIter != apiPointers.end(); apiIter++)
+	for (std::_Tree_const_iterator<std::_Tree_val<std::_Tree_simple_types<unsigned long>>>::value_type apiPointer :
+	     apiPointers)
 	{
-		DWORD_PTR refTargetPointer = *apiIter;
+		DWORD_PTR refTargetPointer = apiPointer;
 		if (newIatBase) //create new iat in section
 		{
-			refTargetPointer = (*apiIter - IatAddressVA) + newIatBase + ImageBase;
+			refTargetPointer = (apiPointer - IatAddressVA) + newIatBase + ImageBase;
 		}
 		//create jump table in section
-		DWORD_PTR newIatAddressPointer = refTargetPointer - ImageBase + stdImagebase;
+	    const DWORD_PTR newIatAddressPointer = refTargetPointer - ImageBase + stdImagebase;
 
 #ifdef _WIN64
-		patchBytes = (DWORD)(newIatAddressPointer - (directImportsJumpTableRVA + stdImagebase) - 6);
+		patchBytes = static_cast<DWORD>(newIatAddressPointer - (directImportsJumpTableRVA + stdImagebase) - 6);
 #else
 		patchBytes = newIatAddressPointer;
 		DWORD relocOffset = (directImportsJumpTableRVA + 2);
@@ -643,9 +641,9 @@ void IATReferenceScan::patchDirectJumpTable( DWORD_PTR stdImagebase, DWORD direc
 #endif
 		jmpTableMemory[0] = 0xFF;
 		jmpTableMemory[1] = 0x25;
-		*((DWORD *)&jmpTableMemory[2]) = patchBytes;
+		*reinterpret_cast<DWORD *>(&jmpTableMemory[2]) = patchBytes;
 
-		patchDirectJumpTableEntry(*apiIter, stdImagebase, directImportsJumpTableRVA, peParser, jmpTableMemory, newIatBase);
+		patchDirectJumpTableEntry(apiPointer, stdImagebase, directImportsJumpTableRVA, peParser, jmpTableMemory, newIatBase);
 
 		jmpTableMemory += 6;
 		directImportsJumpTableRVA += 6;
@@ -654,7 +652,7 @@ void IATReferenceScan::patchDirectJumpTable( DWORD_PTR stdImagebase, DWORD direc
 
 void IATReferenceScan::patchDirectImportInDump32( int patchPreFixBytes, int instructionSize, DWORD patchBytes, BYTE * memory, DWORD memorySize, bool generateReloc, DWORD patchOffset, DWORD sectionRVA )
 {
-	if (memorySize < (DWORD)(patchOffset + instructionSize))
+	if (memorySize < static_cast<DWORD>(patchOffset + instructionSize))
 	{
 		Scylla::debugLog.log(TEXT("Error - Cannot fix direct import reference RVA: %X"), sectionRVA + patchOffset);
 	}
@@ -663,17 +661,17 @@ void IATReferenceScan::patchDirectImportInDump32( int patchPreFixBytes, int inst
 		memory += patchOffset + patchPreFixBytes;
 		if (generateReloc)
 		{
-			DWORD relocOffset = sectionRVA + patchOffset+ patchPreFixBytes;
+		    const DWORD relocOffset = sectionRVA + patchOffset+ patchPreFixBytes;
 			directImportLog.log(TEXT("Relocation direct imports fix: Base RVA %08X Type HIGHLOW Offset %04X RelocTableEntry %04X"), relocOffset & 0xFFFFF000, relocOffset & 0x00000FFF, (IMAGE_REL_BASED_HIGHLOW << 12) + (relocOffset & 0x00000FFF));
 		}
 
-		*((DWORD *)memory) = patchBytes;
+		*reinterpret_cast<DWORD *>(memory) = patchBytes;
 	}
 }
 
 void IATReferenceScan::patchDirectImportInDump64( int patchPreFixBytes, int instructionSize, DWORD_PTR patchBytes, BYTE * memory, DWORD memorySize, bool generateReloc, DWORD patchOffset, DWORD sectionRVA )
 {
-	if (memorySize < (DWORD)(patchOffset + instructionSize))
+	if (memorySize < static_cast<DWORD>(patchOffset + instructionSize))
 	{
 		Scylla::debugLog.log(TEXT("Error - Cannot fix direct import reference RVA: %X"), sectionRVA + patchOffset);
 	}
@@ -682,11 +680,11 @@ void IATReferenceScan::patchDirectImportInDump64( int patchPreFixBytes, int inst
 		memory += patchOffset + patchPreFixBytes;
 		if (generateReloc)
 		{
-			DWORD relocOffset = sectionRVA + patchOffset+ patchPreFixBytes;
+		    const DWORD relocOffset = sectionRVA + patchOffset+ patchPreFixBytes;
 			directImportLog.log(TEXT("Relocation direct imports fix: Base RVA %08X Type DIR64 Offset %04X RelocTableEntry %04X"), relocOffset & 0xFFFFF000, relocOffset & 0x00000FFF, (IMAGE_REL_BASED_DIR64 << 12) + (relocOffset & 0x00000FFF));
 		}
 
-		*((DWORD_PTR *)memory) = patchBytes;
+		*reinterpret_cast<DWORD_PTR *>(memory) = patchBytes;
 	}
 }
 
@@ -694,9 +692,9 @@ DWORD IATReferenceScan::addAdditionalApisToList()
 {
 	std::set<DWORD_PTR> apiPointers;
 
-	for (std::vector<IATReference>::iterator iter = iatDirectImportList.begin(); iter != iatDirectImportList.end(); iter++)
+	for (auto& iter : iatDirectImportList)
 	{
-		IATReference * ref = &(*iter);
+		IATReference * ref = &iter;
 
 		if (ref->targetPointer == 0)
 		{
@@ -708,13 +706,14 @@ DWORD IATReferenceScan::addAdditionalApisToList()
 	DWORD newIatSize = IatSize;
 
 	bool isSuspect = false;
-	for (std::set<DWORD_PTR>::iterator apiIter = apiPointers.begin(); apiIter != apiPointers.end(); apiIter++)
+	for (std::_Tree_const_iterator<std::_Tree_val<std::_Tree_simple_types<unsigned long>>>::value_type apiPointer :
+	     apiPointers)
 	{
-		for (std::vector<IATReference>::iterator iter = iatDirectImportList.begin(); iter != iatDirectImportList.end(); iter++)
+		for (auto& iter : iatDirectImportList)
 		{
-			IATReference * ref = &(*iter);
+			IATReference * ref = &iter;
 
-			if (ref->targetPointer == 0  && ref->targetAddressInIat == *apiIter)
+			if (ref->targetPointer == 0  && ref->targetAddressInIat == apiPointer)
 			{
 				ref->targetPointer = iatAddy;
 				ApiInfo * apiInfo = apiReader->getApiByVirtualAddress(ref->targetAddressInIat, &isSuspect);

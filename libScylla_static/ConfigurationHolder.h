@@ -41,19 +41,19 @@ private:
 
 	static const TCHAR CONFIG_FILE_SECTION_NAME[];
 
-	TCHAR configPath[MAX_PATH];
+	TCHAR configPath[MAX_PATH]{};
 	std::map<ConfigOption, Configuration> config;
 
 	bool buildConfigFilePath(LPCTSTR fileName);
 
-	bool readStringFromConfigFile(Configuration & configObject);
-	bool readBooleanFromConfigFile(Configuration & configObject);
-	bool readNumericFromConfigFile(Configuration & configObject, int nBase);
+	bool readStringFromConfigFile(Configuration & configObject) const;
+	bool readBooleanFromConfigFile(Configuration & configObject) const;
+	bool readNumericFromConfigFile(Configuration & configObject, int nBase) const;
 
 	bool saveStringToConfigFile(const Configuration & configObject) const;
 	bool saveBooleanToConfigFile(const Configuration & configObject) const;
 	bool saveNumericToConfigFile(const Configuration & configObject, int nBase) const;
 
-	bool loadConfig(Configuration & configObject);
+	bool loadConfig(Configuration & configObject) const;
 	bool saveConfig(const Configuration & configObject) const;
 };

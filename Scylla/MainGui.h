@@ -242,7 +242,7 @@ protected:
     void OnProcessListSelected(UINT uNotifyCode, int nID, CWindow wndCtl);
 
     void OnPickDLL(UINT uNotifyCode, int nID, CWindow wndCtl);
-    void OnOptions(UINT uNotifyCode, int nID, CWindow wndCtl);
+    static void OnOptions(UINT uNotifyCode, int nID, CWindow wndCtl);
     void OnDump(UINT uNotifyCode, int nID, CWindow wndCtl);
     void OnDumpMemory(UINT uNotifyCode, int nID, CWindow wndCtl);
     void OnDumpSection(UINT uNotifyCode, int nID, CWindow wndCtl);
@@ -261,15 +261,15 @@ protected:
     void OnCutSelected(UINT uNotifyCode, int nID, CWindow wndCtl);
     void OnSaveTree(UINT uNotifyCode, int nID, CWindow wndCtl);
     void OnLoadTree(UINT uNotifyCode, int nID, CWindow wndCtl);
-    void OnAutotrace(UINT uNotifyCode, int nID, CWindow wndCtl);
+    static void OnAutotrace(UINT uNotifyCode, int nID, CWindow wndCtl);
 
     void OnExit(UINT uNotifyCode, int nID, CWindow wndCtl);
-    void OnAbout(UINT uNotifyCode, int nID, CWindow wndCtl);
-    void OnDonate(UINT uNotifyCode, int nID, CWindow wndCtl);
+    static void OnAbout(UINT uNotifyCode, int nID, CWindow wndCtl);
+    static void OnDonate(UINT uNotifyCode, int nID, CWindow wndCtl);
 
     // GUI functions
 
-    bool showFileDialog(LPTSTR selectedFile, bool save, LPCTSTR defFileName, LPCTSTR filter = NULL, LPCTSTR defExtension = NULL, LPCTSTR directory = NULL) const;
+    bool showFileDialog(LPTSTR selectedFile, bool save, LPCTSTR defFileName, LPCTSTR filter = nullptr, LPCTSTR defExtension = nullptr, LPCTSTR directory = nullptr) const;
 
     void setupStatusBar();
     void updateStatusBar();
@@ -282,7 +282,7 @@ protected:
     // Actions
 
     void pickDllActionHandler();
-    void pickApiActionHandler(CTreeItem item);
+    void pickApiActionHandler(const CTreeItem& item);
     void processSelectedActionHandler(int index);
     void showInvalidImportsActionHandler();
     void showSuspectImportsActionHandler();
@@ -296,7 +296,7 @@ protected:
     void dumpMemoryActionHandler();
     void dumpSectionActionHandler();
     void peRebuildActionHandler();
-    void startDisassemblerGui(CTreeItem selectedTreeNode);
+    void startDisassemblerGui(const CTreeItem& selectedTreeNode);
     void dumpFixActionHandler();
     static void showAboutDialog();
     static void showDonateDialog();
@@ -316,7 +316,7 @@ protected:
     // Log
 
     void clearOutputLog();
-    bool saveLogToFile(LPCTSTR file);
+    bool saveLogToFile(LPCTSTR file) const;
 
     // Misc
 

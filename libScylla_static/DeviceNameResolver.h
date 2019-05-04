@@ -1,11 +1,7 @@
-#include <Windows.h>
-
-
 #pragma once
 
 #include <Windows.h>
 #include <vector>
-#include <tchar.h>
 
 class HardDisk {
 public:
@@ -26,4 +22,3 @@ private:
 	void initDeviceNameList();
     void fixVirtualDevices();
 };
-

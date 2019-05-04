@@ -137,4 +137,4 @@ set_target_properties (ScyllaExeTest PROPERTIES	FOLDER "tests" LINK_FLAGS "/SUBS
 
 # compile projects as unicode
 set(unicode_targets Scylla libScylla libScylla_static)
-set_msvc_unicode(unicode_targets)
+# set_msvc_unicode(unicode_targets)
