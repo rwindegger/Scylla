@@ -1,5 +1,6 @@
 #include "Logger.h"
 
+#include <iostream>
 #include <shlwapi.h>
 #include <cstdio>
 #include <atlbase.h> 
@@ -42,6 +43,16 @@ void Logger::write(const CHAR * str)
 	write(ATL::CA2W(str));
 }
 
+void ConsoleLogger::write(const WCHAR* str)
+{
+    std::wcout << L"[SCYLLA] " << str << std::endl;
+}
+
+void ConsoleLogger::write(const CHAR* str)
+{
+    std::cout << "[SCYLLA] " << str << std::endl;
+}
+
 FileLog::FileLog(const WCHAR * fileName)
 {
 	GetModuleFileName(0, this->filePath, _countof(this->filePath));
@@ -51,14 +62,6 @@ FileLog::FileLog(const WCHAR * fileName)
 
 void FileLog::write(const CHAR * str)
 {
-	/*
-	std::wofstream file(filePath, std::wofstream::app);
-	if(!file.fail())
-	{
-		file << str << std::endl;
-	}
-	*/
-
 	FILE * pFile = 0;
 	if (_wfopen_s(&pFile, filePath, L"a") == 0)
 	{
@@ -70,14 +73,6 @@ void FileLog::write(const CHAR * str)
 
 void FileLog::write(const WCHAR * str)
 {
-	/*
-	std::wofstream file(filePath, std::wofstream::app);
-	if(!file.fail())
-	{
-		file << str << std::endl;
-	}
-	*/
-	
 	FILE * pFile = 0;
 	if (_wfopen_s(&pFile, filePath, L"a") == 0)
 	{

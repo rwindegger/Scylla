@@ -1,18 +1,15 @@
 #pragma once
 
 #include <windows.h>
-#include <iostream>
 
 // Abstract class for logging text.
 class Logger
 {
 public:
-
+    virtual ~Logger() = default;
     virtual void log(const WCHAR * format, ...);
     virtual void log(const CHAR * format, ...);
-
 protected:
-
     virtual void write(const WCHAR * str) = 0;
     virtual void write(const CHAR * str);
 };
@@ -20,31 +17,30 @@ protected:
 class ConsoleLogger : public Logger
 {
 public:
-    ConsoleLogger() {};
-    void setWindow(HWND window) {};
+    ConsoleLogger() = default;
 protected:
-    void write(const WCHAR* str) override { std::wcout << L"[SCYLLA] " << str << L"\n"; };
+    void write(const WCHAR* str) override;
+    void write(const CHAR* str) override;
 };
 
 // Dummy logger which does absolutely nothing
 class DummyLogger : public Logger
 {
 public:
-    DummyLogger() {};
+    DummyLogger() = default;
 private:
-    void write(const WCHAR * str) {};
+    void write(const WCHAR *str) override {};
+    void write(const CHAR *str) override {};
 };
 
 class FileLog : public Logger
 {
 public:
-
     FileLog(const WCHAR * fileName);
 
 private:
-
-    void write(const WCHAR * str);
-    void write(const CHAR * str);
+    void write(const WCHAR * str) override;
+    void write(const CHAR * str) override;
 
     WCHAR filePath[MAX_PATH];
 };
