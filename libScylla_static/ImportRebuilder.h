@@ -8,7 +8,7 @@
 
 class ImportRebuilder : public PeParser {
 public:
-	ImportRebuilder(const WCHAR * file) : PeParser(file, true)
+	ImportRebuilder(LPCTSTR file) : PeParser(file, true)
 	{
 		pImportDescriptor = 0;
 		pThunkData = 0;
@@ -25,7 +25,7 @@ public:
 		sizeOfJumpTable = 0;
 	}
 
-	bool rebuildImportTable(const WCHAR * newFilePath, std::map<DWORD_PTR, ImportModuleThunk> & moduleList);
+	bool rebuildImportTable(LPCTSTR newFilePath, std::map<DWORD_PTR, ImportModuleThunk> & moduleList);
 	void enableOFTSupport();
 	void enableNewIatInSection(DWORD_PTR iatAddress, DWORD iatSize);
 

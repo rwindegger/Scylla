@@ -22,9 +22,9 @@ class Memory
 public:
 	DWORD_PTR address;
 	DWORD size;
-	WCHAR filename[MAX_PATH];
-	WCHAR mappedFilename[MAX_PATH];
-	WCHAR peSection[IMAGE_SIZEOF_SHORT_NAME * 20];
+	TCHAR filename[MAX_PATH];
+	TCHAR mappedFilename[MAX_PATH];
+	TCHAR peSection[IMAGE_SIZEOF_SHORT_NAME * 20];
 	DWORD state;
 	DWORD protect;
 	DWORD type;
@@ -71,7 +71,7 @@ public:
 
 	BYTE * dumpedMemory;
 	DWORD dumpedMemorySize;
-	WCHAR dumpFilename[39];
+	TCHAR dumpFilename[39];
 
 protected:
 	CListViewCtrl ListMemorySelect;
@@ -110,7 +110,7 @@ protected:
 
 	// GUI functions
 
-	void addColumnsToMemoryList(CListViewCtrl& list);
+    static void addColumnsToMemoryList(CListViewCtrl& list);
 	void displayMemoryList(CListViewCtrl& list);
 
 	static int CALLBACK listviewCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
@@ -145,25 +145,25 @@ private:
 		PROT_WRITECOMBINE
 	};
 
-	static const WCHAR * MemoryStateValues[];
-	static const WCHAR * MemoryTypeValues[];
-	static const WCHAR * MemoryProtectionValues[];
-	static const WCHAR MemoryUnknown[];
-	static const WCHAR MemoryUndefined[];
+	static LPCTSTR MemoryStateValues[];
+	static LPCTSTR MemoryTypeValues[];
+	static LPCTSTR MemoryProtectionValues[];
+	static LPCTSTR MemoryUnknown;
+	static LPCTSTR MemoryUndefined;
 
-	static WCHAR protectionString[100];
+	static TCHAR protectionString[100];
 
-	static const WCHAR * getMemoryTypeString(DWORD value);
-	static const WCHAR * getMemoryStateString(DWORD value);
-	static WCHAR * getMemoryProtectionString(DWORD value);
+	static LPCTSTR getMemoryTypeString(DWORD value);
+	static LPCTSTR getMemoryStateString(DWORD value);
+	static LPTSTR getMemoryProtectionString(DWORD value);
 
 	void updateAddressAndSize( Memory * selectedMemory );
 	void getMemoryList();
 	SIZE_T getSizeOfImage(DWORD_PTR moduleBase);
-	void setModuleName(DWORD_PTR moduleBase, const WCHAR * moduleName);
-	void setAllSectionNames( DWORD_PTR moduleBase, WCHAR * moduleName );
+	void setModuleName(DWORD_PTR moduleBase, LPCTSTR moduleName);
+	void setAllSectionNames( DWORD_PTR moduleBase, LPTSTR moduleName );
 
-	void setSectionName(DWORD_PTR sectionAddress, DWORD sectionSize, const WCHAR * sectionName);
+	void setSectionName(DWORD_PTR sectionAddress, DWORD sectionSize, LPCTSTR sectionName);
 	bool dumpMemory();
-	bool getMappedFilename( Memory* memory );
+	bool getMappedFilename( Memory* memory ) const;
 };

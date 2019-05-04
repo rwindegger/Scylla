@@ -7,11 +7,9 @@ class Logger
 {
 public:
     virtual ~Logger() = default;
-    virtual void log(const WCHAR * format, ...);
-    virtual void log(const CHAR * format, ...);
+    virtual void log(LPCTSTR format, ...);
 protected:
-    virtual void write(const WCHAR * str) = 0;
-    virtual void write(const CHAR * str);
+    virtual void write(LPCTSTR str) = 0;
 };
 
 class ConsoleLogger : public Logger
@@ -19,8 +17,7 @@ class ConsoleLogger : public Logger
 public:
     ConsoleLogger() = default;
 protected:
-    void write(const WCHAR* str) override;
-    void write(const CHAR* str) override;
+    void write(LPCTSTR str) override;
 };
 
 // Dummy logger which does absolutely nothing
@@ -29,18 +26,15 @@ class DummyLogger : public Logger
 public:
     DummyLogger() = default;
 private:
-    void write(const WCHAR *str) override {};
-    void write(const CHAR *str) override {};
+    void write(LPCTSTR str) override {};
 };
 
 class FileLog : public Logger
 {
 public:
-    FileLog(const WCHAR * fileName);
-
+    FileLog(LPCTSTR fileName);
 private:
-    void write(const WCHAR * str) override;
-    void write(const CHAR * str) override;
+    void write(LPCTSTR str) override;
 
-    WCHAR filePath[MAX_PATH];
+    TCHAR filePath[MAX_PATH];
 };

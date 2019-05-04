@@ -10,7 +10,7 @@ PeParser::PeParser()
 	initClass();
 }
 
-PeParser::PeParser(const WCHAR * file, bool readSectionHeaders)
+PeParser::PeParser(LPCTSTR file, bool readSectionHeaders)
 {
 	initClass();
 
@@ -360,7 +360,7 @@ bool PeParser::getSectionHeaders()
 	return true;
 }
 
-bool PeParser::getSectionNameUnicode(const int sectionIndex, WCHAR * output, const int outputLen)
+bool PeParser::getSectionName(const int sectionIndex, LPTSTR output, const int outputLen)
 {
 	CHAR sectionNameA[IMAGE_SIZEOF_SHORT_NAME + 1] = {0};
 	
@@ -368,7 +368,7 @@ bool PeParser::getSectionNameUnicode(const int sectionIndex, WCHAR * output, con
 
 	memcpy(sectionNameA, listPeSection[sectionIndex].sectionHeader.Name, IMAGE_SIZEOF_SHORT_NAME); //not null terminated
 
-	return (swprintf_s(output, outputLen, L"%S", sectionNameA) != -1);
+	return (_stprintf_s(output, outputLen, TEXT("%s"), sectionNameA) != -1);
 }
 
 WORD PeParser::getNumberOfSections()
@@ -501,7 +501,7 @@ bool PeParser::openFileHandle()
 	return (hFile != INVALID_HANDLE_VALUE);
 }
 
-bool PeParser::openWriteFileHandle( const WCHAR * newFile )
+bool PeParser::openWriteFileHandle(LPCTSTR newFile)
 {
 	if (newFile)
 	{
@@ -655,7 +655,7 @@ DWORD PeParser::isMemoryNotNull( BYTE * data, int dataSize )
 	return 0;
 }
 
-bool PeParser::savePeFileToDisk( const WCHAR * newFile )
+bool PeParser::savePeFileToDisk(LPCTSTR newFile)
 {
 	bool retValue = true;
 	DWORD dwFileOffset = 0, dwWriteSize = 0;
@@ -827,7 +827,7 @@ DWORD PeParser::alignValue(DWORD badValue, DWORD alignTo)
 	return (((badValue + alignTo - 1) / alignTo) * alignTo);
 }
 
-bool PeParser::addNewLastSection(const CHAR * sectionName, DWORD sectionSize, BYTE * sectionData)
+bool PeParser::addNewLastSection(LPCSTR sectionName, DWORD sectionSize, BYTE * sectionData)
 {
 	size_t nameLength = strlen(sectionName);
 	DWORD fileAlignment = 0, sectionAlignment = 0;
@@ -888,6 +888,7 @@ DWORD_PTR PeParser::getStandardImagebase()
 	}
 	else
 	{
+#pragma warning(suppress : 4244)
 		return pNTHeader64->OptionalHeader.ImageBase;
 	}
 }
@@ -1092,7 +1093,7 @@ void PeParser::alignAllSectionHeaders()
 	std::sort(listPeSection.begin(), listPeSection.end(), PeFileSectionSortByVirtualAddress); //sort by VirtualAddress ascending
 }
 
-bool PeParser::dumpProcess(DWORD_PTR modBase, DWORD_PTR entryPoint, const WCHAR * dumpFilePath)
+bool PeParser::dumpProcess(DWORD_PTR modBase, DWORD_PTR entryPoint, LPCTSTR dumpFilePath)
 {
 	moduleBaseAddress = modBase;
 
@@ -1113,7 +1114,7 @@ bool PeParser::dumpProcess(DWORD_PTR modBase, DWORD_PTR entryPoint, const WCHAR 
 	return false;
 }
 
-bool PeParser::dumpProcess(DWORD_PTR modBase, DWORD_PTR entryPoint, const WCHAR * dumpFilePath, std::vector<PeSection> & sectionList)
+bool PeParser::dumpProcess(DWORD_PTR modBase, DWORD_PTR entryPoint, LPCTSTR dumpFilePath, std::vector<PeSection> & sectionList)
 {
 	if (listPeSection.size() == sectionList.size())
 	{
@@ -1203,7 +1204,7 @@ bool PeParser::hasOverlayData()
 	}
 }
 
-bool PeParser::updatePeHeaderChecksum(const WCHAR * targetFile, DWORD fileSize)
+bool PeParser::updatePeHeaderChecksum(LPCTSTR targetFile, DWORD fileSize)
 {
 	PIMAGE_NT_HEADERS32 pNTHeader32 = 0;
 	PIMAGE_NT_HEADERS64 pNTHeader64 = 0;

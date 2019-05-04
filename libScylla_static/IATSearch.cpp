@@ -3,7 +3,7 @@
 #include "Architecture.h"
 
 
-bool IATSearch::searchImportAddressTableInProcess( DWORD_PTR startAddress, DWORD_PTR* addressIAT, DWORD* sizeIAT, bool advanced )
+bool IATSearch::searchImportAddressTableInProcess( DWORD_PTR startAddress, DWORD_PTR* addressIAT, size_t* sizeIAT, bool advanced )
 {
 	DWORD_PTR addressInIAT = 0;
 
@@ -20,16 +20,16 @@ bool IATSearch::searchImportAddressTableInProcess( DWORD_PTR startAddress, DWORD
 
 	if(!addressInIAT)
 	{
-		Scylla::debugLog.log(L"searchImportAddressTableInProcess :: addressInIAT not found, startAddress " PRINTF_DWORD_PTR_FULL, startAddress);
+		Scylla::debugLog.log(TEXT("searchImportAddressTableInProcess :: addressInIAT not found, startAddress ") PRINTF_DWORD_PTR_FULL, startAddress);
 		return false;
 	}
 	else
 	{
-		return findIATStartAndSize(addressInIAT, addressIAT,sizeIAT);
+		return findIATStartAndSize(addressInIAT, addressIAT, sizeIAT);
 	}
 }
 
-bool IATSearch::findIATAdvanced( DWORD_PTR startAddress, DWORD_PTR* addressIAT, DWORD* sizeIAT )
+bool IATSearch::findIATAdvanced( DWORD_PTR startAddress, DWORD_PTR* addressIAT, size_t *sizeIAT )
 {
 	BYTE *dataBuffer;
 	DWORD_PTR baseAddress;
@@ -44,7 +44,7 @@ bool IATSearch::findIATAdvanced( DWORD_PTR startAddress, DWORD_PTR* addressIAT, 
 
 	if (!readMemoryFromProcess((DWORD_PTR)baseAddress, memorySize,dataBuffer))
 	{
-		Scylla::debugLog.log(L"findAPIAddressInIAT2 :: error reading memory");
+		Scylla::debugLog.log(TEXT("findAPIAddressInIAT2 :: error reading memory"));
 
 		delete [] dataBuffer;
 		return false;
@@ -89,8 +89,8 @@ bool IATSearch::findIATAdvanced( DWORD_PTR startAddress, DWORD_PTR* addressIAT, 
 		return false;
 	}
 
-	Scylla::Log->log(L"IAT Search Adv: Found %d (0x%X) possible IAT entries.", iatPointers.size(), iatPointers.size());
-	Scylla::Log->log(L"IAT Search Adv: Possible IAT first " PRINTF_DWORD_PTR_FULL L" last " PRINTF_DWORD_PTR_FULL L" entry.", *(iatPointers.begin()), *(--iatPointers.end()));
+	Scylla::Log->log(TEXT("IAT Search Adv: Found %d (0x%X) possible IAT entries."), iatPointers.size(), iatPointers.size());
+	Scylla::Log->log(TEXT("IAT Search Adv: Possible IAT first ") PRINTF_DWORD_PTR_FULL TEXT(" last ") PRINTF_DWORD_PTR_FULL TEXT(" entry."), *(iatPointers.begin()), *(--iatPointers.end()));
 
 	delete [] dataBuffer;
 
@@ -115,7 +115,7 @@ DWORD_PTR IATSearch::findAPIAddressInIAT(DWORD_PTR startAddress)
 
 		if (!readMemoryFromProcess(startAddress, sizeof(dataBuffer), dataBuffer))
 		{
-			Scylla::debugLog.log(L"findAPIAddressInIAT :: error reading memory " PRINTF_DWORD_PTR_FULL, startAddress);
+			Scylla::debugLog.log(TEXT("findAPIAddressInIAT :: error reading memory ") PRINTF_DWORD_PTR_FULL, startAddress);
 			return 0;
 		}
 
@@ -157,7 +157,7 @@ DWORD_PTR IATSearch::findNextFunctionAddress()
 					{
 #ifdef DEBUG_COMMENTS
 						distorm_format(&decomposerCi, &decomposerResult[i], &inst);
-						Scylla::debugLog.log(L"%S %S %d %d - target address: " PRINTF_DWORD_PTR_FULL, inst.mnemonic.p, inst.operands.p, decomposerResult[i].ops[0].type, decomposerResult[i].size, INSTRUCTION_GET_TARGET(&decomposerResult[i]));
+						Scylla::debugLog.log(TEXT("%S %S %d %d - target address: ") PRINTF_DWORD_PTR_FULL, inst.mnemonic.p, inst.operands.p, decomposerResult[i].ops[0].type, decomposerResult[i].size, INSTRUCTION_GET_TARGET(&decomposerResult[i]));
 #endif
 						return (DWORD_PTR)INSTRUCTION_GET_TARGET(&decomposerResult[i]);
 					}
@@ -188,7 +188,7 @@ DWORD_PTR IATSearch::findIATPointer()
 					{
 #ifdef DEBUG_COMMENTS
 						distorm_format(&decomposerCi, &decomposerResult[i], &inst);
-						Scylla::debugLog.log(L"%S %S %d %d - target address: " PRINTF_DWORD_PTR_FULL, inst.mnemonic.p, inst.operands.p, decomposerResult[i].ops[0].type, decomposerResult[i].size, INSTRUCTION_GET_RIP_TARGET(&decomposerResult[i]));
+						Scylla::debugLog.log(TEXT("%S %S %d %d - target address: ") PRINTF_DWORD_PTR_FULL, inst.mnemonic.p, inst.operands.p, decomposerResult[i].ops[0].type, decomposerResult[i].size, INSTRUCTION_GET_RIP_TARGET(&decomposerResult[i]));
 #endif
 						return INSTRUCTION_GET_RIP_TARGET(&decomposerResult[i]);
 					}
@@ -198,7 +198,7 @@ DWORD_PTR IATSearch::findIATPointer()
 						//jmp dword ptr || call dword ptr
 #ifdef DEBUG_COMMENTS
 						distorm_format(&decomposerCi, &decomposerResult[i], &inst);
-						Scylla::debugLog.log(L"%S %S %d %d - target address: " PRINTF_DWORD_PTR_FULL, inst.mnemonic.p, inst.operands.p, decomposerResult[i].ops[0].type, decomposerResult[i].size, decomposerResult[i].disp);
+						Scylla::debugLog.log(TEXT("%S %S %d %d - target address: ") PRINTF_DWORD_PTR_FULL, inst.mnemonic.p, inst.operands.p, decomposerResult[i].ops[0].type, decomposerResult[i].size, decomposerResult[i].disp);
 #endif
 						return (DWORD_PTR)decomposerResult[i].disp;
 					}
@@ -217,7 +217,7 @@ bool IATSearch::isIATPointerValid(DWORD_PTR iatPointer, bool checkRedirects)
 
 	if (!readMemoryFromProcess(iatPointer,sizeof(DWORD_PTR),&apiAddress))
 	{
-		Scylla::debugLog.log(L"isIATPointerValid :: error reading memory");
+		Scylla::debugLog.log(TEXT("isIATPointerValid :: error reading memory"));
 		return false;
 	}
 
@@ -248,7 +248,7 @@ bool IATSearch::isIATPointerValid(DWORD_PTR iatPointer, bool checkRedirects)
     return false;
 }
 
-bool IATSearch::findIATStartAndSize(DWORD_PTR address, DWORD_PTR * addressIAT, DWORD * sizeIAT)
+bool IATSearch::findIATStartAndSize(DWORD_PTR address, DWORD_PTR * addressIAT, size_t *sizeIAT)
 {
 	BYTE *dataBuffer = 0;
     DWORD_PTR baseAddress = 0;
@@ -268,7 +268,7 @@ bool IATSearch::findIATStartAndSize(DWORD_PTR address, DWORD_PTR * addressIAT, D
 
 	if (!readMemoryFromProcess(baseAddress, baseSize, dataBuffer))
 	{
-		Scylla::debugLog.log(L"findIATStartAddress :: error reading memory");
+		Scylla::debugLog.log(TEXT("findIATStartAddress :: error reading memory"));
 
 		delete [] dataBuffer;
 		return false;
@@ -316,7 +316,7 @@ DWORD_PTR IATSearch::findIATStartAddress(DWORD_PTR baseAddress, DWORD_PTR startA
 	return baseAddress;
 }
 
-DWORD IATSearch::findIATSize(DWORD_PTR baseAddress, DWORD_PTR iatAddress, BYTE * dataBuffer, DWORD bufferSize)
+size_t IATSearch::findIATSize(DWORD_PTR baseAddress, DWORD_PTR iatAddress, BYTE * dataBuffer, size_t bufferSize)
 {
 	size_t iatSize = 0;
 	size_t iatOffset = (iatAddress - baseAddress);
@@ -324,11 +324,11 @@ DWORD IATSearch::findIATSize(DWORD_PTR baseAddress, DWORD_PTR iatAddress, BYTE *
 	DWORD_PTR *pIATAddress = (DWORD_PTR *) (dataBuffer + iatOffset);
 	DWORD_PTR CurrentImportAddress;
 
-	Scylla::debugLog.log(L"findIATSize :: baseAddress %X iatAddress %X dataBuffer %X pIATAddress %X", baseAddress, iatAddress, dataBuffer, pIATAddress);
+	Scylla::debugLog.log(TEXT("findIATSize :: baseAddress %X iatAddress %X dataBuffer %X pIATAddress %X"), baseAddress, iatAddress, dataBuffer, pIATAddress);
 	for (int iat_index = 0; iat_index * sizeof(DWORD_PTR) < iatMaxByteSize; iat_index++)
 	{
 		CurrentImportAddress = pIATAddress[iat_index];
-		Scylla::debugLog.log(L"findIATSize :: %p %p %p", (void*)&CurrentImportAddress, pIATAddress[iat_index + 1], pIATAddress[iat_index + 1]);
+		Scylla::debugLog.log(TEXT("findIATSize :: %p %p %p"), (void*)&CurrentImportAddress, pIATAddress[iat_index + 1], pIATAddress[iat_index + 1]);
 		
 		// Heuristic for end of IAT
 		if (isInvalidMemoryForIat(pIATAddress[iat_index])
@@ -368,7 +368,7 @@ void IATSearch::findIATPointers(std::set<DWORD_PTR> & iatPointers)
 					{
 #ifdef DEBUG_COMMENTS
 						distorm_format(&decomposerCi, &decomposerResult[i], &inst);
-						Scylla::debugLog.log(L"%S %S %d %d - target address: " PRINTF_DWORD_PTR_FULL, inst.mnemonic.p, inst.operands.p, decomposerResult[i].ops[0].type, decomposerResult[i].size, INSTRUCTION_GET_RIP_TARGET(&decomposerResult[i]));
+						Scylla::debugLog.log(TEXT("%S %S %d %d - target address: ") PRINTF_DWORD_PTR_FULL, inst.mnemonic.p, inst.operands.p, decomposerResult[i].ops[0].type, decomposerResult[i].size, INSTRUCTION_GET_RIP_TARGET(&decomposerResult[i]));
 #endif
 						iatPointers.insert(INSTRUCTION_GET_RIP_TARGET(&decomposerResult[i]));
 					}
@@ -378,7 +378,7 @@ void IATSearch::findIATPointers(std::set<DWORD_PTR> & iatPointers)
 						//jmp dword ptr || call dword ptr
 #ifdef DEBUG_COMMENTS
 						distorm_format(&decomposerCi, &decomposerResult[i], &inst);
-						Scylla::debugLog.log(L"%S %S %d %d - target address: " PRINTF_DWORD_PTR_FULL, inst.mnemonic.p, inst.operands.p, decomposerResult[i].ops[0].type, decomposerResult[i].size, decomposerResult[i].disp);
+						Scylla::debugLog.log(TEXT("%S %S %d %d - target address: ") PRINTF_DWORD_PTR_FULL, inst.mnemonic.p, inst.operands.p, decomposerResult[i].ops[0].type, decomposerResult[i].size, decomposerResult[i].disp);
 #endif
 						iatPointers.insert((DWORD_PTR)decomposerResult[i].disp);
 					}
@@ -401,7 +401,7 @@ void IATSearch::findExecutableMemoryPagesByStartAddress( DWORD_PTR startAddress,
 
 	if (VirtualQueryEx(hProcess,(LPCVOID)startAddress, &memBasic, sizeof(MEMORY_BASIC_INFORMATION)) != sizeof(MEMORY_BASIC_INFORMATION))
 	{
-		Scylla::debugLog.log(L"findIATStartAddress :: VirtualQueryEx error %u", GetLastError());
+		Scylla::debugLog.log(TEXT("findIATStartAddress :: VirtualQueryEx error %u"), GetLastError());
 		return;
 	}
 

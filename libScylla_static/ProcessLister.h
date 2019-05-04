@@ -18,8 +18,8 @@ public:
 	intptr_t pebAddress;
 	DWORD entryPoint; //RVA without imagebase
 	DWORD imageSize;
-	WCHAR filename[MAX_PATH];
-	WCHAR fullPath[MAX_PATH];
+	TCHAR filename[MAX_PATH];
+	TCHAR fullPath[MAX_PATH];
 
 	Process()
 	{
@@ -42,7 +42,7 @@ public:
 	ProcessLister()
 	{
 		deviceNameResolver = new DeviceNameResolver();
-		_IsWow64Process = (def_IsWow64Process)GetProcAddress(GetModuleHandle(L"kernel32.dll"), "IsWow64Process");
+		_IsWow64Process = (def_IsWow64Process)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "IsWow64Process");
 	}
 	~ProcessLister()
 	{

@@ -9,6 +9,7 @@
 /************************************************************************/
 #include <distorm.h>
 #include <mnemonics.h>
+#include <tchar.h>
 
 // The number of the array of instructions the decoder function will use to return the disassembled instructions.
 // Play with this value for performance...
@@ -22,209 +23,209 @@ class ModuleInfo
 {
 public:
 
-	WCHAR fullPath[MAX_PATH];
-	DWORD_PTR modBaseAddr;
-	DWORD modBaseSize;
+    TCHAR fullPath[MAX_PATH];
+    DWORD_PTR modBaseAddr;
+    DWORD modBaseSize;
 
-	bool isAlreadyParsed;
-	bool parsing;
+    bool isAlreadyParsed;
+    bool parsing;
 
-	/*
-	  for iat rebuilding with duplicate entries:
+    /*
+      for iat rebuilding with duplicate entries:
 
-	  ntdll = low priority
-	  kernelbase = low priority
-	  SHLWAPI = low priority
+      ntdll = low priority
+      kernelbase = low priority
+      SHLWAPI = low priority
 
-	  kernel32 = high priority
-	  
-	  priority = 1 -> normal/high priority
-	  priority = 0 -> low priority
-	*/
-	int priority;
+      kernel32 = high priority
 
-	std::vector<ApiInfo *> apiList;
+      priority = 1 -> normal/high priority
+      priority = 0 -> low priority
+    */
+    int priority;
 
-	ModuleInfo()
-	{
-		modBaseAddr = 0;
-		modBaseSize = 0;
-		priority = 1;
-		isAlreadyParsed = false;
-		parsing = false;
-	}
+    std::vector<ApiInfo *> apiList;
 
-	const WCHAR * getFilename() const
-	{
-		const WCHAR* slash = wcsrchr(fullPath, L'\\');
-		if(slash)
-		{
-			return slash+1;
-		}
-		return fullPath;
-	}
+    ModuleInfo()
+    {
+        modBaseAddr = 0;
+        modBaseSize = 0;
+        priority = 1;
+        isAlreadyParsed = false;
+        parsing = false;
+    }
+
+    const LPCTSTR getFilename() const
+    {
+        LPCTSTR slash = _tcsrchr(fullPath, TEXT('\\'));
+        if (slash)
+        {
+            return slash + 1;
+        }
+        return fullPath;
+    }
 };
 
 class ApiInfo
 {
 public:
 
-	char name[MAX_PATH];
-	WORD hint;
-	DWORD_PTR va;
-	DWORD_PTR rva;
-	WORD ordinal;
-	bool isForwarded;
-	ModuleInfo * module;
+    TCHAR name[MAX_PATH];
+    WORD hint;
+    DWORD_PTR va;
+    DWORD_PTR rva;
+    WORD ordinal;
+    bool isForwarded;
+    ModuleInfo * module;
 };
 
 class ProcessAccessHelp
 {
 public:
 
-	static HANDLE hProcess; //OpenProcess handle to target process
+    static HANDLE hProcess; //OpenProcess handle to target process
 
-	static DWORD_PTR targetImageBase;
-	static DWORD_PTR targetSizeOfImage;
-	static DWORD_PTR maxValidAddress;
+    static DWORD_PTR targetImageBase;
+    static DWORD_PTR targetSizeOfImage;
+    static DWORD_PTR maxValidAddress;
 
-	static ModuleInfo * selectedModule;
+    static ModuleInfo * selectedModule;
 
-	static std::vector<ModuleInfo> moduleList; //target process module list
-	static std::vector<ModuleInfo> ownModuleList; //own module list
+    static std::vector<ModuleInfo> moduleList; //target process module list
+    static std::vector<ModuleInfo> ownModuleList; //own module list
 
-	static const size_t PE_HEADER_BYTES_COUNT = 2000;
+    static const size_t PE_HEADER_BYTES_COUNT = 2000;
 
-	static BYTE fileHeaderFromDisk[PE_HEADER_BYTES_COUNT];
+    static BYTE fileHeaderFromDisk[PE_HEADER_BYTES_COUNT];
 
 
-	//for decomposer
-	static _DInst decomposerResult[MAX_INSTRUCTIONS];
-	static unsigned int decomposerInstructionsCount;
-	static _CodeInfo decomposerCi;
+    //for decomposer
+    static _DInst decomposerResult[MAX_INSTRUCTIONS];
+    static unsigned int decomposerInstructionsCount;
+    static _CodeInfo decomposerCi;
 
-	//distorm :: Decoded instruction information.
-	static _DecodedInst decodedInstructions[MAX_INSTRUCTIONS];
-	static unsigned int decodedInstructionsCount;
+    //distorm :: Decoded instruction information.
+    static _DecodedInst decodedInstructions[MAX_INSTRUCTIONS];
+    static unsigned int decodedInstructionsCount;
 #ifdef _WIN64
-	static const _DecodeType dt = Decode64Bits;
+    static const _DecodeType dt = Decode64Bits;
 #else
-	static const _DecodeType dt = Decode32Bits;
+    static const _DecodeType dt = Decode32Bits;
 #endif
 
-	/*
-	 * Open a new process handle
-	 */
-	static bool openProcessHandle(size_t szPID);
+    /*
+     * Open a new process handle
+     */
+    static bool openProcessHandle(size_t szPID);
 
-	static HANDLE NativeOpenProcess(DWORD dwDesiredAccess, size_t szPID);
+    static HANDLE NativeOpenProcess(DWORD dwDesiredAccess, size_t szPID);
 
-	static void closeProcessHandle();
+    static void closeProcessHandle();
 
-	/*
-	 * Get all modules from a process
-	 */
-	static bool getProcessModules(HANDLE hProcess, std::vector<ModuleInfo> &moduleList);
-
-
-	/*
-	 * file mapping view with different access level
-	 */
-	static LPVOID createFileMappingViewRead(const WCHAR * filePath);
-	static LPVOID createFileMappingViewFull(const WCHAR * filePath);
-
-	/*
-	 * Create a file mapping view of a file 
-	 */
-	static LPVOID createFileMappingView(const WCHAR * filePath, DWORD accessFile, DWORD flProtect, DWORD accessMap);
-
-	/*
-	 * Read memory from target process
-	 */
-	static bool readMemoryFromProcess(DWORD_PTR address, SIZE_T size, LPVOID dataBuffer);
-	static bool writeMemoryToProcess(DWORD_PTR address, SIZE_T size, LPVOID dataBuffer);
-
-	/*
-	 * Read memory from target process and ignore no data pages
-	 */
-	static bool readMemoryPartlyFromProcess(DWORD_PTR address, SIZE_T size, LPVOID dataBuffer);
-
-	/*
-	 * Read memory from file
-	 */
-	static bool readMemoryFromFile(HANDLE hFile, LONG offset, DWORD size, LPVOID dataBuffer);
-
-	/*
-	 * Write memory to file
-	 */
-	static bool writeMemoryToFile(HANDLE hFile, LONG offset, DWORD size, LPCVOID dataBuffer);
+    /*
+     * Get all modules from a process
+     */
+    static bool getProcessModules(HANDLE hProcess, std::vector<ModuleInfo> &moduleList);
 
 
-	/*
-	 * Write memory to new file
-	 */
-	static bool writeMemoryToNewFile(const WCHAR * file,DWORD size, LPCVOID dataBuffer);
+    /*
+     * file mapping view with different access level
+     */
+    static LPVOID createFileMappingViewRead(LPCTSTR filePath);
+    static LPVOID createFileMappingViewFull(LPCTSTR filePath);
 
-	/*
-	 * Write memory to file end
-	 */
-	static bool writeMemoryToFileEnd(HANDLE hFile, DWORD size, LPCVOID dataBuffer);
+    /*
+     * Create a file mapping view of a file
+     */
+    static LPVOID createFileMappingView(LPCTSTR filePath, DWORD accessFile, DWORD flProtect, DWORD accessMap);
 
-	/*
-	 * Disassemble Memory
-	 */
-	static bool disassembleMemory(BYTE * dataBuffer, SIZE_T bufferSize, DWORD_PTR startOffset);
+    /*
+     * Read memory from target process
+     */
+    static bool readMemoryFromProcess(DWORD_PTR address, SIZE_T size, LPVOID dataBuffer);
+    static bool writeMemoryToProcess(DWORD_PTR address, SIZE_T size, LPVOID dataBuffer);
 
-	static bool decomposeMemory(BYTE * dataBuffer, SIZE_T bufferSize, DWORD_PTR startAddress);
+    /*
+     * Read memory from target process and ignore no data pages
+     */
+    static bool readMemoryPartlyFromProcess(DWORD_PTR address, SIZE_T size, LPVOID dataBuffer);
 
-	/*
-	 * Search for pattern
-	 */
-	static DWORD_PTR findPattern(DWORD_PTR startOffset, DWORD size, BYTE * pattern, const char * mask);
+    /*
+     * Read memory from file
+     */
+    static bool readMemoryFromFile(HANDLE hFile, LONG offset, DWORD size, LPVOID dataBuffer);
 
-	/*
-	 * Get process ID by process name
-	 */
-	static DWORD getProcessByName(const WCHAR * processName);
-
-	/*
-	 * Get memory region from address
-	 */
-	static bool getMemoryRegionFromAddress(DWORD_PTR address, DWORD_PTR * memoryRegionBase, SIZE_T * memoryRegionSize);
+    /*
+     * Write memory to file
+     */
+    static bool writeMemoryToFile(HANDLE hFile, LONG offset, DWORD size, LPCVOID dataBuffer);
 
 
-	/*
-	 * Read PE Header from file
-	 */
-	static bool readHeaderFromFile(BYTE * buffer, DWORD bufferSize, const WCHAR * filePath);
+    /*
+     * Write memory to new file
+     */
+    static bool writeMemoryToNewFile(LPCTSTR file, DWORD size, LPCVOID dataBuffer);
 
-	static bool readHeaderFromCurrentFile(const WCHAR * filePath);
+    /*
+     * Write memory to file end
+     */
+    static bool writeMemoryToFileEnd(HANDLE hFile, DWORD size, LPCVOID dataBuffer);
 
-	/*
-	 * Get real sizeOfImage value
-	 */
-	static SIZE_T getSizeOfImageProcess(HANDLE processHandle, DWORD_PTR moduleBase);
+    /*
+     * Disassemble Memory
+     */
+    static bool disassembleMemory(BYTE * dataBuffer, SIZE_T bufferSize, DWORD_PTR startOffset);
 
-	/*
-	 * Get real sizeOfImage value current process
-	 */
-	static bool getSizeOfImageCurrentProcess();
+    static bool decomposeMemory(const BYTE * dataBuffer, SIZE_T bufferSize, DWORD_PTR startAddress);
 
-	static LONGLONG getFileSize(HANDLE hFile);
-	static LONGLONG getFileSize(const WCHAR * filePath);
+    /*
+     * Search for pattern
+     */
+    static DWORD_PTR findPattern(DWORD_PTR startOffset, DWORD size, const BYTE * pattern, const char * mask);
 
-	static DWORD getEntryPointFromFile(const WCHAR * filePath);
+    /*
+     * Get process ID by process name
+     */
+    static DWORD getProcessByName(LPCTSTR processName);
 
-	static bool createBackupFile(const WCHAR * filePath);
+    /*
+     * Get memory region from address
+     */
+    static bool getMemoryRegionFromAddress(DWORD_PTR address, DWORD_PTR * memoryRegionBase, SIZE_T * memoryRegionSize);
 
-	static DWORD getModuleHandlesFromProcess(const HANDLE hProcess, HMODULE ** hMods );
 
-	static void setCurrentProcessAsTarget();
+    /*
+     * Read PE Header from file
+     */
+    static bool readHeaderFromFile(BYTE * buffer, DWORD bufferSize, LPCTSTR filePath);
 
-	static bool suspendProcess();
-	static bool resumeProcess();
-	static bool terminateProcess();
-    static bool isPageExecutable( DWORD Protect );
-	static bool isPageAccessable( DWORD Protect );
-    static SIZE_T getSizeOfImageProcessNative( HANDLE processHandle, DWORD_PTR moduleBase );
+    static bool readHeaderFromCurrentFile(LPCTSTR filePath);
+
+    /*
+     * Get real sizeOfImage value
+     */
+    static SIZE_T getSizeOfImageProcess(HANDLE processHandle, DWORD_PTR moduleBase);
+
+    /*
+     * Get real sizeOfImage value current process
+     */
+    static bool getSizeOfImageCurrentProcess();
+
+    static LONGLONG getFileSize(HANDLE hFile);
+    static LONGLONG getFileSize(LPCTSTR filePath);
+
+    static DWORD getEntryPointFromFile(LPCTSTR filePath);
+
+    static bool createBackupFile(LPCTSTR filePath);
+
+    static DWORD getModuleHandlesFromProcess(HANDLE hProcess, HMODULE ** hMods);
+
+    static void setCurrentProcessAsTarget();
+
+    static bool suspendProcess();
+    static bool resumeProcess();
+    static bool terminateProcess();
+    static bool isPageExecutable(DWORD Protect);
+    static bool isPageAccessable(DWORD Protect);
+    static SIZE_T getSizeOfImageProcessNative(HANDLE processHandle, DWORD_PTR moduleBase);
 };

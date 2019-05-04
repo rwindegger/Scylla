@@ -34,7 +34,7 @@ typedef struct _SCYLLA_EXCHANGE {
 class DllInjectionPlugin : public DllInjection {
 
 public:
-	static const WCHAR * FILE_MAPPING_NAME;
+	static LPCTSTR FILE_MAPPING_NAME;
 	static HANDLE hProcess;
 
 	ApiReader * apiReader;

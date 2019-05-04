@@ -1,9 +1,10 @@
 #include "ExceptionHandler.h"
 #include <windows.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 #include <psapi.h>
 #include "Architecture.h"
+#include <tchar.h>
 
 // Default vectored exception handlers
 static LPTOP_LEVEL_EXCEPTION_FILTER oldFilter;
@@ -45,32 +46,32 @@ LONG WINAPI ScyllaHandleUnknownException(struct _EXCEPTION_POINTERS *ExceptionIn
 #else
 LONG WINAPI ScyllaHandleUnknownException(struct _EXCEPTION_POINTERS *ExceptionInfo)
 {
-	WCHAR registerInfo[220];
-	WCHAR filepath[MAX_PATH] = {0};
-	WCHAR file[MAX_PATH] = {0};
-	WCHAR message[MAX_PATH + 200 + _countof(registerInfo)];
-	WCHAR osInfo[100];
+	TCHAR registerInfo[220];
+	TCHAR filepath[MAX_PATH] = {0};
+	TCHAR file[MAX_PATH] = {0};
+	TCHAR message[MAX_PATH + 200 + _countof(registerInfo)];
+	TCHAR osInfo[100];
 	DWORD_PTR baseAddress = 0;
 	DWORD_PTR address = (DWORD_PTR)ExceptionInfo->ExceptionRecord->ExceptionAddress;
 
-	wcscpy_s(filepath, L"unknown");
-	wcscpy_s(file, L"unknown");
+	_tcscpy_s(filepath, TEXT("unknown"));
+	_tcscpy_s(file, TEXT("unknown"));
 
-	if (GetMappedFileNameW(GetCurrentProcess(), (LPVOID)address, filepath, _countof(filepath)) > 0)
+	if (GetMappedFileName(GetCurrentProcess(), (LPVOID)address, filepath, _countof(filepath)) > 0)
 	{
-		WCHAR *temp = wcsrchr(filepath, '\\');
+		TCHAR *temp = _tcsrchr(filepath, TEXT('\\'));
 		if (temp)
 		{
 			temp++;
-			wcscpy_s(file, temp);
+			_tcscpy_s(file, temp);
 		}
 	}
 
-	swprintf_s(osInfo, _countof(osInfo), TEXT("Exception! Please report it! OS: %X"), GetVersion());
+	_stprintf_s(osInfo, _countof(osInfo), TEXT("Exception! Please report it! OS: %X"), GetVersion());
 
-	DWORD_PTR moduleBase = (DWORD_PTR)GetModuleHandleW(file);
+	DWORD_PTR moduleBase = (DWORD_PTR)GetModuleHandle(file);
 	
-	swprintf_s(message, _countof(message), TEXT("ExceptionCode %08X\r\nExceptionFlags %08X\r\nNumberParameters %08X\r\nExceptionAddress VA ") PRINTF_DWORD_PTR_FULL TEXT(" - Base ") PRINTF_DWORD_PTR_FULL TEXT("\r\nExceptionAddress module %s\r\n\r\n"), 
+	_stprintf_s(message, _countof(message), TEXT("ExceptionCode %08X\r\nExceptionFlags %08X\r\nNumberParameters %08X\r\nExceptionAddress VA ") PRINTF_DWORD_PTR_FULL TEXT(" - Base ") PRINTF_DWORD_PTR_FULL TEXT("\r\nExceptionAddress module %s\r\n\r\n"), 
 	ExceptionInfo->ExceptionRecord->ExceptionCode,
 	ExceptionInfo->ExceptionRecord->ExceptionFlags, 
 	ExceptionInfo->ExceptionRecord->NumberParameters, 
@@ -81,7 +82,7 @@ LONG WINAPI ScyllaHandleUnknownException(struct _EXCEPTION_POINTERS *ExceptionIn
 	
 
 #ifdef _WIN64
-	swprintf_s(registerInfo, _countof(registerInfo), TEXT("rax=0x%llx, rbx = 0x%llx, rdx = 0x%llx, rcx = 0x%llx, rsi = 0x%llx, rdi = 0x%llx, rbp = 0x%llx, rsp = 0x%llx, rip = 0x%llx"),
+	_stprintf_s(registerInfo, _countof(registerInfo), TEXT("rax=0x%llx, rbx = 0x%llx, rdx = 0x%llx, rcx = 0x%llx, rsi = 0x%llx, rdi = 0x%llx, rbp = 0x%llx, rsp = 0x%llx, rip = 0x%llx"),
 		ExceptionInfo->ContextRecord->Rax,
 		ExceptionInfo->ContextRecord->Rbx,
 		ExceptionInfo->ContextRecord->Rdx,
@@ -93,7 +94,7 @@ LONG WINAPI ScyllaHandleUnknownException(struct _EXCEPTION_POINTERS *ExceptionIn
 		ExceptionInfo->ContextRecord->Rip
 		);
 #else
-	swprintf_s(registerInfo, _countof(registerInfo), TEXT("eax=0x%lx, ebx=0x%lx, edx=0x%lx, ecx=0x%lx, esi=0x%lx, edi=0x%lx, ebp=0x%lx, esp=0x%lx, eip=0x%lx"),
+	_stprintf_s(registerInfo, _countof(registerInfo), TEXT("eax=0x%lx, ebx=0x%lx, edx=0x%lx, ecx=0x%lx, esi=0x%lx, edi=0x%lx, ebp=0x%lx, esp=0x%lx, eip=0x%lx"),
 		ExceptionInfo->ContextRecord->Eax,
 		ExceptionInfo->ContextRecord->Ebx,
 		ExceptionInfo->ContextRecord->Edx,
@@ -106,7 +107,7 @@ LONG WINAPI ScyllaHandleUnknownException(struct _EXCEPTION_POINTERS *ExceptionIn
 		);
 #endif
 
-	wcscat_s(message, _countof(message), registerInfo);
+	_tcscat_s(message, _countof(message), registerInfo);
 
 	MessageBox(0, message, osInfo, MB_ICONERROR);
 

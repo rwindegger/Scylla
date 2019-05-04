@@ -35,13 +35,13 @@ const int SCY_ERROR_PIDNOTFOUND = -5;
 	@param phCtxt : pointer to output Scylla context
 	@param TargetProcessPid : Unique id of target process
 */
-SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  ScyllaInitContext(PSCY_HANDLE phCtxt, DWORD_PTR TargetProcessPid);
+SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  InitContext(PSCY_HANDLE phCtxt, DWORD_PTR TargetProcessPid);
 
 /*
 	Free the input Scylla context. Necessary to call it in order to release resources.
 	@param hCtxt : input Scylla context to be cleaned up
 */
-SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  ScyllaUnInitContext(SCY_HANDLE hCtxt);
+SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  DeinitializeContext(SCY_HANDLE hCtxt);
 /*
 	Dump Current process into a file.
 	@param fileToDump : path to output file
@@ -49,16 +49,7 @@ SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  ScyllaUnInitContext(SCY_HANDLE hCtxt);
 	@param entrypoint : Process entry point (or estimated entry point ?)
 	@param fileResult :
 */
-SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  ScyllaDumpCurrentProcessW(SCY_HANDLE hScyllaContext, const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult);
-
-/*
-	Dump Current process into a file.
-	@param fileToDump : path to output file
-	@param imagebase : Process image base (why ??)
-	@param entrypoint : Process entry point (or estimated entry point ?)
-	@param fileResult :
-*/
-SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  ScyllaDumpCurrentProcessA(SCY_HANDLE hScyllaContext, const char * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const char * fileResult);
+SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  DumpCurrentProcess(SCY_HANDLE hScyllaContext, LPCTSTR fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, LPCTSTR fileResult);
 
 /*
 	Dump process by PID into a file.
@@ -68,42 +59,23 @@ SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  ScyllaDumpCurrentProcessA(SCY_HANDLE hS
 	@param entrypoint : Process entry point (or estimated entry point ?)
 	@param fileResult :
 */
-SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  ScyllaDumpProcessW(DWORD_PTR pid, const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult);
-SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  ScyllaDumpProcessExW(DWORD_PTR pid, const WCHAR * fileResult);
-/*
-	Dump process by PID into a file.
-	@param pid : process unique PID to dump
-	@param fileToDump : path to output file 
-	@param imagebase : Process image base (why ??)
-	@param entrypoint : Process entry point (or estimated entry point ?)
-	@param fileResult : 
-*/
-SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  ScyllaDumpProcessA(DWORD_PTR pid, const char * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const char * fileResult);
+SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  DumpProcess(DWORD_PTR pid, LPCTSTR fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, LPCTSTR fileResult);
+SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  DumpProcessEx(DWORD_PTR pid, LPCTSTR fileResult);
 
-/*
+    /*
 	Rebuild PE ?
 */
-SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  ScyllaRebuildFileW(SCY_HANDLE hScyllaContext, const WCHAR * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup);
-
-/*
-	Rebuild PE ?
-*/
-SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  ScyllaRebuildFileA(SCY_HANDLE hScyllaContext, const char * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup);
+SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  RebuildFile(SCY_HANDLE hScyllaContext, LPCTSTR fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup);
 
 /*
 	Return Scylla dll version string;
 */
-SCYLLA_DLL_EXPORT  const WCHAR * SCYLLA_DECL_API  ScyllaVersionInformationW();
-
-/*
-	Return Scylla dll version string;
-*/
-SCYLLA_DLL_EXPORT  const char * SCYLLA_DECL_API  ScyllaVersionInformationA();
+SCYLLA_DLL_EXPORT LPCTSTR SCYLLA_DECL_API GetVersionInformation();
 
 /*
 	Return Scylla dll version integer;
 */
-SCYLLA_DLL_EXPORT  DWORD SCYLLA_DECL_API  ScyllaVersionInformationDword();
+SCYLLA_DLL_EXPORT DWORD SCYLLA_DECL_API GetVersionNumber();
 
 /*
 	Search IAT in the target process 
@@ -117,29 +89,14 @@ SCYLLA_DLL_EXPORT  DWORD SCYLLA_DECL_API  ScyllaVersionInformationDword();
 
 	If the heuristics didn't found an IAT, iatStart and iatSize are set to 0.
 */
-SCYLLA_DLL_EXPORT  int SCYLLA_DECL_API  ScyllaIatSearch(SCY_HANDLE hScyllaContext, DWORD_PTR * iatStart, DWORD * iatSize, DWORD_PTR searchStart, BOOL advancedSearch);
+SCYLLA_DLL_EXPORT  int SCYLLA_DECL_API  IatSearch(SCY_HANDLE hScyllaContext, DWORD_PTR * iatStart, size_t * iatSize, DWORD_PTR searchStart, BOOL advancedSearch);
 
 
 /*
 	Scylla AutoFix import address ?
 	@param
 */
-SCYLLA_DLL_EXPORT  int SCYLLA_DECL_API  ScyllaIatFixAutoW(SCY_HANDLE hScyllaContext, DWORD_PTR iatAddr, DWORD iatSize, DWORD dwProcessId, const WCHAR * dumpFile, const WCHAR * iatFixFile);
-
-
-
-#ifdef UNICODE
-#define ScyllaDumpProcess ScyllaDumpProcessW
-#define ScyllaDumpCurrentProcess ScyllaDumpCurrentProcessW
-#define ScyllaVersionInformation ScyllaVersionInformationW
-#define ScyllaRebuildFile ScyllaRebuildFileW
-#else
-#define ScyllaDumpProcess ScyllaDumpProcessA
-#define ScyllaDumpCurrentProcess ScyllaDumpCurrentProcessA
-#define ScyllaVersionInformation ScyllaVersionInformationA
-#define ScyllaRebuildFile ScyllaRebuildFileA
-#endif  // !UNICODE
-
+SCYLLA_DLL_EXPORT  int SCYLLA_DECL_API  IatFixAuto(SCY_HANDLE hScyllaContext, DWORD_PTR iatAddr, DWORD iatSize, DWORD dwProcessId, LPCTSTR dumpFile, LPCTSTR iatFixFile);
 
 #ifdef __cplusplus
 }

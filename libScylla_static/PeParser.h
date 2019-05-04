@@ -6,7 +6,7 @@
 class PeSection
 {
 public:
-    WCHAR name[IMAGE_SIZEOF_SHORT_NAME + 1];
+    TCHAR name[IMAGE_SIZEOF_SHORT_NAME + 1];
     DWORD_PTR virtualAddress;
     DWORD  virtualSize;
     DWORD  rawAddress;
@@ -37,7 +37,7 @@ public:
 class PeParser
 {
 public:
-	PeParser(const WCHAR * file, bool readSectionHeaders = true);
+	PeParser(LPCTSTR file, bool readSectionHeaders = true);
 	PeParser(const DWORD_PTR moduleBase, bool readSectionHeaders = true);
 
 	~PeParser();
@@ -58,25 +58,25 @@ public:
 
 	DWORD getEntryPoint();
 
-	bool getSectionNameUnicode(const int sectionIndex, WCHAR * output, const int outputLen);
+	bool getSectionName(const int sectionIndex, LPTSTR output, const int outputLen);
 
 	DWORD getSectionHeaderBasedFileSize();
 	DWORD getSectionHeaderBasedSizeOfImage();
 
 	bool readPeSectionsFromProcess();
 	bool readPeSectionsFromFile();
-	bool savePeFileToDisk(const WCHAR * newFile);
+	bool savePeFileToDisk(LPCTSTR newFile);
 	void removeDosStub();
 	void alignAllSectionHeaders();
 	void fixPeHeader();
 	void setDefaultFileAlignment();
-	bool dumpProcess(DWORD_PTR modBase, DWORD_PTR entryPoint, const WCHAR * dumpFilePath);
-	bool dumpProcess(DWORD_PTR modBase, DWORD_PTR entryPoint, const WCHAR * dumpFilePath, std::vector<PeSection> & sectionList);
+	bool dumpProcess(DWORD_PTR modBase, DWORD_PTR entryPoint, LPCTSTR dumpFilePath);
+	bool dumpProcess(DWORD_PTR modBase, DWORD_PTR entryPoint, LPCTSTR dumpFilePath, std::vector<PeSection> & sectionList);
 
 	void setEntryPointVa(DWORD_PTR entryPoint);
 	void setEntryPointRva(DWORD entryPoint);
 
-	static bool updatePeHeaderChecksum(const WCHAR * targetFile, DWORD fileSize);
+	static bool updatePeHeaderChecksum(LPCTSTR targetFile, DWORD fileSize);
 	BYTE * getSectionMemoryByIndex(int index);
 	DWORD getSectionMemorySizeByIndex(int index);
 	int convertRVAToOffsetVectorIndex(DWORD_PTR dwRVA);
@@ -92,7 +92,7 @@ protected:
 
 	static const DWORD FileAlignmentConstant = 0x200;
 
-	const WCHAR * filename;
+    LPCTSTR filename;
 	DWORD_PTR moduleBaseAddress;
 
 	/************************************************************************/
@@ -133,7 +133,7 @@ protected:
 	void initClass();
 	
 	DWORD isMemoryNotNull( BYTE * data, int dataSize );
-	bool openWriteFileHandle( const WCHAR * newFile );
+	bool openWriteFileHandle(LPCTSTR newFile );
 	bool writeZeroMemoryToFile(HANDLE hFile, DWORD fileOffset, DWORD size);
 
 	bool readPeSectionFromFile( DWORD readOffset, PeFileSection & peFileSection );
@@ -146,7 +146,7 @@ protected:
 	
 	DWORD_PTR getStandardImagebase();
 
-	bool addNewLastSection(const CHAR * sectionName, DWORD sectionSize, BYTE * sectionData);
+	bool addNewLastSection(LPCSTR sectionName, DWORD sectionSize, BYTE * sectionData);
 	DWORD alignValue(DWORD badValue, DWORD alignTo);
 
 	void setNumberOfSections(WORD numberOfSections);
@@ -155,4 +155,3 @@ protected:
 	bool getFileOverlay();
 	
 };
-

@@ -8,6 +8,6 @@ public:
     explicit ListboxLog(HWND window);
     void setWindow(HWND window);
 private:
-    void write(const WCHAR * str) override;
+    void write(LPCTSTR str) override;
     HWND window;
 };

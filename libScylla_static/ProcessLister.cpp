@@ -3,8 +3,7 @@
 
 #include "ProcessAccessHelp.h"
 #include "Scylla.h"
-
-
+#include "StringConversion.h"
 
 
 def_IsWow64Process ProcessLister::_IsWow64Process = 0;
@@ -109,26 +108,24 @@ ProcessType ProcessLister::checkIsProcess64(HANDLE hProcess)
 
 bool ProcessLister::getAbsoluteFilePath(HANDLE hProcess, Process * process)
 {
-	WCHAR processPath[MAX_PATH];
+	TCHAR processPath[MAX_PATH];
 	bool retVal = false;
 
-	wcscpy_s(process->fullPath, L"Unknown path");
+	_tcscpy_s(process->fullPath, TEXT("Unknown path"));
 
 	if(!hProcess)
 	{
 		//missing rights
 		return false;
-	}
+	}    
 
-    
-
-	if (GetProcessImageFileNameW(hProcess, processPath, _countof(processPath)) > 0)
+	if (GetProcessImageFileName(hProcess, processPath, _countof(processPath)) > 0)
 	{
 		if (!deviceNameResolver->resolveDeviceLongNameToShort(processPath, process->fullPath))
 		{
 			//some virtual volumes
-            Scylla::debugLog.log(L"getAbsoluteFilePath :: resolveDeviceLongNameToShort failed with path %s", processPath);
-            if (GetModuleFileNameExW(hProcess, 0, process->fullPath, _countof(process->fullPath)) != 0)
+            Scylla::debugLog.log(TEXT("getAbsoluteFilePath :: resolveDeviceLongNameToShort failed with path %s"), processPath);
+            if (GetModuleFileNameEx(hProcess, 0, process->fullPath, _countof(process->fullPath)) != 0)
             {
                 retVal = true;
             }       
@@ -140,8 +137,8 @@ bool ProcessLister::getAbsoluteFilePath(HANDLE hProcess, Process * process)
 	}
 	else
 	{
-		Scylla::debugLog.log(L"getAbsoluteFilePath :: GetProcessImageFileName failed %u", GetLastError());
-		if (GetModuleFileNameExW(hProcess, 0, process->fullPath, _countof(process->fullPath)) != 0)
+		Scylla::debugLog.log(TEXT("getAbsoluteFilePath :: GetProcessImageFileName failed %u"), GetLastError());
+		if (GetModuleFileNameEx(hProcess, 0, process->fullPath, _countof(process->fullPath)) != 0)
 		{
 			retVal = true;
 		}
@@ -213,15 +210,14 @@ std::vector<Process>& ProcessLister::getProcessListSnapshotNative()
 void ProcessLister::handleProcessInformationAndAddToList( PSYSTEM_PROCESS_INFORMATION pProcess )
 {
     Process process;
-    WCHAR tempProcessName[MAX_PATH*2] = {0};
 
-    process.PID = (size_t) pProcess->UniqueProcessId;
+    process.PID = reinterpret_cast<size_t>(pProcess->UniqueProcessId);
 
     HANDLE hProcess = ProcessAccessHelp::NativeOpenProcess(PROCESS_QUERY_INFORMATION|PROCESS_VM_READ, process.PID);
 
     if (hProcess)
     {
-        ProcessType processType = checkIsProcess64(hProcess);
+        const ProcessType processType = checkIsProcess64(hProcess);
 
 #ifdef _WIN64
         if (processType == PROCESS_64)
@@ -231,8 +227,7 @@ void ProcessLister::handleProcessInformationAndAddToList( PSYSTEM_PROCESS_INFORM
         {
             process.sessionId = pProcess->SessionId;
 
-            memcpy(tempProcessName, pProcess->ImageName.Buffer, pProcess->ImageName.Length);
-            wcscpy_s(process.filename, tempProcessName);
+            StringConversion::ToTStr(pProcess->ImageName.Buffer, process.filename, MAX_PATH);
 
             getAbsoluteFilePath(hProcess, &process);
             process.pebAddress = getPebAddressFromProcess(hProcess);

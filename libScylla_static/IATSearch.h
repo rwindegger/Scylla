@@ -10,22 +10,22 @@ public:
 	DWORD_PTR memoryAddress;
 	SIZE_T memorySize;
 
-	bool searchImportAddressTableInProcess(DWORD_PTR startAddress, DWORD_PTR* addressIAT, DWORD* sizeIAT, bool advanced);
+	bool searchImportAddressTableInProcess(DWORD_PTR startAddress, DWORD_PTR* addressIAT, size_t* sizeIAT, bool advanced);
 
 private:
 
 	DWORD_PTR findAPIAddressInIAT(DWORD_PTR startAddress);
-	bool findIATAdvanced(DWORD_PTR startAddress,DWORD_PTR* addressIAT, DWORD* sizeIAT);
+	bool findIATAdvanced(DWORD_PTR startAddress, DWORD_PTR* addressIAT, size_t* sizeIAT);
 	DWORD_PTR findNextFunctionAddress();
 	DWORD_PTR findIATPointer();
 	//DWORD_PTR findAddressFromWORDString(char * stringBuffer);
 	//DWORD_PTR findAddressFromNormalCALLString(char * stringBuffer);
 	bool isIATPointerValid(DWORD_PTR iatPointer, bool checkRedirects);
 
-	bool findIATStartAndSize(DWORD_PTR address, DWORD_PTR * addressIAT, DWORD * sizeIAT);
+	bool findIATStartAndSize(DWORD_PTR address, DWORD_PTR * addressIAT, size_t *sizeIAT);
 
 	DWORD_PTR findIATStartAddress( DWORD_PTR baseAddress, DWORD_PTR startAddress, BYTE * dataBuffer );
-	DWORD findIATSize( DWORD_PTR baseAddress, DWORD_PTR iatAddress, BYTE * dataBuffer, DWORD bufferSize );
+    size_t findIATSize( DWORD_PTR baseAddress, DWORD_PTR iatAddress, BYTE * dataBuffer, size_t bufferSize );
 
 	void findIATPointers(std::set<DWORD_PTR> & iatPointers);
 	void findExecutableMemoryPagesByStartAddress( DWORD_PTR startAddress, DWORD_PTR* baseAddress, SIZE_T* memorySize );

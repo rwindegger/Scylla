@@ -76,15 +76,15 @@ void PickDllGui::addColumnsToModuleList(CListViewCtrl& list)
 {
 	list.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
 
-	list.InsertColumn(COL_NAME, L"Name", LVCFMT_LEFT);
-	list.InsertColumn(COL_IMAGEBASE, L"ImageBase", LVCFMT_CENTER);
-	list.InsertColumn(COL_IMAGESIZE, L"ImageSize", LVCFMT_CENTER);
-	list.InsertColumn(COL_PATH, L"Path", LVCFMT_LEFT);
+	list.InsertColumn(COL_NAME, TEXT("Name"), LVCFMT_LEFT);
+	list.InsertColumn(COL_IMAGEBASE, TEXT("ImageBase"), LVCFMT_CENTER);
+	list.InsertColumn(COL_IMAGESIZE, TEXT("ImageSize"), LVCFMT_CENTER);
+	list.InsertColumn(COL_PATH, TEXT("Path"), LVCFMT_LEFT);
 }
 
 void PickDllGui::displayModuleList(CListViewCtrl& list)
 {
-	WCHAR temp[20];
+	TCHAR temp[20];
 
 	list.DeleteAllItems();
 
@@ -95,11 +95,11 @@ void PickDllGui::displayModuleList(CListViewCtrl& list)
 	{
 		list.InsertItem(count, iter->getFilename());
 
-		swprintf_s(temp, PRINTF_DWORD_PTR_FULL, iter->modBaseAddr);
+		_stprintf_s(temp, PRINTF_DWORD_PTR_FULL, iter->modBaseAddr);
 		
 		list.SetItemText(count, COL_IMAGEBASE, temp);
 
-		swprintf_s(temp, L"%08X",iter->modBaseSize);
+		_stprintf_s(temp, TEXT("%08X"),iter->modBaseSize);
 		list.SetItemText(count, COL_IMAGESIZE, temp);
 
 		list.SetItemText(count, COL_PATH, iter->fullPath);
@@ -127,7 +127,7 @@ int PickDllGui::listviewCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lPara
 	switch(column)
 	{
 	case COL_NAME:
-		diff = _wcsicmp(module1->getFilename(), module2->getFilename());
+		diff = _tcsicmp(module1->getFilename(), module2->getFilename());
 		break;
 	case COL_IMAGEBASE:
 		diff = module1->modBaseAddr < module2->modBaseAddr ? -1 : 1;
@@ -136,7 +136,7 @@ int PickDllGui::listviewCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lPara
 		diff = module1->modBaseSize < module2->modBaseSize ? -1 : 1;
 		break;
 	case COL_PATH:
-		diff = _wcsicmp(module1->fullPath, module2->fullPath);
+		diff = _tcsicmp(module1->fullPath, module2->fullPath);
 		break;
 	}
 

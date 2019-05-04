@@ -49,7 +49,7 @@ protected:
 
 	// Settings (filled by DDX)
 
-	WCHAR iatSectionName[IMAGE_SIZEOF_SHORT_NAME+1];
+	TCHAR iatSectionName[IMAGE_SIZEOF_SHORT_NAME+1];
 	bool updateHeaderChecksum;
 	bool createBackup;
 	bool dllInjectionAutoUnload;

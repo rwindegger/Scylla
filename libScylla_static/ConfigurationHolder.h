@@ -29,7 +29,7 @@ class ConfigurationHolder
 {
 public:
 
-	ConfigurationHolder(const WCHAR* fileName);
+	ConfigurationHolder(LPCTSTR fileName);
 
 	bool loadConfiguration();
 	bool saveConfiguration() const;
@@ -39,12 +39,12 @@ public:
 
 private:
 
-	static const WCHAR CONFIG_FILE_SECTION_NAME[];
+	static const TCHAR CONFIG_FILE_SECTION_NAME[];
 
-	WCHAR configPath[MAX_PATH];
+	TCHAR configPath[MAX_PATH];
 	std::map<ConfigOption, Configuration> config;
 
-	bool buildConfigFilePath(const WCHAR* fileName);
+	bool buildConfigFilePath(LPCTSTR fileName);
 
 	bool readStringFromConfigFile(Configuration & configObject);
 	bool readBooleanFromConfigFile(Configuration & configObject);

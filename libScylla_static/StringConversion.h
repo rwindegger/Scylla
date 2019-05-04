@@ -1,9 +1,11 @@
 #pragma once
+#include <atlbase.h>
 
 class StringConversion
 {
 public:
-
-	static const char* ToASCII(const wchar_t* str, char* buf, size_t bufsize);
-	static const wchar_t* ToUTF16(const char* str, wchar_t* buf, size_t bufsize);
+    static LPCSTR ToCStr(LPCTSTR str, LPSTR buf, size_t bufsize);
+    static LPCWSTR ToWStr(LPCTSTR str, LPWSTR buf, size_t bufsize);
+    static LPCTSTR ToTStr(LPCSTR str, LPTSTR buf, size_t bufsize);
+    static LPCTSTR ToTStr(LPCWSTR str, LPTSTR buf, size_t bufsize);
 };

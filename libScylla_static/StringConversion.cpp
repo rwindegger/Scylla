@@ -1,22 +1,42 @@
 #include "StringConversion.h"
-//#include <cstdlib>
-#include <atlbase.h> 
 #include <atlconv.h>
 
-const char* StringConversion::ToASCII(const wchar_t* str, char* buf, size_t bufsize)
+LPCSTR StringConversion::ToCStr(LPCTSTR str, LPSTR buf, size_t bufsize)
 {
-	//wcstombs(buf, str, bufsize);
-	ATL::CW2A str_a = str;
-	strncpy_s(buf, bufsize, str_a, bufsize);
-	buf[bufsize - 1] = '\0';
-	return buf;
+#ifdef _UNICODE
+    sprintf_s(buf, bufsize, "%S", str);
+#else
+    _tcscpy_s(buf, bufsize, str);    
+#endif
+    return buf;
 }
 
-const wchar_t* StringConversion::ToUTF16(const char* str, wchar_t* buf, size_t bufsize)
+LPCWSTR StringConversion::ToWStr(LPCTSTR str, LPWSTR buf, size_t bufsize)
 {
-	//mbstowcs_s(buf, str, bufsize);
-	ATL::CA2W str_w = str;
-	wcsncpy_s(buf, bufsize, str_w, bufsize);
-	buf[bufsize - 1] = L'\0';
-	return buf;
+#ifdef _UNICODE
+    _tcscpy_s(buf, bufsize, str);
+#else
+    swprintf_s(buf, bufsize, L"%S", str);
+#endif
+    return buf;
+}
+
+LPCTSTR StringConversion::ToTStr(LPCSTR str, LPTSTR buf, size_t bufsize)
+{
+#ifdef _UNICODE
+    _stprintf_s(buf, bufsize, TEXT("%S"), str);
+#else
+    _tcscpy_s(buf, bufsize, str);
+#endif    
+    return buf;
+}
+
+LPCTSTR StringConversion::ToTStr(LPCWSTR str, LPTSTR buf, size_t bufsize)
+{
+#ifdef _UNICODE
+    _tcscpy_s(buf, bufsize, str);
+#else
+    _stprintf_s(buf, bufsize, TEXT("%S"), str);
+#endif
+    return buf;
 }

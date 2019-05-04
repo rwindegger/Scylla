@@ -1,14 +1,15 @@
 #include "Configuration.h"
+#include <tchar.h>
 
-Configuration::Configuration(const WCHAR* name, Type type)
+Configuration::Configuration(LPCTSTR name, Type type)
 {
-	wcscpy_s(this->name, name);
+	_tcscpy_s(this->name, name);
 	this->type = type;
 	valueNumeric = 0;
 	valueString[0] = L'\0';
 }
 
-const WCHAR* Configuration::getName() const
+LPCTSTR Configuration::getName() const
 {
 	return name;
 }
@@ -28,14 +29,14 @@ void Configuration::setNumeric(DWORD_PTR value)
 	valueNumeric = value;
 }
 
-const WCHAR* Configuration::getString() const
+LPCTSTR Configuration::getString() const
 {
 	return valueString;
 }
 
-void Configuration::setString(const WCHAR* str)
+void Configuration::setString(LPCTSTR str)
 {
-	wcsncpy_s(valueString, str, _countof(valueString));
+	_tcsncpy_s(valueString, str, _countof(valueString));
 }
 
 bool Configuration::getBool() const

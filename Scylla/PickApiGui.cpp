@@ -1,6 +1,7 @@
 #include "PickApiGui.h"
 
 #include <atlconv.h> // string conversion
+#include "StringConversion.h"
 
 PickApiGui::PickApiGui(const std::vector<ModuleInfo> &moduleList) : moduleList(moduleList)
 {
@@ -34,7 +35,7 @@ void PickApiGui::OnDllListSelected(UINT uNotifyCode, int nID, CWindow wndCtl)
 	if (indexDll != CB_ERR)
 	{
 		fillApiListBox(ListApiSelect, moduleList[indexDll].apiList);
-		EditApiFilter.SetWindowText(L"");
+		EditApiFilter.SetWindowText(TEXT(""));
 	}
 }
 
@@ -50,8 +51,8 @@ void PickApiGui::OnApiFilterUpdated(UINT uNotifyCode, int nID, CWindow wndCtl)
 		return;
 
 	std::vector<ApiInfo *> newApis;
-	WCHAR filter[MAX_PATH];
-
+	TCHAR filter[MAX_PATH];
+    
 	int lenFilter = EditApiFilter.GetWindowText(filter, _countof(filter));
 	if(lenFilter > 0)
 	{
@@ -62,17 +63,18 @@ void PickApiGui::OnApiFilterUpdated(UINT uNotifyCode, int nID, CWindow wndCtl)
 			ApiInfo* api = apis[i];
 			if(api->name[0] != '\0')
 			{
-				CA2WEX<MAX_PATH> wStr(api->name);
-				if(!_wcsnicmp(wStr, filter, lenFilter))
+                TCHAR str[MAX_PATH];
+                StringConversion::ToTStr(api->name, str, MAX_PATH);
+				if(!_tcsnicmp(str, filter, lenFilter))
 				{
 					newApis.push_back(api);
 				}
 			}
 			else
 			{
-				WCHAR buf[6];
-				swprintf_s(buf, L"#%04X", api->ordinal);
-				if(!_wcsnicmp(buf, filter, lenFilter))
+				TCHAR buf[6];
+				_stprintf_s(buf, TEXT("%04X"), api->ordinal);
+				if(!_tcsnicmp(buf, filter, lenFilter))
 				{
 					newApis.push_back(api);
 				}
@@ -126,13 +128,14 @@ void PickApiGui::fillApiListBox(CListBox& list, const std::vector<ApiInfo *> &ap
 		int item;
 		if(api->name[0] != '\0')
 		{
-			CA2WEX<MAX_PATH> wStr(api->name);
-			item = list.AddString(wStr);
+            TCHAR str[MAX_PATH];
+            StringConversion::ToTStr(api->name, str, MAX_PATH);
+			item = list.AddString(str);
 		}
 		else
 		{
-			WCHAR buf[6];
-			swprintf_s(buf, L"#%04X", api->ordinal);
+			TCHAR buf[6];
+			_stprintf_s(buf, TEXT("#%04X"), api->ordinal);
 			item = list.AddString(buf);
 		}
 		list.SetItemData(item, (DWORD_PTR)api);

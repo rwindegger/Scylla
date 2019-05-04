@@ -21,7 +21,7 @@ class PeRebuild
 {
 public:
 
-	bool truncateFile(WCHAR * szFilePath, DWORD dwNewFsize);
+    static bool truncateFile(LPCTSTR szFilePath, DWORD dwNewFsize);
 	DWORD realignPE(LPVOID AddressOfMapFile,DWORD dwFsize);
 	DWORD wipeReloc(void* pMap, DWORD dwFsize);
 	bool validatePE(void* pPEImage, DWORD dwFileSize);
@@ -29,7 +29,7 @@ public:
 
 	bool updatePeHeaderChecksum(LPVOID AddressOfMapFile, DWORD dwFsize);
 
-	LPVOID createFileMappingViewFull(const WCHAR * filePath);
+	LPVOID createFileMappingViewFull(LPCTSTR filePath);
 	void closeAllMappingHandles();
 
 private:
@@ -57,10 +57,10 @@ private:
 	LPVOID addrMappedDll;
 
 
-	DWORD validAlignment(DWORD BadSize);
-	DWORD validAlignmentNew(DWORD badAddress);
-	bool isRoundedTo(DWORD_PTR dwTarNum, DWORD_PTR dwRoundNum);
+	DWORD validAlignment(DWORD BadSize) const;
+    static DWORD validAlignmentNew(DWORD badAddress);
+    static bool isRoundedTo(DWORD_PTR dwTarNum, DWORD_PTR dwRoundNum);
 
 	void cleanSectionPointer();
-	bool validatePeHeaders( PIMAGE_DOS_HEADER pDosh );
+    static bool validatePeHeaders( PIMAGE_DOS_HEADER pDosh );
 };

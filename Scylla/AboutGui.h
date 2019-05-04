@@ -77,25 +77,25 @@ protected:
 
 	// Texts
 
-	static const WCHAR TEXT_VISIT[];
-	static const WCHAR TEXT_DEVELOPED[];
-	static const WCHAR TEXT_CREDIT_DISTORM[];
-	static const WCHAR TEXT_CREDIT_YODA[];
-	static const WCHAR TEXT_CREDIT_WTL[];
-	static const WCHAR TEXT_CREDIT_SILK[];
-	static const WCHAR TEXT_GREETINGS[];
-	static const WCHAR TEXT_LICENSE[];
-	static const WCHAR TEXT_TINYXML[];
+	static const TCHAR TEXT_VISIT[];
+	static const TCHAR TEXT_DEVELOPED[];
+	static const TCHAR TEXT_CREDIT_DISTORM[];
+	static const TCHAR TEXT_CREDIT_YODA[];
+	static const TCHAR TEXT_CREDIT_WTL[];
+	static const TCHAR TEXT_CREDIT_SILK[];
+	static const TCHAR TEXT_GREETINGS[];
+	static const TCHAR TEXT_LICENSE[];
+	static const TCHAR TEXT_TINYXML[];
 
 	// URLs
 
-	static const WCHAR URL_VISIT1[];
-	static const WCHAR URL_VISIT2[];
-	static const WCHAR URL_DISTORM[];
-	static const WCHAR URL_WTL[];
-	static const WCHAR URL_SILK[];
-	static const WCHAR URL_LICENSE[];
-	static const WCHAR URL_TINYXML[];
+	static const TCHAR URL_VISIT1[];
+	static const TCHAR URL_VISIT2[];
+	static const TCHAR URL_DISTORM[];
+	static const TCHAR URL_WTL[];
+	static const TCHAR URL_SILK[];
+	static const TCHAR URL_LICENSE[];
+	static const TCHAR URL_TINYXML[];
 
 protected:
 
@@ -109,6 +109,6 @@ protected:
 	// GUI helpers
 
 	void setupLinks();
-	void setLinkURL(CLinkCtrl& link, const WCHAR* url, int index = 0);
-	void setupTooltip(CToolTipCtrl tooltip, CWindow window, const WCHAR* text);
+	void setLinkURL(CLinkCtrl& link, LPCTSTR url, int index = 0);
+	void setupTooltip(CToolTipCtrl tooltip, CWindow window, LPCTSTR text);
 };

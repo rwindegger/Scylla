@@ -36,7 +36,7 @@ protected:
 	CStatic DonateInfo;
 
 	// Texts
-	static const WCHAR TEXT_DONATE[];
+	static const TCHAR TEXT_DONATE[];
 
 protected:
 

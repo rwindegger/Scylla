@@ -1,4 +1,4 @@
-
+#include "StringConversion.h"
 #include "DeviceNameResolver.h"
 #include "NativeWinApi.h"
 
@@ -43,13 +43,14 @@ void DeviceNameResolver::initDeviceNameList()
     fixVirtualDevices();
 }
 
-bool DeviceNameResolver::resolveDeviceLongNameToShort(const TCHAR * sourcePath, TCHAR * targetPath)
+bool DeviceNameResolver::resolveDeviceLongNameToShort(LPCTSTR sourcePath, LPTSTR targetPath)
 {
 	for (unsigned int i = 0; i < deviceNameList.size(); i++)
 	{
 		if (!_tcsnicmp(deviceNameList[i].longName, sourcePath, deviceNameList[i].longNameLength) && sourcePath[deviceNameList[i].longNameLength] == TEXT('\\'))
 		{
 			_tcscpy_s(targetPath, MAX_PATH, deviceNameList[i].shortName);
+
 			_tcscat_s(targetPath, MAX_PATH, sourcePath + deviceNameList[i].longNameLength);
 			return true;
 		}
@@ -75,10 +76,9 @@ void DeviceNameResolver::fixVirtualDevices()
 
     for (unsigned int i = 0; i < deviceNameList.size(); i++)
     {
-        wcscpy_s(longCopy, deviceNameList[i].longName);
-
+        StringConversion::ToWStr(deviceNameList[i].longName, longCopy, MAX_PATH);
         NativeWinApi::RtlInitUnicodeString(&unicodeInput, longCopy);
-        InitializeObjectAttributes(&oa, &unicodeInput, 0, 0, 0);
+        InitializeObjectAttributes(&oa, &unicodeInput, 0, NULL, NULL);
 
         if(NT_SUCCESS(NativeWinApi::NtOpenSymbolicLinkObject(&hFile, SYMBOLIC_LINK_QUERY, &oa)))
         {
@@ -89,8 +89,8 @@ void DeviceNameResolver::fixVirtualDevices()
             if (NT_SUCCESS(NativeWinApi::NtQuerySymbolicLinkObject(hFile, &unicodeOutput, &retLen)))
             {
                 hardDisk.longNameLength = wcslen(unicodeOutput.Buffer);
-                wcscpy_s(hardDisk.shortName, deviceNameList[i].shortName);
-                wcscpy_s(hardDisk.longName, unicodeOutput.Buffer);
+                _tcscpy_s(hardDisk.shortName, deviceNameList[i].shortName);
+                StringConversion::ToTStr(unicodeOutput.Buffer, hardDisk.longName, MAX_PATH);                
                 deviceNameList.push_back(hardDisk);
             }  
 

@@ -2,8 +2,9 @@
 
 #include "Scylla.h"
 #include "Architecture.h"
+#include "StringConversion.h"
 
-const WCHAR DonateGui::TEXT_DONATE[] = L"If you like this tool, please feel free to donate some Bitcoins to support this project.\n\n\nBTC Address:\n\n" TEXT(DONATE_BTC_ADDRESS);
+const TCHAR DonateGui::TEXT_DONATE[] = TEXT("If you like this tool, please feel free to donate some Bitcoins to support this project.\n\n\nBTC Address:\n\n") DONATE_BTC_ADDRESS;
 
 
 BOOL DonateGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
@@ -34,11 +35,11 @@ void DonateGui::CopyBtcAddress(UINT uNotifyCode, int nID, CWindow wndCtl)
 	if(OpenClipboard())
 	{
 		EmptyClipboard();
-		size_t len = strlen(DONATE_BTC_ADDRESS);
+		size_t len = _tcslen(DONATE_BTC_ADDRESS);
 		HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, (len + 1) * sizeof(CHAR));
 		if(hMem)
 		{
-			strcpy_s(static_cast<CHAR *>(GlobalLock(hMem)), len + 1, DONATE_BTC_ADDRESS);
+            StringConversion::ToCStr(DONATE_BTC_ADDRESS, (LPSTR)hMem, len + 1);
 			GlobalUnlock(hMem);
 			if(!SetClipboardData(CF_TEXT, hMem))
 			{

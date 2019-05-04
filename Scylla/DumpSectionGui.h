@@ -56,7 +56,7 @@ class DumpSectionGui : public CDialogImpl<DumpSectionGui>, public CWinDataExchan
 
 		DWORD_PTR imageBase;  //VA
 		DWORD_PTR entryPoint;
-		WCHAR fullpath[MAX_PATH];
+		TCHAR fullpath[MAX_PATH];
 
 		std::vector<PeSection> & getSectionList();
 

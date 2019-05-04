@@ -4,27 +4,27 @@
 #include "Architecture.h"
 #include "Scylla.h"
 
-const WCHAR ConfigurationHolder::CONFIG_FILE_SECTION_NAME[] = L"SCYLLA_CONFIG";
+const TCHAR ConfigurationHolder::CONFIG_FILE_SECTION_NAME[] = TEXT("SCYLLA_CONFIG");
 
-ConfigurationHolder::ConfigurationHolder(const WCHAR* fileName)
+ConfigurationHolder::ConfigurationHolder(LPCTSTR fileName)
 {
-	config[USE_PE_HEADER_FROM_DISK]     = Configuration(L"USE_PE_HEADER_FROM_DISK",      Configuration::Boolean);
-	config[DEBUG_PRIVILEGE]             = Configuration(L"DEBUG_PRIVILEGE",              Configuration::Boolean);
-	config[CREATE_BACKUP]               = Configuration(L"CREATE_BACKUP",                Configuration::Boolean);
-	config[DLL_INJECTION_AUTO_UNLOAD]   = Configuration(L"DLL_INJECTION_AUTO_UNLOAD",    Configuration::Boolean);
-	config[UPDATE_HEADER_CHECKSUM]      = Configuration(L"UPDATE_HEADER_CHECKSUM",       Configuration::Boolean);
-	config[IAT_SECTION_NAME]            = Configuration(L"IAT_SECTION_NAME",             Configuration::String);
-	config[REMOVE_DOS_HEADER_STUB]      = Configuration(L"REMOVE_DOS_HEADER_STUB",       Configuration::Boolean);
-	config[IAT_FIX_AND_OEP_FIX]         = Configuration(L"IAT_FIX_AND_OEP_FIX",          Configuration::Boolean);
-	config[SUSPEND_PROCESS_FOR_DUMPING] = Configuration(L"SUSPEND_PROCESS_FOR_DUMPING",  Configuration::Boolean);
-	config[OriginalFirstThunk_SUPPORT]  = Configuration(L"OriginalFirstThunk_SUPPORT",	 Configuration::Boolean);
-	config[USE_ADVANCED_IAT_SEARCH]     = Configuration(L"USE_ADVANCED_IAT_SEARCH",	     Configuration::Boolean);
-	config[SCAN_DIRECT_IMPORTS]			= Configuration(L"SCAN_DIRECT_IMPORTS",			 Configuration::Boolean);
-	config[FIX_DIRECT_IMPORTS_NORMAL]			= Configuration(L"FIX_DIRECT_IMPORTS_NORMAL",			 Configuration::Boolean);
-	config[FIX_DIRECT_IMPORTS_UNIVERSAL]		= Configuration(L"FIX_DIRECT_IMPORTS_UNIVERSAL",			 Configuration::Boolean);
-    config[CREATE_NEW_IAT_IN_SECTION]	=   Configuration(L"CREATE_NEW_IAT_IN_SECTION",	 Configuration::Boolean);
-    config[DONT_CREATE_NEW_SECTION] 	=   Configuration(L"DONT_CREATE_NEW_SECTION",	 Configuration::Boolean);
-    config[APIS_ALWAYS_FROM_DISK]	    =   Configuration(L"APIS_ALWAYS_FROM_DISK",	     Configuration::Boolean);
+	config[USE_PE_HEADER_FROM_DISK]     = Configuration(TEXT("USE_PE_HEADER_FROM_DISK"),      Configuration::Boolean);
+	config[DEBUG_PRIVILEGE]             = Configuration(TEXT("DEBUG_PRIVILEGE"),              Configuration::Boolean);
+	config[CREATE_BACKUP]               = Configuration(TEXT("CREATE_BACKUP"),                Configuration::Boolean);
+	config[DLL_INJECTION_AUTO_UNLOAD]   = Configuration(TEXT("DLL_INJECTION_AUTO_UNLOAD"),    Configuration::Boolean);
+	config[UPDATE_HEADER_CHECKSUM]      = Configuration(TEXT("UPDATE_HEADER_CHECKSUM"),       Configuration::Boolean);
+	config[IAT_SECTION_NAME]            = Configuration(TEXT("IAT_SECTION_NAME"),             Configuration::String);
+	config[REMOVE_DOS_HEADER_STUB]      = Configuration(TEXT("REMOVE_DOS_HEADER_STUB"),       Configuration::Boolean);
+	config[IAT_FIX_AND_OEP_FIX]         = Configuration(TEXT("IAT_FIX_AND_OEP_FIX"),          Configuration::Boolean);
+	config[SUSPEND_PROCESS_FOR_DUMPING] = Configuration(TEXT("SUSPEND_PROCESS_FOR_DUMPING"),  Configuration::Boolean);
+	config[OriginalFirstThunk_SUPPORT]  = Configuration(TEXT("OriginalFirstThunk_SUPPORT"),	 Configuration::Boolean);
+	config[USE_ADVANCED_IAT_SEARCH]     = Configuration(TEXT("USE_ADVANCED_IAT_SEARCH"),	     Configuration::Boolean);
+	config[SCAN_DIRECT_IMPORTS]			= Configuration(TEXT("SCAN_DIRECT_IMPORTS"),			 Configuration::Boolean);
+	config[FIX_DIRECT_IMPORTS_NORMAL]			= Configuration(TEXT("FIX_DIRECT_IMPORTS_NORMAL"),			 Configuration::Boolean);
+	config[FIX_DIRECT_IMPORTS_UNIVERSAL]		= Configuration(TEXT("FIX_DIRECT_IMPORTS_UNIVERSAL"),			 Configuration::Boolean);
+    config[CREATE_NEW_IAT_IN_SECTION]	=   Configuration(TEXT("CREATE_NEW_IAT_IN_SECTION"),	 Configuration::Boolean);
+    config[DONT_CREATE_NEW_SECTION] 	=   Configuration(TEXT("DONT_CREATE_NEW_SECTION"),	 Configuration::Boolean);
+    config[APIS_ALWAYS_FROM_DISK]	    =   Configuration(TEXT("APIS_ALWAYS_FROM_DISK"),	     Configuration::Boolean);
 	buildConfigFilePath(fileName);
 }
 
@@ -89,15 +89,16 @@ const Configuration& ConfigurationHolder::operator[](ConfigOption option) const
 
 bool ConfigurationHolder::saveNumericToConfigFile(const Configuration & configObject, int nBase) const
 {
-	WCHAR buf[21]; // UINT64_MAX in dec has 20 digits
+	TCHAR buf[21]; // UINT64_MAX in dec has 20 digits
 
 	if (nBase == 16)
 	{
-		swprintf_s(buf, PRINTF_DWORD_PTR_FULL, configObject.getNumeric());
+		_stprintf_s(buf, PRINTF_DWORD_PTR_FULL, configObject.getNumeric());
 	}
 	else
 	{
-		swprintf_s(buf, PRINTF_INTEGER, configObject.getNumeric());
+#pragma warning(suppress : 4477)
+		_stprintf_s(buf, PRINTF_INTEGER, configObject.getNumeric());
 	}
 
 	BOOL ret = WritePrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), buf, configPath);
@@ -106,15 +107,15 @@ bool ConfigurationHolder::saveNumericToConfigFile(const Configuration & configOb
 
 bool ConfigurationHolder::readNumericFromConfigFile(Configuration & configObject, int nBase)
 {
-	WCHAR buf[21]; // UINT64_MAX in dec has 20 digits
-	DWORD read = GetPrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), L"", buf, _countof(buf), configPath);
+	TCHAR buf[21]; // UINT64_MAX in dec has 20 digits
+	DWORD read = GetPrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), TEXT(""), buf, _countof(buf), configPath);
 
-	if (read > 0 && wcslen(buf) > 0)
+	if (read > 0 && _tcslen(buf) > 0)
 	{
 #ifdef _WIN64
-		configObject.setNumeric(_wcstoui64(buf, NULL, nBase));
+		configObject.setNumeric(_tcstoui64(buf, NULL, nBase));
 #else
-		configObject.setNumeric(wcstoul(buf, NULL, nBase));
+		configObject.setNumeric(_tcstoul(buf, NULL, nBase));
 #endif
 		return true;
 	}
@@ -130,9 +131,9 @@ bool ConfigurationHolder::saveStringToConfigFile(const Configuration & configObj
 
 bool ConfigurationHolder::readStringFromConfigFile(Configuration & configObject)
 {
-	WCHAR buf[Configuration::CONFIG_STRING_LENGTH];
-	DWORD read = GetPrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), L"", buf, _countof(buf), configPath);
-	if(read > 0 && wcslen(buf) > 0)
+	TCHAR buf[Configuration::CONFIG_STRING_LENGTH];
+	DWORD read = GetPrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), TEXT(""), buf, _countof(buf), configPath);
+	if(read > 0 && _tcslen(buf) > 0)
 	{
 		configObject.setString(buf);
 		return true;
@@ -150,7 +151,7 @@ bool ConfigurationHolder::readBooleanFromConfigFile(Configuration & configObject
 
 bool ConfigurationHolder::saveBooleanToConfigFile(const Configuration & configObject) const
 {
-	const WCHAR *boolValue = configObject.isTrue() ? L"1" : L"0";
+    const TCHAR *boolValue = configObject.isTrue() ? TEXT("1") : TEXT("0");
 	BOOL ret = WritePrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), boolValue, configPath);
 	return !!ret;
 }
@@ -189,13 +190,13 @@ bool ConfigurationHolder::saveConfig(const Configuration & configObject) const
 	}
 }
 
-bool ConfigurationHolder::buildConfigFilePath(const WCHAR* fileName)
+bool ConfigurationHolder::buildConfigFilePath(LPCTSTR fileName)
 {
 	ZeroMemory(configPath, sizeof(configPath));
 
-	if (!GetModuleFileName(0, configPath, _countof(configPath)))
+	if (!GetModuleFileName(NULL, configPath, _countof(configPath)))
 	{
-		Scylla::debugLog.log(L"buildConfigFilePath :: GetModuleFileName failed %d", GetLastError());
+		Scylla::debugLog.log(TEXT("buildConfigFilePath :: GetModuleFileName failed %d"), GetLastError());
 		return false;
 	}
 

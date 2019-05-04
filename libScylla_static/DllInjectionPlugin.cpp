@@ -1,291 +1,272 @@
 #include "DllInjectionPlugin.h"
 #include "Scylla.h"
 
-const WCHAR * DllInjectionPlugin::FILE_MAPPING_NAME = L"ScyllaPluginExchange";
+LPCTSTR DllInjectionPlugin::FILE_MAPPING_NAME = TEXT("ScyllaPluginExchange");
 
-HANDLE DllInjectionPlugin::hProcess = 0;
+HANDLE DllInjectionPlugin::hProcess = nullptr;
 
 void DllInjectionPlugin::injectPlugin(Plugin & plugin, std::map<DWORD_PTR, ImportModuleThunk> & moduleList, DWORD_PTR imageBase, DWORD_PTR imageSize)
 {
-	PSCYLLA_EXCHANGE scyllaExchange = 0;
-	PUNRESOLVED_IMPORT unresImp = 0;
+    const DWORD_PTR numberOfUnresolvedImports = getNumberOfUnresolvedImports(moduleList);
 
-	BYTE * dataBuffer = 0;
-	DWORD_PTR numberOfUnresolvedImports = getNumberOfUnresolvedImports(moduleList);
+    if (numberOfUnresolvedImports == 0)
+    {
+        Scylla::Log->log(TEXT("No unresolved Imports"));
+        return;
+    }
 
-	if (numberOfUnresolvedImports == 0)
-	{
-		Scylla::Log->log(L"No unresolved Imports");
-		return;
-	}
+    if (!createFileMapping(static_cast<DWORD>(sizeof(SCYLLA_EXCHANGE) + sizeof(UNRESOLVED_IMPORT) + (sizeof(UNRESOLVED_IMPORT) *
+        numberOfUnresolvedImports))))
+    {
+        Scylla::debugLog.log(TEXT("injectPlugin :: createFileMapping %X failed"), sizeof(SCYLLA_EXCHANGE) + sizeof(UNRESOLVED_IMPORT) + (sizeof(UNRESOLVED_IMPORT) * numberOfUnresolvedImports));
+        return;
+    }
 
-	if (!createFileMapping((DWORD)(sizeof(SCYLLA_EXCHANGE) + sizeof(UNRESOLVED_IMPORT) + (sizeof(UNRESOLVED_IMPORT) * numberOfUnresolvedImports))))
-	{
-		Scylla::debugLog.log(L"injectPlugin :: createFileMapping %X failed",sizeof(SCYLLA_EXCHANGE) + sizeof(UNRESOLVED_IMPORT) + (sizeof(UNRESOLVED_IMPORT) * numberOfUnresolvedImports));
-		return;
-	}
+    auto scyllaExchange = static_cast<PSCYLLA_EXCHANGE>(lpViewOfFile);
+    scyllaExchange->status = 0xFF;
+    scyllaExchange->imageBase = imageBase;
+    scyllaExchange->imageSize = imageSize;
+    scyllaExchange->numberOfUnresolvedImports = numberOfUnresolvedImports;
+    scyllaExchange->offsetUnresolvedImportsArray = sizeof(SCYLLA_EXCHANGE);
 
-	scyllaExchange = (PSCYLLA_EXCHANGE)lpViewOfFile;
-	scyllaExchange->status = 0xFF;
-	scyllaExchange->imageBase = imageBase;
-	scyllaExchange->imageSize = imageSize;
-	scyllaExchange->numberOfUnresolvedImports = numberOfUnresolvedImports;
-	scyllaExchange->offsetUnresolvedImportsArray = sizeof(SCYLLA_EXCHANGE);
+    const auto unresImp = reinterpret_cast<PUNRESOLVED_IMPORT>(reinterpret_cast<DWORD_PTR>(lpViewOfFile) + sizeof(SCYLLA_EXCHANGE));
 
-	unresImp = (PUNRESOLVED_IMPORT)((DWORD_PTR)lpViewOfFile + sizeof(SCYLLA_EXCHANGE));
+    addUnresolvedImports(unresImp, moduleList);
 
-	addUnresolvedImports(unresImp, moduleList);
+    UnmapViewOfFile(lpViewOfFile);
+    lpViewOfFile = nullptr;
 
-	UnmapViewOfFile(lpViewOfFile);
-	lpViewOfFile = 0;
+    const HMODULE hDll = dllInjection(hProcess, plugin.fullpath);
+    if (hDll)
+    {
+        Scylla::Log->log(TEXT("Plugin injection was successful"));
+        if (!unloadDllInProcess(hProcess, hDll))
+        {
+            Scylla::Log->log(TEXT("Plugin unloading failed"));
+        }
+        lpViewOfFile = MapViewOfFile(hMapFile, FILE_MAP_ALL_ACCESS, 0, 0, 0);
 
-	HMODULE hDll = dllInjection(hProcess, plugin.fullpath);
-	if (hDll)
-	{
-		Scylla::Log->log(L"Plugin injection was successful");
-		if (!unloadDllInProcess(hProcess,hDll))
-		{
-			Scylla::Log->log(L"Plugin unloading failed");
-		}
-		lpViewOfFile = MapViewOfFile(hMapFile, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+        if (lpViewOfFile)
+        {
+            scyllaExchange = static_cast<PSCYLLA_EXCHANGE>(lpViewOfFile);
+            handlePluginResults(scyllaExchange, moduleList);
+        }
 
-		if (lpViewOfFile)
-		{
-			scyllaExchange = (PSCYLLA_EXCHANGE)lpViewOfFile;
-			handlePluginResults(scyllaExchange, moduleList);
-		}
+    }
+    else
+    {
+        Scylla::Log->log(TEXT("Plugin injection failed"));
+    }
 
-	}
-	else
-	{
-		Scylla::Log->log(L"Plugin injection failed");
-	}
-
-	closeAllHandles();
+    closeAllHandles();
 }
 
 void DllInjectionPlugin::injectImprecPlugin(Plugin & plugin, std::map<DWORD_PTR, ImportModuleThunk> & moduleList, DWORD_PTR imageBase, DWORD_PTR imageSize)
 {
-	Plugin newPlugin;
-	size_t mapSize = (wcslen(plugin.fullpath) + 1) * sizeof(WCHAR);
+    Plugin newPlugin{};
+    const size_t mapSize = (_tcslen(plugin.fullpath) + 1) * sizeof(TCHAR);
 
-	HANDLE hImprecMap = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE|SEC_COMMIT, 0, (DWORD)mapSize, TEXT(PLUGIN_IMPREC_EXCHANGE_DLL_PATH));
-	
-	if (hImprecMap == NULL)
-	{
-		Scylla::debugLog.log(L"injectImprecPlugin :: CreateFileMapping failed 0x%X", GetLastError());
-		return;
-	}
+    const auto hImprecMap = CreateFileMapping(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE | SEC_COMMIT, 0, static_cast<DWORD>(mapSize), TEXT(PLUGIN_IMPREC_EXCHANGE_DLL_PATH));
 
-	LPVOID lpImprecViewOfFile = MapViewOfFile(hImprecMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+    if (hImprecMap == nullptr)
+    {
+        Scylla::debugLog.log(TEXT("injectImprecPlugin :: CreateFileMapping failed 0x%X"), GetLastError());
+        return;
+    }
 
-	if (lpImprecViewOfFile == NULL)
-	{
-		Scylla::debugLog.log(L"injectImprecPlugin :: MapViewOfFile failed 0x%X", GetLastError());
-		CloseHandle(hImprecMap);
-		return;
-	}
+    const auto lpImprecViewOfFile = MapViewOfFile(hImprecMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
 
-	CopyMemory(lpImprecViewOfFile,plugin.fullpath, mapSize);
+    if (lpImprecViewOfFile == nullptr)
+    {
+        Scylla::debugLog.log(TEXT("injectImprecPlugin :: MapViewOfFile failed 0x%X"), GetLastError());
+        CloseHandle(hImprecMap);
+        return;
+    }
 
-	UnmapViewOfFile(lpImprecViewOfFile);
+    CopyMemory(lpImprecViewOfFile, plugin.fullpath, mapSize);
 
-	newPlugin.fileSize = plugin.fileSize;
-	wcscpy_s(newPlugin.pluginName, plugin.pluginName);
-	wcscpy_s(newPlugin.fullpath, Scylla::plugins.imprecWrapperDllPath);
+    UnmapViewOfFile(lpImprecViewOfFile);
 
-	injectPlugin(newPlugin,moduleList,imageBase,imageSize);
+    newPlugin.fileSize = plugin.fileSize;
+    _tcscpy_s(newPlugin.pluginName, plugin.pluginName);
+    _tcscpy_s(newPlugin.fullpath, Scylla::plugins.imprecWrapperDllPath);
 
-	CloseHandle(hImprecMap);
+    injectPlugin(newPlugin, moduleList, imageBase, imageSize);
+
+    CloseHandle(hImprecMap);
 }
-
-
 
 bool DllInjectionPlugin::createFileMapping(DWORD mappingSize)
 {
-	hMapFile = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE|SEC_COMMIT, 0, mappingSize, FILE_MAPPING_NAME);
+    hMapFile = CreateFileMapping(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE | SEC_COMMIT, 0, mappingSize, FILE_MAPPING_NAME);
 
-	if (hMapFile == NULL)
-	{
-		Scylla::debugLog.log(L"createFileMapping :: CreateFileMapping failed 0x%X", GetLastError());
-		return false;
-	}
+    if (hMapFile == nullptr)
+    {
+        Scylla::debugLog.log(TEXT("createFileMapping :: CreateFileMapping failed 0x%X"), GetLastError());
+        return false;
+    }
 
-	lpViewOfFile = MapViewOfFile(hMapFile, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+    lpViewOfFile = MapViewOfFile(hMapFile, FILE_MAP_ALL_ACCESS, 0, 0, 0);
 
-	if (lpViewOfFile == NULL)
-	{
-		Scylla::debugLog.log(L"createFileMapping :: MapViewOfFile failed 0x%X", GetLastError());
-		CloseHandle(hMapFile);
-		hMapFile = 0;
-		return false;
-	}
-	else
-	{
-		return true;
-	}
+    if (lpViewOfFile == nullptr)
+    {
+        Scylla::debugLog.log(TEXT("createFileMapping :: MapViewOfFile failed 0x%X"), GetLastError());
+        CloseHandle(hMapFile);
+        hMapFile = nullptr;
+        return false;
+    }
+    else
+    {
+        return true;
+    }
 }
 
 void DllInjectionPlugin::closeAllHandles()
 {
-	if (lpViewOfFile)
-	{
-		UnmapViewOfFile(lpViewOfFile);
-		lpViewOfFile = 0;
-	}
-	if (hMapFile)
-	{
-		CloseHandle(hMapFile);
-		hMapFile = 0;
-	}
+    if (lpViewOfFile)
+    {
+        UnmapViewOfFile(lpViewOfFile);
+        lpViewOfFile = nullptr;
+    }
+    if (hMapFile)
+    {
+        CloseHandle(hMapFile);
+        hMapFile = nullptr;
+    }
 }
 
-DWORD_PTR DllInjectionPlugin::getNumberOfUnresolvedImports( std::map<DWORD_PTR, ImportModuleThunk> & moduleList )
+DWORD_PTR DllInjectionPlugin::getNumberOfUnresolvedImports(std::map<DWORD_PTR, ImportModuleThunk> & moduleList)
 {
-	std::map<DWORD_PTR, ImportModuleThunk>::iterator iterator1;
-	std::map<DWORD_PTR, ImportThunk>::iterator iterator2;
-	ImportModuleThunk * moduleThunk = 0;
-	ImportThunk * importThunk = 0;
-	DWORD_PTR dwNumber = 0;
+    DWORD_PTR dwNumber = 0;
 
-	iterator1 = moduleList.begin();
+    std::map<DWORD_PTR, ImportModuleThunk>::iterator iterator1 = moduleList.begin();
 
-	while (iterator1 != moduleList.end())
-	{
-		moduleThunk = &(iterator1->second);
+    while (iterator1 != moduleList.end())
+    {
+        ImportModuleThunk * moduleThunk = &(iterator1->second);
 
-		iterator2 = moduleThunk->thunkList.begin();
+        std::map<DWORD_PTR, ImportThunk>::iterator iterator2 = moduleThunk->thunkList.begin();
 
-		while (iterator2 != moduleThunk->thunkList.end())
-		{
-			importThunk = &(iterator2->second);
+        while (iterator2 != moduleThunk->thunkList.end())
+        {
+            ImportThunk * importThunk = &(iterator2->second);
 
-			if (importThunk->valid == false)
-			{
-				dwNumber++;
-			}
+            if (!importThunk->valid)
+            {
+                dwNumber++;
+            }
 
-			iterator2++;
-		}
+            iterator2++;
+        }
 
-		iterator1++;
-	}
+        iterator1++;
+    }
 
-	return dwNumber;
+    return dwNumber;
 }
 
-void DllInjectionPlugin::addUnresolvedImports( PUNRESOLVED_IMPORT firstUnresImp, std::map<DWORD_PTR, ImportModuleThunk> & moduleList )
+void DllInjectionPlugin::addUnresolvedImports(PUNRESOLVED_IMPORT firstUnresImp, std::map<DWORD_PTR, ImportModuleThunk> & moduleList)
 {
-	std::map<DWORD_PTR, ImportModuleThunk>::iterator iterator1;
-	std::map<DWORD_PTR, ImportThunk>::iterator iterator2;
-	ImportModuleThunk * moduleThunk = 0;
-	ImportThunk * importThunk = 0;
+    std::map<DWORD_PTR, ImportModuleThunk>::iterator iterator1 = moduleList.begin();
 
-	iterator1 = moduleList.begin();
+    while (iterator1 != moduleList.end())
+    {
+        ImportModuleThunk * moduleThunk = &(iterator1->second);
 
-	while (iterator1 != moduleList.end())
-	{
-		moduleThunk = &(iterator1->second);
+        std::map<DWORD_PTR, ImportThunk>::iterator iterator2 = moduleThunk->thunkList.begin();
 
-		iterator2 = moduleThunk->thunkList.begin();
+        while (iterator2 != moduleThunk->thunkList.end())
+        {
+            ImportThunk * importThunk = &(iterator2->second);
 
-		while (iterator2 != moduleThunk->thunkList.end())
-		{
-			importThunk = &(iterator2->second);
+            if (!importThunk->valid)
+            {
+                firstUnresImp->InvalidApiAddress = importThunk->apiAddressVA;
+                firstUnresImp->ImportTableAddressPointer = importThunk->va;
+                firstUnresImp++;
+            }
 
-			if (importThunk->valid == false)
-			{
-				firstUnresImp->InvalidApiAddress = importThunk->apiAddressVA;
-				firstUnresImp->ImportTableAddressPointer = importThunk->va;
-				firstUnresImp++;
-			}
+            iterator2++;
+        }
 
-			iterator2++;
-		}
+        iterator1++;
+    }
 
-		iterator1++;
-	}
-
-	firstUnresImp->InvalidApiAddress = 0;
-	firstUnresImp->ImportTableAddressPointer = 0;
+    firstUnresImp->InvalidApiAddress = 0;
+    firstUnresImp->ImportTableAddressPointer = 0;
 }
 
-void DllInjectionPlugin::handlePluginResults( PSCYLLA_EXCHANGE scyllaExchange, std::map<DWORD_PTR, ImportModuleThunk> & moduleList )
+void DllInjectionPlugin::handlePluginResults(PSCYLLA_EXCHANGE scyllaExchange, std::map<DWORD_PTR, ImportModuleThunk> & moduleList)
 {
-	PUNRESOLVED_IMPORT unresImp = (PUNRESOLVED_IMPORT)((DWORD_PTR)scyllaExchange + scyllaExchange->offsetUnresolvedImportsArray);;
+    const auto unresImp = reinterpret_cast<PUNRESOLVED_IMPORT>(reinterpret_cast<DWORD_PTR>(scyllaExchange) + scyllaExchange->offsetUnresolvedImportsArray);;
 
-	switch (scyllaExchange->status)
-	{
-	case SCYLLA_STATUS_SUCCESS:
-		Scylla::Log->log(L"Plugin was successful");
-		updateImportsWithPluginResult(unresImp, moduleList);
-		break;
-	case SCYLLA_STATUS_UNKNOWN_ERROR:
-		Scylla::Log->log(L"Plugin reported Unknown Error");
-		break;
-	case SCYLLA_STATUS_UNSUPPORTED_PROTECTION:
-		Scylla::Log->log(L"Plugin detected unknown protection");
-		updateImportsWithPluginResult(unresImp, moduleList);
-		break;
-	case SCYLLA_STATUS_IMPORT_RESOLVING_FAILED:
-		Scylla::Log->log(L"Plugin import resolving failed");
-		updateImportsWithPluginResult(unresImp, moduleList);
-		break;
-	case SCYLLA_STATUS_MAPPING_FAILED:
-		Scylla::Log->log(L"Plugin file mapping failed");
-		break;
-	default:
-		Scylla::Log->log(L"Plugin failed without reason");
-	}
+    switch (scyllaExchange->status)
+    {
+    case SCYLLA_STATUS_SUCCESS:
+        Scylla::Log->log(TEXT("Plugin was successful"));
+        updateImportsWithPluginResult(unresImp, moduleList);
+        break;
+    case SCYLLA_STATUS_UNKNOWN_ERROR:
+        Scylla::Log->log(TEXT("Plugin reported Unknown Error"));
+        break;
+    case SCYLLA_STATUS_UNSUPPORTED_PROTECTION:
+        Scylla::Log->log(TEXT("Plugin detected unknown protection"));
+        updateImportsWithPluginResult(unresImp, moduleList);
+        break;
+    case SCYLLA_STATUS_IMPORT_RESOLVING_FAILED:
+        Scylla::Log->log(TEXT("Plugin import resolving failed"));
+        updateImportsWithPluginResult(unresImp, moduleList);
+        break;
+    case SCYLLA_STATUS_MAPPING_FAILED:
+        Scylla::Log->log(TEXT("Plugin file mapping failed"));
+        break;
+    default:
+        Scylla::Log->log(TEXT("Plugin failed without reason"));
+    }
 }
 
-void DllInjectionPlugin::updateImportsWithPluginResult( PUNRESOLVED_IMPORT firstUnresImp, std::map<DWORD_PTR, ImportModuleThunk> & moduleList )
+void DllInjectionPlugin::updateImportsWithPluginResult(PUNRESOLVED_IMPORT firstUnresImp, std::map<DWORD_PTR, ImportModuleThunk> & moduleList)
 {
-	std::map<DWORD_PTR, ImportModuleThunk>::iterator iterator1;
-	std::map<DWORD_PTR, ImportThunk>::iterator iterator2;
-	ImportModuleThunk * moduleThunk = 0;
-	ImportThunk * importThunk = 0;
-	ApiInfo * apiInfo = 0;
-	bool isSuspect = 0;
+    bool isSuspect;
 
-	iterator1 = moduleList.begin();
+    std::map<DWORD_PTR, ImportModuleThunk>::iterator iterator1 = moduleList.begin();
 
-	while (iterator1 != moduleList.end())
-	{
-		moduleThunk = &(iterator1->second);
+    while (iterator1 != moduleList.end())
+    {
+        ImportModuleThunk * moduleThunk = &(iterator1->second);
 
-		iterator2 = moduleThunk->thunkList.begin();
+        std::map<DWORD_PTR, ImportThunk>::iterator iterator2 = moduleThunk->thunkList.begin();
 
-		while (iterator2 != moduleThunk->thunkList.end())
-		{
-			importThunk = &(iterator2->second);
+        while (iterator2 != moduleThunk->thunkList.end())
+        {
+            ImportThunk * importThunk = &(iterator2->second);
 
-			if (importThunk->valid == false)
-			{
-				if (apiReader->isApiAddressValid(firstUnresImp->InvalidApiAddress))
-				{
-					apiInfo = apiReader->getApiByVirtualAddress(firstUnresImp->InvalidApiAddress,&isSuspect);
+            if (!importThunk->valid)
+            {
+                if (apiReader->isApiAddressValid(firstUnresImp->InvalidApiAddress))
+                {
+                    ApiInfo * apiInfo = apiReader->getApiByVirtualAddress(firstUnresImp->InvalidApiAddress, &isSuspect);
 
-					importThunk->suspect = isSuspect;
-					importThunk->valid = true;
-					importThunk->apiAddressVA = firstUnresImp->InvalidApiAddress;
-					importThunk->hint = (WORD)apiInfo->hint;
-					importThunk->ordinal = apiInfo->ordinal;
-					strcpy_s(importThunk->name, apiInfo->name);
-					wcscpy_s(importThunk->moduleName, apiInfo->module->getFilename());
+                    importThunk->suspect = isSuspect;
+                    importThunk->valid = true;
+                    importThunk->apiAddressVA = firstUnresImp->InvalidApiAddress;
+                    importThunk->hint = static_cast<WORD>(apiInfo->hint);
+                    importThunk->ordinal = apiInfo->ordinal;
+                    _tcscpy_s(importThunk->name, apiInfo->name);
+                    _tcscpy_s(importThunk->moduleName, apiInfo->module->getFilename());
 
-					if (moduleThunk->moduleName[0] == L'?')
-					{
-						wcscpy_s(moduleThunk->moduleName, _countof(importThunk->moduleName), apiInfo->module->getFilename());
-					}
-				}
-				
-				firstUnresImp++;
-			}
+                    if (moduleThunk->moduleName[0] == TEXT('?'))
+                    {
+                        _tcscpy_s(moduleThunk->moduleName, _countof(importThunk->moduleName), apiInfo->module->getFilename());
+                    }
+                }
 
-			iterator2++;
-		}
+                firstUnresImp++;
+            }
 
-		iterator1++;
-	}
+            iterator2++;
+        }
+
+        iterator1++;
+    }
 }

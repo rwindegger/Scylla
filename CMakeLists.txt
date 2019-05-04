@@ -61,7 +61,6 @@ message("-- Configuring : diStorm")
 file (GLOB diStorm_files 
 			"${diStorm_dir}/src/*.c"
 			"${diStorm_dir}/src/*.h"
-			"${diStorm_dir}/include/*.h"
 )
 add_library(diStorm ${diStorm_files})
 target_include_directories(diStorm PUBLIC "${diStorm_dir}/include")
@@ -93,7 +92,7 @@ add_executable(Scylla ${Scylla_files})
 target_include_directories(Scylla PRIVATE "${Scylla_dir}/")
 target_link_libraries(Scylla libScylla_static)
 set_target_properties(Scylla PROPERTIES FOLDER "Scylla"
-	LINK_FLAGS "/SUBSYSTEM:WINDOWS /MANIFESTDEPENDENCY:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df'\" /DYNAMICBASE")
+	LINK_FLAGS "/SUBSYSTEM:WINDOWS  /MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\" /MANIFESTDEPENDENCY:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df'\" /DYNAMICBASE")
 
 if (SCYLLA_USE_MINIDUMP_FOR_CRASH)
 	find_library(dbghelp_lib dbghelp ${WDK_LIBPATH}/${ARCH})

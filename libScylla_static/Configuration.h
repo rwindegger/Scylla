@@ -16,16 +16,16 @@ public:
 	static const size_t CONFIG_NAME_LENGTH = 100;
 	static const size_t CONFIG_STRING_LENGTH = 100;
 
-	Configuration(const WCHAR* name = L"", Type type = String);
+	Configuration(LPCTSTR name = TEXT(""), Type type = String);
 
-	const WCHAR* getName() const;
+    LPCTSTR getName() const;
 	Type getType() const;
 
 	DWORD_PTR getNumeric() const;
 	void setNumeric(DWORD_PTR value);
 
-	const WCHAR* getString() const;
-	void setString(const WCHAR* str);
+    LPCTSTR getString() const;
+	void setString(LPCTSTR str);
 
 	bool getBool() const;
 	void setBool(bool flag);
@@ -37,9 +37,9 @@ public:
 
 private:
 
-	WCHAR name[CONFIG_NAME_LENGTH];
+	TCHAR name[CONFIG_NAME_LENGTH];
 	Type type;
 
 	DWORD_PTR valueNumeric;
-	WCHAR valueString[CONFIG_STRING_LENGTH];
+	TCHAR valueString[CONFIG_STRING_LENGTH];
 };

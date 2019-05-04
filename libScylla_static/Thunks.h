@@ -11,8 +11,8 @@
 class ImportThunk
 {
 public:
-	WCHAR moduleName[MAX_PATH];
-	char name[MAX_PATH];
+	TCHAR moduleName[MAX_PATH];
+	TCHAR name[MAX_PATH];
 	DWORD_PTR va;
 	DWORD_PTR rva;
 	WORD ordinal;
@@ -30,7 +30,7 @@ public:
 class ImportModuleThunk
 {
 public:
-	WCHAR moduleName[MAX_PATH];
+	TCHAR moduleName[MAX_PATH];
 	std::map<DWORD_PTR, ImportThunk> thunkList;
 
 	DWORD_PTR firstThunk;

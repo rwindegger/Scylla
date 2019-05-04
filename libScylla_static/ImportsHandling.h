@@ -27,25 +27,25 @@ public:
 	unsigned int invalidThunkCount() const { return m_invalidThunkCount; }
 	unsigned int suspectThunkCount() const { return m_suspectThunkCount; }
 
-	bool isModule(CTreeItem item);
-	bool isImport(CTreeItem item);
+	bool isModule(const CTreeItem& item);
+	bool isImport(const CTreeItem& item);
 
 	ImportModuleThunk * getModuleThunk(CTreeItem item);
-	ImportThunk * getImportThunk(CTreeItem item);
+	ImportThunk * getImportThunk(const CTreeItem& item);
 
 	void displayAllImports();
 	void clearAllImports();
 	void selectImports(bool invalid, bool suspect);
 
-	bool invalidateImport(CTreeItem item);
-	bool invalidateModule(CTreeItem item);
-	bool setImport(CTreeItem item, const WCHAR * moduleName, const CHAR * apiName, WORD ordinal = 0, WORD hint = 0, bool valid = true, bool suspect = false);
+	bool invalidateImport(const CTreeItem& item);
+	bool invalidateModule(const CTreeItem& item);
+	bool setImport(const CTreeItem& item, LPCTSTR moduleName, LPCTSTR apiName, WORD ordinal = 0, WORD hint = 0, bool valid = true, bool suspect = false);
 	bool cutImport(CTreeItem item);
 	bool cutModule(CTreeItem item);
 	//bool addImport(const WCHAR * moduleName, const CHAR * name, DWORD_PTR va, DWORD_PTR rva, WORD ordinal = 0, bool valid = true, bool suspect = false);
 	//bool addModule(const WCHAR * moduleName, DWORD_PTR firstThunk);
 
-	DWORD_PTR getApiAddressByNode(CTreeItem selectedTreeNode);
+	DWORD_PTR getApiAddressByNode(const CTreeItem& item);
 	void scanAndFixModuleList();
 	void expandAllTreeNodes();
 	void collapseAllTreeNodes();
@@ -73,7 +73,7 @@ private:
 	void setItemData(CTreeItem item, const TreeItemData * data);
 	TreeItemData * getItemData(CTreeItem item);
 
-	WCHAR stringBuffer[600];
+	TCHAR stringBuffer[600];
 
 	CMultiSelectTreeViewCtrl& TreeImports;
 	CImageList TreeIcons;
@@ -101,14 +101,14 @@ private:
 	//bool selectItem(CTreeItem hItem, bool select = true);
 	bool findNewModules(std::map<DWORD_PTR, ImportThunk> & thunkList);
 
-	Icon getAppropiateIcon(const ImportThunk * importThunk);
-	Icon getAppropiateIcon(bool valid);
+    static Icon getAppropiateIcon(const ImportThunk * importThunk);
+    static Icon getAppropiateIcon(bool valid);
 
-	bool addModuleToModuleList(const WCHAR * moduleName, DWORD_PTR firstThunk);
+	bool addModuleToModuleList(LPCTSTR moduleName, DWORD_PTR firstThunk);
 	void addUnknownModuleToModuleList(DWORD_PTR firstThunk);
 	bool addNotFoundApiToModuleList(const ImportThunk * apiNotFound);
 	bool addFunctionToModuleList(const ImportThunk * apiFound);
-	bool isNewModule(const WCHAR * moduleName);
+	bool isNewModule(LPCTSTR moduleName);
 
 	void changeExpandStateOfTreeNodes(UINT flag);
 

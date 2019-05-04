@@ -3,7 +3,7 @@
 #include "Architecture.h"
 #include <set>
 
-FileLog IATReferenceScan::directImportLog(L"Scylla_direct_imports.log");
+FileLog IATReferenceScan::directImportLog(TEXT("Scylla_direct_imports.log"));
 
 int IATReferenceScan::numberOfFoundDirectImports()
 {
@@ -71,7 +71,7 @@ void IATReferenceScan::startScan(DWORD_PTR imageBase, DWORD imageSize, DWORD_PTR
 	{
 		if (!VirtualQueryEx(ProcessAccessHelp::hProcess, (LPCVOID)section, &memBasic, sizeof(MEMORY_BASIC_INFORMATION)))
 		{
-			Scylla::debugLog.log(L"VirtualQueryEx failed %d", GetLastError());
+			Scylla::debugLog.log(TEXT("VirtualQueryEx failed %d"), GetLastError());
 
 
 			break;
@@ -228,7 +228,7 @@ void IATReferenceScan::findNormalIatReference( _DInst * instruction )
 
 #ifdef DEBUG_COMMENTS
 				distorm_format(&ProcessAccessHelp::decomposerCi, instruction, &inst);
-				Scylla::debugLog.log(PRINTF_DWORD_PTR_FULL L" " PRINTF_DWORD_PTR_FULL L" %S %S %d %d - target address: " PRINTF_DWORD_PTR_FULL, (DWORD_PTR)instruction->addr, ImageBase, inst.mnemonic.p, inst.operands.p, instruction->ops[0].type, instruction->size, INSTRUCTION_GET_RIP_TARGET(instruction));
+				Scylla::debugLog.log(PRINTF_DWORD_PTR_FULL TEXT(" ") PRINTF_DWORD_PTR_FULL TEXT(" %S %S %d %d - target address: ") PRINTF_DWORD_PTR_FULL, (DWORD_PTR)instruction->addr, ImageBase, inst.mnemonic.p, inst.operands.p, instruction->ops[0].type, instruction->size, INSTRUCTION_GET_RIP_TARGET(instruction));
 #endif
 
 				if (INSTRUCTION_GET_RIP_TARGET(instruction) >= IatAddressVA && INSTRUCTION_GET_RIP_TARGET(instruction) < (IatAddressVA + IatSize))
@@ -249,7 +249,7 @@ void IATReferenceScan::findNormalIatReference( _DInst * instruction )
 				//jmp dword ptr || call dword ptr
 #ifdef DEBUG_COMMENTS
 				distorm_format(&ProcessAccessHelp::decomposerCi, instruction, &inst);
-				Scylla::debugLog.log(PRINTF_DWORD_PTR_FULL L" " PRINTF_DWORD_PTR_FULL L" %S %S %d %d - target address: " PRINTF_DWORD_PTR_FULL, (DWORD_PTR)instruction->addr, ImageBase, inst.mnemonic.p, inst.operands.p, instruction->ops[0].type, instruction->size, instruction->disp);
+				Scylla::debugLog.log(PRINTF_DWORD_PTR_FULL TEXT(" ") PRINTF_DWORD_PTR_FULL TEXT(" %S %S %d %d - target address: ") PRINTF_DWORD_PTR_FULL, (DWORD_PTR)instruction->addr, ImageBase, inst.mnemonic.p, inst.operands.p, instruction->ops[0].type, instruction->size, instruction->disp);
 #endif
 				
 				if (instruction->disp >= IatAddressVA && instruction->disp < (IatAddressVA + IatSize))
@@ -392,7 +392,7 @@ void IATReferenceScan::patchNewIat(DWORD_PTR stdImagebase, DWORD_PTR newIatBaseA
 
 		if (memorySize < (DWORD)(patchOffset + 6))
 		{
-			Scylla::debugLog.log(L"Error - Cannot fix IAT reference RVA: " PRINTF_DWORD_PTR_FULL, ref->addressVA - ImageBase);
+			Scylla::debugLog.log(TEXT("Error - Cannot fix IAT reference RVA: ") PRINTF_DWORD_PTR_FULL, ref->addressVA - ImageBase);
 		}
 		else
 		{
@@ -407,8 +407,8 @@ void IATReferenceScan::patchNewIat(DWORD_PTR stdImagebase, DWORD_PTR newIatBaseA
 
 void IATReferenceScan::printDirectImportLog()
 {
-	IATReferenceScan::directImportLog.log(L"------------------------------------------------------------");
-	IATReferenceScan::directImportLog.log(L"ImageBase " PRINTF_DWORD_PTR_FULL L" ImageSize %08X IATAddress " PRINTF_DWORD_PTR_FULL L" IATSize 0x%X", ImageBase, ImageSize, IatAddressVA, IatSize);
+	IATReferenceScan::directImportLog.log(TEXT("------------------------------------------------------------"));
+	IATReferenceScan::directImportLog.log(TEXT("ImageBase ") PRINTF_DWORD_PTR_FULL TEXT(" ImageSize %08X IATAddress ") PRINTF_DWORD_PTR_FULL TEXT(" IATSize 0x%X"), ImageBase, ImageSize, IatAddressVA, IatSize);
 	int count = 0;
 	bool isSuspect = false;
 
@@ -419,34 +419,34 @@ void IATReferenceScan::printDirectImportLog()
 		ApiInfo * apiInfo = apiReader->getApiByVirtualAddress(ref->targetAddressInIat, &isSuspect);
 
 		count++;
-		WCHAR * type = L"U";
+		TCHAR * type = TEXT("U");
 
 		if (ref->type == IAT_REFERENCE_DIRECT_CALL)
 		{
-			type = L"CALL";
+			type = TEXT("CALL");
 		}
 		else if (ref->type == IAT_REFERENCE_DIRECT_JMP)
 		{
-			type = L"JMP";
+			type = TEXT("JMP");
 		}
 		else if (ref->type == IAT_REFERENCE_DIRECT_MOV)
 		{
-			type = L"MOV";
+			type = TEXT("MOV");
 		}
 		else if (ref->type == IAT_REFERENCE_DIRECT_PUSH)
 		{
-			type = L"PUSH";
+			type = TEXT("PUSH");
 		}
 		else if (ref->type == IAT_REFERENCE_DIRECT_LEA)
 		{
-			type = L"LEA";
+			type = TEXT("LEA");
 		}
 
-		IATReferenceScan::directImportLog.log(L"%04d AddrVA " PRINTF_DWORD_PTR_FULL L" Type %s Value " PRINTF_DWORD_PTR_FULL L" IatRefPointer " PRINTF_DWORD_PTR_FULL L" Api %s %S", count, ref->addressVA, type, ref->targetAddressInIat, ref->targetPointer,apiInfo->module->getFilename(), apiInfo->name);
+		IATReferenceScan::directImportLog.log(TEXT("%04d AddrVA ") PRINTF_DWORD_PTR_FULL TEXT(" Type %s Value ") PRINTF_DWORD_PTR_FULL TEXT(" IatRefPointer ") PRINTF_DWORD_PTR_FULL TEXT(" Api %s %S"), count, ref->addressVA, type, ref->targetAddressInIat, ref->targetPointer,apiInfo->module->getFilename(), apiInfo->name);
 
 	}
 
-	IATReferenceScan::directImportLog.log(L"------------------------------------------------------------");
+	IATReferenceScan::directImportLog.log(TEXT("------------------------------------------------------------"));
 }
 
 void IATReferenceScan::findDirectIatReferenceCallJmp( _DInst * instruction )
@@ -639,7 +639,7 @@ void IATReferenceScan::patchDirectJumpTable( DWORD_PTR stdImagebase, DWORD direc
 #else
 		patchBytes = newIatAddressPointer;
 		DWORD relocOffset = (directImportsJumpTableRVA + 2);
-		directImportLog.log(L"Relocation direct imports fix: Base RVA %08X Type HIGHLOW Offset %04X RelocTableEntry %04X", relocOffset & 0xFFFFF000, relocOffset & 0x00000FFF, (IMAGE_REL_BASED_HIGHLOW << 12) + (relocOffset & 0x00000FFF));
+		directImportLog.log(TEXT("Relocation direct imports fix: Base RVA %08X Type HIGHLOW Offset %04X RelocTableEntry %04X"), relocOffset & 0xFFFFF000, relocOffset & 0x00000FFF, (IMAGE_REL_BASED_HIGHLOW << 12) + (relocOffset & 0x00000FFF));
 #endif
 		jmpTableMemory[0] = 0xFF;
 		jmpTableMemory[1] = 0x25;
@@ -656,7 +656,7 @@ void IATReferenceScan::patchDirectImportInDump32( int patchPreFixBytes, int inst
 {
 	if (memorySize < (DWORD)(patchOffset + instructionSize))
 	{
-		Scylla::debugLog.log(L"Error - Cannot fix direct import reference RVA: %X", sectionRVA + patchOffset);
+		Scylla::debugLog.log(TEXT("Error - Cannot fix direct import reference RVA: %X"), sectionRVA + patchOffset);
 	}
 	else
 	{
@@ -664,7 +664,7 @@ void IATReferenceScan::patchDirectImportInDump32( int patchPreFixBytes, int inst
 		if (generateReloc)
 		{
 			DWORD relocOffset = sectionRVA + patchOffset+ patchPreFixBytes;
-			directImportLog.log(L"Relocation direct imports fix: Base RVA %08X Type HIGHLOW Offset %04X RelocTableEntry %04X", relocOffset & 0xFFFFF000, relocOffset & 0x00000FFF, (IMAGE_REL_BASED_HIGHLOW << 12) + (relocOffset & 0x00000FFF));
+			directImportLog.log(TEXT("Relocation direct imports fix: Base RVA %08X Type HIGHLOW Offset %04X RelocTableEntry %04X"), relocOffset & 0xFFFFF000, relocOffset & 0x00000FFF, (IMAGE_REL_BASED_HIGHLOW << 12) + (relocOffset & 0x00000FFF));
 		}
 
 		*((DWORD *)memory) = patchBytes;
@@ -675,7 +675,7 @@ void IATReferenceScan::patchDirectImportInDump64( int patchPreFixBytes, int inst
 {
 	if (memorySize < (DWORD)(patchOffset + instructionSize))
 	{
-		Scylla::debugLog.log(L"Error - Cannot fix direct import reference RVA: %X", sectionRVA + patchOffset);
+		Scylla::debugLog.log(TEXT("Error - Cannot fix direct import reference RVA: %X"), sectionRVA + patchOffset);
 	}
 	else
 	{
@@ -683,7 +683,7 @@ void IATReferenceScan::patchDirectImportInDump64( int patchPreFixBytes, int inst
 		if (generateReloc)
 		{
 			DWORD relocOffset = sectionRVA + patchOffset+ patchPreFixBytes;
-			directImportLog.log(L"Relocation direct imports fix: Base RVA %08X Type DIR64 Offset %04X RelocTableEntry %04X", relocOffset & 0xFFFFF000, relocOffset & 0x00000FFF, (IMAGE_REL_BASED_DIR64 << 12) + (relocOffset & 0x00000FFF));
+			directImportLog.log(TEXT("Relocation direct imports fix: Base RVA %08X Type DIR64 Offset %04X RelocTableEntry %04X"), relocOffset & 0xFFFFF000, relocOffset & 0x00000FFF, (IMAGE_REL_BASED_DIR64 << 12) + (relocOffset & 0x00000FFF));
 		}
 
 		*((DWORD_PTR *)memory) = patchBytes;
@@ -728,5 +728,3 @@ DWORD IATReferenceScan::addAdditionalApisToList()
 
 	return newIatSize;
 }
-
-

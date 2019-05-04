@@ -6,13 +6,13 @@ class DllInjection
 {
 public:
 
-	HMODULE dllInjection(HANDLE hProcess, const WCHAR * filename);
-	bool unloadDllInProcess(HANDLE hProcess, HMODULE hModule);
-	HANDLE startRemoteThread(HANDLE hProcess, LPVOID lpStartAddress, LPVOID lpParameter);
+    static HMODULE dllInjection(HANDLE hProcess, LPCTSTR filename);
+    static bool unloadDllInProcess(HANDLE hProcess, HMODULE hModule);
+    static HANDLE startRemoteThread(HANDLE hProcess, LPVOID lpStartAddress, LPVOID lpParameter);
 
 private:
 
-	HANDLE customCreateRemoteThread(HANDLE hProcess, LPVOID lpStartAddress, LPVOID lpParameter);
-	void specialThreadSettings(HANDLE hThread);
-	HMODULE getModuleHandleByFilename(HANDLE hProcess, const WCHAR * filename);
+    static HANDLE customCreateRemoteThread(HANDLE hProcess, LPVOID lpStartAddress, LPVOID lpParameter);
+    static void specialThreadSettings(HANDLE hThread);
+    static HMODULE getModuleHandleByFilename(HANDLE hProcess, LPCTSTR filename);
 };

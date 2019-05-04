@@ -7,7 +7,7 @@
 #include "IATSearch.h"
 #include "Architecture.h"
 
-ConfigurationHolder Scylla::config(L"Scylla.ini");
+ConfigurationHolder Scylla::config(TEXT("Scylla.ini"));
 PluginLoader Scylla::plugins;
 
 ProcessLister Scylla::processLister;
@@ -18,7 +18,7 @@ DummyLogger Scylla::debugLog;
 FileLog Scylla::debugLog(DEBUG_LOG_FILENAME);
 #endif /* DEBUG_COMMENTS */
 
-const WCHAR Scylla::DEBUG_LOG_FILENAME[] = L"Scylla_debug.log";
+const TCHAR Scylla::DEBUG_LOG_FILENAME[] = TEXT("Scylla_debug.log");
 Logger* Scylla::Log;
 
 // Internal structure of a SCY_HANDLE
@@ -28,14 +28,9 @@ typedef struct SCY_CONTEXT_T_
     ApiReader apiReader;
 } SCY_CONTEXT_T;
 
-const wchar_t* Scylla::get_version_w()
+LPCTSTR Scylla::get_version_information()
 {
-    return APPNAME L" " ARCHITECTURE L" " APPVERSION;
-}
-
-const char* Scylla::get_version_a()
-{
-    return APPNAME_S " " ARCHITECTURE_S " " APPVERSION_S;
+    return APPNAME TEXT(" ") ARCHITECTURE TEXT(" ") APPVERSION;
 }
 
 const DWORD Scylla::get_version()
@@ -104,7 +99,7 @@ bool Scylla::deinitialize_context(SCY_HANDLE hCtxt)
     return TRUE;
 }
 
-int Scylla::iat_search(SCY_HANDLE hScyllaContext, DWORD_PTR* iatStart, DWORD* iatSize, DWORD_PTR searchStart,
+int Scylla::iat_search(SCY_HANDLE hScyllaContext, DWORD_PTR* iatStart, size_t* iatSize, DWORD_PTR searchStart,
     int advancedSearch)
 {
     //ApiReader apiReader;

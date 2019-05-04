@@ -187,7 +187,7 @@ int DumpSectionGui::listviewCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM l
 	switch(column)
 	{
 	case COL_NAME:
-		diff = _wcsicmp(module1->name, module2->name);
+		diff = _tcsicmp(module1->name, module2->name);
 		break;
 	case COL_VA:
 		diff = module1->virtualAddress < module2->virtualAddress ? -1 : 1;
@@ -213,18 +213,18 @@ void DumpSectionGui::addColumnsToSectionList(CListViewCtrl& list)
 {
 	list.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT|LVS_EX_CHECKBOXES|LVS_EX_GRIDLINES, LVS_EX_FULLROWSELECT|LVS_EX_CHECKBOXES|LVS_EX_GRIDLINES);
 
-	list.InsertColumn(COL_NAME, L"Name", LVCFMT_CENTER);
-	list.InsertColumn(COL_VA, L"Virtual Address", LVCFMT_CENTER);
-	list.InsertColumn(COL_VSize, L"Virtual Size", LVCFMT_CENTER);
-	list.InsertColumn(COL_RVA, L"Raw Address", LVCFMT_CENTER);
-	list.InsertColumn(COL_RSize, L"Raw Size", LVCFMT_CENTER);
-	list.InsertColumn(COL_Characteristics, L"Characteristics", LVCFMT_CENTER);
+	list.InsertColumn(COL_NAME, TEXT("Name"), LVCFMT_CENTER);
+	list.InsertColumn(COL_VA, TEXT("Virtual Address"), LVCFMT_CENTER);
+	list.InsertColumn(COL_VSize, TEXT("Virtual Size"), LVCFMT_CENTER);
+	list.InsertColumn(COL_RVA, TEXT("Raw Address"), LVCFMT_CENTER);
+	list.InsertColumn(COL_RSize, TEXT("Raw Size"), LVCFMT_CENTER);
+	list.InsertColumn(COL_Characteristics, TEXT("Characteristics"), LVCFMT_CENTER);
 }
 
 void DumpSectionGui::displaySectionList(CListViewCtrl& list)
 {
 	int count = 0;
-	WCHAR temp[20];
+	TCHAR temp[20];
 
 	list.DeleteAllItems();
 
@@ -232,29 +232,25 @@ void DumpSectionGui::displaySectionList(CListViewCtrl& list)
 	{
 		getAllSectionsFromFile();
 	}
-	
 
-	std::vector<PeSection>::const_iterator iter;
-
-	for( iter = sectionList.begin(); iter != sectionList.end(); iter++ , count++)
+    for( std::vector<PeSection>::const_iterator iter = sectionList.begin(); iter != sectionList.end(); iter++ , count++)
 	{
 		list.InsertItem(count, iter->name);
 
-		swprintf_s(temp, PRINTF_DWORD_PTR_FULL, iter->virtualAddress);
+		_stprintf_s(temp, PRINTF_DWORD_PTR_FULL, iter->virtualAddress);
 		list.SetItemText(count, COL_VA, temp);
 
-		swprintf_s(temp, L"%08X", iter->virtualSize);
+		_stprintf_s(temp, TEXT("%08X"), iter->virtualSize);
 		list.SetItemText(count, COL_VSize, temp);
 
-		swprintf_s(temp, L"%08X", iter->rawAddress);
+		_stprintf_s(temp, TEXT("%08X"), iter->rawAddress);
 		list.SetItemText(count, COL_RVA, temp);
 
-		swprintf_s(temp, L"%08X", iter->rawSize);
+		_stprintf_s(temp, TEXT("%08X"), iter->rawSize);
 		list.SetItemText(count, COL_RSize, temp);
 
-		swprintf_s(temp, L"%08X", iter->characteristics);
+		_stprintf_s(temp, TEXT("%08X"), iter->characteristics);
 		list.SetItemText(count, COL_Characteristics, temp);
-
 
 		list.SetItemData(count, (DWORD_PTR)&(*iter));
 	}
@@ -329,7 +325,7 @@ void DumpSectionGui::getAllSectionsFromFile()
 
 		for (WORD i = 0; i < peFile.getNumberOfSections(); i++)
 		{
-			peFile.getSectionNameUnicode(i, peSection.name, _countof(peSection.name));
+			peFile.getSectionName(i, peSection.name, _countof(peSection.name));
 
 			peSection.virtualAddress = imageBase + listSectionHeader[i].sectionHeader.VirtualAddress;
 			peSection.virtualSize = listSectionHeader[i].sectionHeader.Misc.VirtualSize;
@@ -343,7 +339,7 @@ void DumpSectionGui::getAllSectionsFromFile()
 	}
 	else
 	{
-		MessageBox(fullpath, L"Not a valid PE -> This should never happen", MB_ICONERROR);
+		MessageBox(fullpath, TEXT("Not a valid PE -> This should never happen"), MB_ICONERROR);
 	}
 
 }

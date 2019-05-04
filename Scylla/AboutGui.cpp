@@ -2,24 +2,25 @@
 
 #include "Scylla.h"
 #include "Architecture.h"
+#include "StringConversion.h"
 
-const WCHAR AboutGui::TEXT_VISIT[]          = L"Visit <a>German Reversing Newbies</a> and <a>Seek n Destroy</a>";
-const WCHAR AboutGui::TEXT_DEVELOPED[]      = L"Developed with Microsoft Visual Studio, written in pure C/C++";
-const WCHAR AboutGui::TEXT_CREDIT_DISTORM[] = L"This tool uses the <a>diStorm disassembler library</a> v3";
-const WCHAR AboutGui::TEXT_CREDIT_YODA[]    = L"Thanks yoda for your PE Rebuilder engine";
-const WCHAR AboutGui::TEXT_CREDIT_SILK[]    = L"The small icons are taken from the <a>Silk icon package</a>";
-const WCHAR AboutGui::TEXT_CREDIT_WTL[]     = L"<a>Windows Template Library</a> v10 is used for the GUI";
-const WCHAR AboutGui::TEXT_GREETINGS[]      = L"Greetz: metr0, G36KV and all from the gRn Team";
-const WCHAR AboutGui::TEXT_LICENSE[]        = L"Scylla is licensed under the <a>GNU General Public License v3</a>";
-const WCHAR AboutGui::TEXT_TINYXML[]        = L"XML support is provided by <a>TinyXML2</a>";
+const TCHAR AboutGui::TEXT_VISIT[]          = TEXT("Visit <a>German Reversing Newbies</a> and <a>Seek n Destroy</a>");
+const TCHAR AboutGui::TEXT_DEVELOPED[]      = TEXT("Developed with Microsoft Visual Studio, written in pure C/C++");
+const TCHAR AboutGui::TEXT_CREDIT_DISTORM[] = TEXT("This tool uses the <a>diStorm disassembler library</a> v3");
+const TCHAR AboutGui::TEXT_CREDIT_YODA[]    = TEXT("Thanks yoda for your PE Rebuilder engine");
+const TCHAR AboutGui::TEXT_CREDIT_SILK[]    = TEXT("The small icons are taken from the <a>Silk icon package</a>");
+const TCHAR AboutGui::TEXT_CREDIT_WTL[]     = TEXT("<a>Windows Template Library</a> v10 is used for the GUI");
+const TCHAR AboutGui::TEXT_GREETINGS[]      = TEXT("Greetz: metr0, G36KV and all from the gRn Team");
+const TCHAR AboutGui::TEXT_LICENSE[]        = TEXT("Scylla is licensed under the <a>GNU General Public License v3</a>");
+const TCHAR AboutGui::TEXT_TINYXML[]        = TEXT("XML support is provided by <a>TinyXML2</a>");
 
-const WCHAR AboutGui::URL_VISIT1[]  = L"http://www.c0rk.org/portal/a/";
-const WCHAR AboutGui::URL_VISIT2[]  = L"http://forum.tuts4you.com";
-const WCHAR AboutGui::URL_DISTORM[] = L"https://github.com/gdabah/distorm/";
-const WCHAR AboutGui::URL_WTL[]     = L"https://sourceforge.net/projects/wtl/";
-const WCHAR AboutGui::URL_SILK[]    = L"http://www.famfamfam.com";
-const WCHAR AboutGui::URL_LICENSE[] = L"http://www.gnu.org/licenses/gpl-3.0.html";
-const WCHAR AboutGui::URL_TINYXML[] = L"https://github.com/leethomason/tinyxml2";
+const TCHAR AboutGui::URL_VISIT1[]  = TEXT("http://www.c0rk.org/portal/a/");
+const TCHAR AboutGui::URL_VISIT2[]  = TEXT("http://forum.tuts4you.com");
+const TCHAR AboutGui::URL_DISTORM[] = TEXT("https://github.com/gdabah/distorm/");
+const TCHAR AboutGui::URL_WTL[]     = TEXT("https://sourceforge.net/projects/wtl/");
+const TCHAR AboutGui::URL_SILK[]    = TEXT("http://www.famfamfam.com");
+const TCHAR AboutGui::URL_LICENSE[] = TEXT("http://www.gnu.org/licenses/gpl-3.0.html");
+const TCHAR AboutGui::URL_TINYXML[] = TEXT("https://github.com/leethomason/tinyxml2");
 
 BOOL AboutGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
@@ -34,7 +35,7 @@ BOOL AboutGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 	StaticTitle.SetFont(FontBold, FALSE);
 
-	StaticTitle.SetWindowText(APPNAME L" " ARCHITECTURE L" " APPVERSION);
+	StaticTitle.SetWindowText(APPNAME TEXT(" ") ARCHITECTURE TEXT(" ") APPVERSION);
 	StaticDeveloped.SetWindowText(TEXT_DEVELOPED);
 	StaticGreetings.SetWindowText(TEXT_GREETINGS);
 	StaticYoda.SetWindowText(TEXT_CREDIT_YODA);
@@ -61,7 +62,10 @@ void AboutGui::OnClose()
 LRESULT AboutGui::OnLink(NMHDR* pnmh)
 {
 	const NMLINK* link = (NMLINK*)pnmh;
-	ShellExecute(NULL, L"open", link->item.szUrl, NULL, NULL, SW_SHOW);
+
+    TCHAR tmp[2084];
+    StringConversion::ToTStr(link->item.szUrl, tmp, 2084);
+	ShellExecute(NULL, TEXT("open"), tmp, NULL, NULL, SW_SHOW);
 	return 0;
 }
 
@@ -104,21 +108,20 @@ void AboutGui::setupLinks()
 	setupTooltip(TooltipLicense, LinkLicense, URL_LICENSE);
 }
 
-void AboutGui::setLinkURL(CLinkCtrl& link, const WCHAR* url, int index)
+void AboutGui::setLinkURL(CLinkCtrl& link, LPCTSTR url, int index)
 {
 	LITEM item;
 	item.mask = LIF_ITEMINDEX | LIF_URL;
 	item.iLink = index;
-
-	wcscpy_s(item.szUrl, url);
+    StringConversion::ToWStr(url, item.szUrl, 2084);
 	link.SetItem(&item);
 }
 
-void AboutGui::setupTooltip(CToolTipCtrl tooltip, CWindow window, const WCHAR* text)
+void AboutGui::setupTooltip(CToolTipCtrl tooltip, CWindow window, LPCTSTR text)
 {
 	CToolInfo ti(TTF_SUBCLASS, window);
 
 	window.GetClientRect(&ti.rect);
-	ti.lpszText = const_cast<WCHAR *>(text);
+	ti.lpszText = const_cast<LPTSTR>(text);
 	tooltip.AddTool(ti);
 }
