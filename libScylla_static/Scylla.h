@@ -16,12 +16,20 @@
 
 #define CONSOLE_LOG
 
+/* Scylla current context. */
+typedef size_t SCY_HANDLE, *PSCY_HANDLE;
+
 class Scylla
 {
 public:
-    static void initAsGuiApp();
-    static void initAsDll();
-
+    static const wchar_t* get_version_w();
+    static const char* get_version_a();
+    static const DWORD get_version();
+    static void initialize(bool isStandalone);
+    static bool initialize_context(PSCY_HANDLE phCtxt, DWORD_PTR TargetProcessPid);
+    static bool deinitialize_context(SCY_HANDLE hCtxt);
+    static int iat_search(SCY_HANDLE hScyllaContext, DWORD_PTR * iatStart, DWORD * iatSize, DWORD_PTR searchStart, BOOL advancedSearch);
+    
     static ConfigurationHolder config;
     static PluginLoader plugins;
 

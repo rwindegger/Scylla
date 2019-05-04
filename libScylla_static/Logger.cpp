@@ -96,10 +96,7 @@ void ListboxLog::setWindow(HWND window)
 
 void ListboxLog::write(const WCHAR* str)
 {	
-	if (IsDllMode == false)
-	{
-		LRESULT index = SendMessageW(window, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(str));
-		SendMessage(window, LB_SETCURSEL, index, 0);
-		UpdateWindow(window);
-	}
+	LRESULT index = SendMessageW(window, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(str));
+	SendMessage(window, LB_SETCURSEL, index, 0);
+	UpdateWindow(window);
 }

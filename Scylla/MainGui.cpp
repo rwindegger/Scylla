@@ -34,7 +34,7 @@ int InitializeGui(HINSTANCE hInstance, LPARAM param)
 
 	AtlInitCommonControls(ICC_LISTVIEW_CLASSES | ICC_TREEVIEW_CLASSES);
 
-	Scylla::initAsGuiApp();
+	Scylla::initialize(true);
 
 	HRESULT hRes = _Module.Init(NULL, hInstance);
 	ATLASSERT(SUCCEEDED(hRes));
@@ -95,7 +95,7 @@ MainGui::MainGui()
 
 MainGui::~MainGui()
 {
-	ScyllaUnInitContext(hProcessContext);
+	Scylla::deinitialize_context(hProcessContext);
 }
 
 BOOL MainGui::PreTranslateMessage(MSG* pMsg)
@@ -647,12 +647,12 @@ void MainGui::processSelectedActionHandler(int index)
 
 	// Cleanup previous results
 	clearImportsActionHandler();
-	ScyllaUnInitContext(hProcessContext);
+	Scylla::deinitialize_context(hProcessContext);
 
 	Scylla::windowLog.log(L"Analyzing %s", process.fullPath);
 
 	// Open Scylla handle on current process
-	if (!ScyllaInitContext(&hProcessContext, process.PID))
+	if (!Scylla::initialize_context(&hProcessContext, process.PID))
 	{
 		enableDialogControls(FALSE);
 		Scylla::windowLog.log(L"Error: Cannot open process handle.");
@@ -888,7 +888,7 @@ void MainGui::iatAutosearchActionHandler()
 
 	
 	// Normal search
-	if (SCY_ERROR_SUCCESS == ScyllaIatSearch(hProcessContext, &addressIAT, &sizeIAT, searchAddress, false))
+	if (SCY_ERROR_SUCCESS == Scylla::iat_search(hProcessContext, &addressIAT, &sizeIAT, searchAddress, false))
 	{
 		Scylla::windowLog.log(L"IAT Search Nor: IAT VA " PRINTF_DWORD_PTR_FULL L" RVA " PRINTF_DWORD_PTR_FULL L" Size 0x%04X (%d)", addressIAT, addressIAT - ProcessAccessHelp::targetImageBase, sizeIAT, sizeIAT);
 	}
@@ -901,7 +901,7 @@ void MainGui::iatAutosearchActionHandler()
 	bAdvancedSearch = Scylla::config[USE_ADVANCED_IAT_SEARCH].isTrue();
 	if (bAdvancedSearch)
 	{
-		if (SCY_ERROR_SUCCESS == ScyllaIatSearch(hProcessContext, &addressIATAdv, &sizeIATAdv, searchAddress, true))
+		if (SCY_ERROR_SUCCESS == Scylla::iat_search(hProcessContext, &addressIATAdv, &sizeIATAdv, searchAddress, true))
 		{
 			Scylla::windowLog.log(L"IAT Search Adv: IAT VA " PRINTF_DWORD_PTR_FULL L" RVA " PRINTF_DWORD_PTR_FULL L" Size 0x%04X (%d)", addressIATAdv, addressIATAdv - ProcessAccessHelp::targetImageBase, sizeIATAdv, sizeIATAdv);
 		}
@@ -909,7 +909,6 @@ void MainGui::iatAutosearchActionHandler()
 		{
 			Scylla::windowLog.log(L"IAT Search Adv: IAT not found at OEP " PRINTF_DWORD_PTR_FULL L"!", searchAddress);
 		}
-
 	}
 
 	// Executive arbitrage between normal and advanced search results

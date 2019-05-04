@@ -2,10 +2,11 @@
 
 #include <windows.h>
 
+#include "Scylla.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 #if defined (WIN32)
 #if defined (_MSC_VER)
@@ -28,9 +29,6 @@ const int SCY_ERROR_IATWRITE = -2;
 const int SCY_ERROR_IATSEARCH = -3;
 const int SCY_ERROR_IATNOTFOUND = -4;
 const int SCY_ERROR_PIDNOTFOUND = -5;
-
-/* Scylla current context. */
-typedef size_t SCY_HANDLE, *PSCY_HANDLE;
 
 /*
 	Init new context for Scylla. Necessary to call it before any other API (except for ScyllaVersionInformation APIs).

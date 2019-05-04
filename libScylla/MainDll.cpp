@@ -3,14 +3,11 @@
 #include "ExceptionHandler.h"
 
 HINSTANCE hDllModule = 0;
-bool IsDllMode = false;
-//CAppModule _Module;
 
 void InitializeDll(HINSTANCE hinstDLL)
 {
 	hDllModule = hinstDLL;
-	IsDllMode = true;
-	Scylla::initAsDll();
+	Scylla::initialize(false);
 }
 
 

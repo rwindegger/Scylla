@@ -1,14 +1,11 @@
 #include "FunctionExport.h"
 #include "PeParser.h"
 #include "ProcessAccessHelp.h"
-#include "Scylla.h"
 #include "Architecture.h"
 #include "ProcessLister.h"
 #include "ApiReader.h"
 #include "IATSearch.h"
 #include "ImportRebuilder.h"
-#include "MainGui.h"
-
 
 extern HINSTANCE hDllModule;
 
@@ -19,21 +16,19 @@ typedef struct SCY_CONTEXT_T_
     ApiReader apiReader;
 } SCY_CONTEXT_T;
 
-
-
 const WCHAR *  ScyllaVersionInformationW()
 {
-    return APPNAME L" " ARCHITECTURE L" " APPVERSION;
+    return Scylla::get_version_w();
 }
 
 const char *  ScyllaVersionInformationA()
 {
-    return APPNAME_S " " ARCHITECTURE_S " " APPVERSION_S;
+    return Scylla::get_version_a();
 }
 
 DWORD  ScyllaVersionInformationDword()
 {
-    return APPVERSIONDWORD;
+    return Scylla::get_version();
 }
 
 BOOL DumpProcessW(SCY_HANDLE hScyllaContext, const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult)
@@ -269,45 +264,6 @@ BOOL  ScyllaDumpProcessA(DWORD_PTR pid, const char * fileToDump, DWORD_PTR image
     }
 }
 
-int  ScyllaIatSearch(SCY_HANDLE hScyllaContext, DWORD_PTR * iatStart, DWORD * iatSize, DWORD_PTR searchStart, BOOL advancedSearch)
-{
-    //ApiReader apiReader;
-    ProcessLister processLister;
-    //Process *processPtr = 0;
-    IATSearch iatSearch;
-    SCY_CONTEXT_T* pPrivScyContext = (SCY_CONTEXT_T*)hScyllaContext;
-
-    if (!pPrivScyContext)
-        return SCY_ERROR_PIDNOTFOUND;
-
-    // Close previous context. FIX ME : use a dedicated structure to store Scylla's context instead of globals
-    //ProcessAccessHelp::closeProcessHandle();
-    //apiReader.clearAll();
-
-    //if (!ProcessAccessHelp::openProcessHandle(dwProcessId))
-    //{
-    //	return SCY_ERROR_PROCOPEN;
-    //}
-
-    ProcessAccessHelp::getProcessModules(ProcessAccessHelp::hProcess, ProcessAccessHelp::moduleList);
-    ProcessAccessHelp::selectedModule = 0;
-
-
-    pPrivScyContext->apiReader.readApisFromModuleList();
-
-    int retVal = SCY_ERROR_IATNOTFOUND;
-    if (iatSearch.searchImportAddressTableInProcess(searchStart, iatStart, iatSize, TRUE == advancedSearch))
-    {
-        retVal = SCY_ERROR_SUCCESS;
-    }
-
-    //ProcessAccessHelp::closeProcessHandle();
-    //apiReader.clearAll();
-
-    return retVal;
-}
-
-
 int  ScyllaIatFixAutoW(SCY_HANDLE hScyllaContext, DWORD_PTR iatAddr, DWORD iatSize, DWORD dwProcessId, const WCHAR * dumpFile, const WCHAR * iatFixFile)
 {
     std::map<DWORD_PTR, ImportModuleThunk> moduleList;
@@ -351,40 +307,17 @@ int  ScyllaIatFixAutoW(SCY_HANDLE hScyllaContext, DWORD_PTR iatAddr, DWORD iatSi
     return retVal;
 }
 
+int  ScyllaIatSearch(SCY_HANDLE hScyllaContext, DWORD_PTR * iatStart, DWORD * iatSize, DWORD_PTR searchStart, BOOL advancedSearch)
+{
+    return Scylla::iat_search(hScyllaContext, iatStart, iatSize, searchStart, advancedSearch);
+}
+
 BOOL ScyllaInitContext(PSCY_HANDLE phCtxt, DWORD_PTR TargetProcessPid)
 {
-    SCY_CONTEXT_T* pPrivScyContext = NULL;
-
-    *phCtxt = NULL;
-
-    pPrivScyContext = (SCY_CONTEXT_T*)calloc(1, sizeof(SCY_CONTEXT_T));
-    if (NULL == pPrivScyContext)
-        return FALSE;
-    memset(pPrivScyContext, 0, sizeof(SCY_CONTEXT_T));
-
-    // Open target process
-    if (!ProcessAccessHelp::openProcessHandle(TargetProcessPid))
-    {
-        return FALSE;
-    }
-    pPrivScyContext->apiReader.readApisFromModuleList();
-
-    *phCtxt = (SCY_HANDLE)pPrivScyContext;
-    return TRUE;
+    return Scylla::initialize_context(phCtxt, TargetProcessPid);
 }
 
 BOOL ScyllaUnInitContext(SCY_HANDLE hCtxt)
 {
-    SCY_CONTEXT_T* pPrivScyContext = (SCY_CONTEXT_T*)hCtxt;
-
-    if (!pPrivScyContext)
-        return FALSE;
-
-    // Close process handle
-    ProcessAccessHelp::closeProcessHandle();
-    pPrivScyContext->apiReader.clearAll();
-
-
-    free(pPrivScyContext);
-    return TRUE;
+    return Scylla::deinitialize_context(hCtxt);
 }

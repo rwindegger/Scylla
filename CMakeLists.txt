@@ -44,7 +44,7 @@ message("-- Configuring project for arch ${ARCH}.")
 
 get_filename_component(src_dir		"${PROJECT_SOURCE_DIR}" 	REALPATH)
 set(vendor_dir "${src_dir}/vendor")
-set(tinyxml_dir	"${vendor_dir}/ticpp")
+set(tinyxml2_dir	"${vendor_dir}/tinyxml2")
 set(diStorm_dir	"${vendor_dir}/distorm")
 set(WTL_dir		"${vendor_dir}/WindowsTemplateLibrary")
 set(libScylla_dir "${src_dir}/libScylla")
@@ -54,7 +54,7 @@ set(ScyllaTest_dir	"${src_dir}/ScyllaDllTest")
 
 message("-- Configuring : tinyxml2")
 set(BUILD_SHARED_LIBS OFF)
-add_subdirectory("${vendor_dir}/tinyxml2")
+add_subdirectory(${tinyxml2_dir})
 
 # diStorm static library
 message("-- Configuring : diStorm")
@@ -71,7 +71,7 @@ message("-- Configuring : libScylla_static")
 file (GLOB libScylla_files "${libScylla_static_dir}/*.cpp")
 add_library(libScylla_static ${libScylla_files})
 target_link_libraries(libScylla_static tinyxml2 diStorm Psapi Imagehlp)
-target_include_directories(libScylla_static PUBLIC "${libScylla_static_dir}/")
+target_include_directories(libScylla_static PUBLIC "${libScylla_static_dir}/" "${WTL_dir}/Include")
 set_target_properties(libScylla_static PROPERTIES FOLDER "Scylla")
 
 message("-- Configuring : libScylla")
@@ -90,9 +90,8 @@ file (GLOB Scylla_files
 			"${Scylla_dir}/*.rc"
 )
 add_executable(Scylla ${Scylla_files})
-target_include_directories(libScylla_static PUBLIC "${Scylla_dir}/")
-target_include_directories(libScylla_static PUBLIC "${WTL_dir}/Include")
-target_link_libraries(Scylla libScylla)
+target_include_directories(Scylla PRIVATE "${Scylla_dir}/")
+target_link_libraries(Scylla libScylla_static)
 set_target_properties(Scylla PROPERTIES FOLDER "Scylla"
 	LINK_FLAGS "/SUBSYSTEM:WINDOWS /MANIFESTDEPENDENCY:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df'\" /DYNAMICBASE")
 
