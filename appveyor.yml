@@ -1,10 +1,5 @@
-# branches to build
-branches:
-  # whitelist
-  only:
-  - master
-
 # Operating system (build VM template)
+version: 0.9.{build}
 image: Visual Studio 2017
 configuration:
 - Release
@@ -12,15 +7,12 @@ configuration:
 platform:
 - x86
 - x64
-build:
-  parallel: true
-  verbosity: minimal
+
 build_script:
-- sh: >-
-    mkdir -p build/%CONFIGURATION%-%PLATFORM%
-
-    cd build/%CONFIGURATION%-%PLATFORM%
-
-    cmake ../.. --config %CONFIGURATION%
-
-    cmake --build ./ --config %CONFIGURATION%
+- ps:
+    git submodule update --init
+    Write-Host "./build/$($env:CONFIGURATION)-$($env:PLATFORM)"
+    New-Item -Path "./build/$($env:CONFIGURATION)-$($env:PLATFORM)" -ItemType Directory
+    cd "./build/$($env:CONFIGURATION)-$($env:PLATFORM)"
+    cmake ../..
+    cmake --build . --config "$($env:CONFIGURATION)"

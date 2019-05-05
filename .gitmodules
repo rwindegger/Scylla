@@ -1,11 +1,11 @@
 [submodule "vendor/WindowsTemplateLibrary"]
 	path = vendor/WindowsTemplateLibrary
-url=git://git.code.sf.net/p/wtl/git
+url=https://git.code.sf.net/p/wtl/git 
 	branch = master
 [submodule "vendor/distorm"]
 	path = vendor/distorm
-	url = git@github.com:gdabah/distorm.git
+url=https://github.com/gdabah/distorm.git
 [submodule "vendor/tinyxml2"]
 	path = vendor/tinyxml2
-	url = git@github.com:leethomason/tinyxml2.git
+url=https://github.com/leethomason/tinyxml2.git
 	branch = master
