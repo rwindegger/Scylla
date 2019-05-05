@@ -1,7 +1,6 @@
-Disclaimer : this a light fork from NtQuery/Scylla official repository. This fork add the ability to build Scylla using cmake as well as using Appveyor as CI server (works for VS2012 and VS2013).
-
 Scylla - x64/x86 Imports Reconstruction
 =======================================
+[![Build status](https://ci.appveyor.com/api/projects/status/uc42jlobm1kjnwbk?svg=true)](https://ci.appveyor.com/project/rwindegger/scylla)
 
 ImpREC, CHimpREC, Imports Fixer... this are all great tools to rebuild an import table, 
 but they all have some major disadvantages, so I decided to create my own tool for this job.
@@ -41,7 +40,6 @@ If you still want to use XP x64, here are some hints:
 
 Some ImpREC Plugins don't work with Windows Vista/7 because they don't "return 1" in the DllMain function.
 
-
 Keyboard Shortcuts
 ------------------
 
@@ -54,9 +52,14 @@ Keyboard Shortcuts
 - CTRL + G: [G]et Imports
 - CTRL + I: [I]AT Autosearch
 
-
 Changelog
 ---------
+
+Version 0.10.0
+
+- Changed dependency management to use git submodules.
+- Split the source into 3 subprojects a static library, a dynamic library, and the GUI.
+- Using CMAKE as build system and appveyor as build service.
 
 Version 0.9.8
 

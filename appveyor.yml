@@ -1,18 +1,64 @@
-# Operating system (build VM template)
-version: 0.9.{build}
+version: 0.10.{build}
+branches:
+  only:
+  - master
+skip_tags: true
 image: Visual Studio 2017
-configuration:
-- Release
-- Debug
+configuration: Release
 platform:
 - x86
 - x64
+init:
+- ps: >-
+    if (-not $env:APPVEYOR_BUILD_VERSION.endswith($($env:APPVEYOR_REPO_COMMIT.substring(0,8)))){
 
+    Update-AppveyorBuild -Version "$env:APPVEYOR_BUILD_VERSION-$($env:APPVEYOR_REPO_COMMIT.substring(0,8))"
+
+    }
+install:
+- cmd: >-
+    if "%PLATFORM%" == "x86" CALL "%programfiles% (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat"
+
+    if "%PLATFORM%" == "x64" CALL "%programfiles% (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
+
+    mkdir c:\tmp
+
+    appveyor DownloadFile https://github.com/ninja-build/ninja/releases/download/v1.9.0/ninja-win.zip -FileName c:\tmp\ninja.zip
+
+    7z x c:\tmp\ninja.zip -oC:\ninja > nul
+
+    set PATH=C:\ninja;%PATH%
+
+    ninja --version
 build_script:
-- ps:
-    git submodule update --init
+- ps: >-
+    git submodule -q update --init
+
     Write-Host "./build/$($env:CONFIGURATION)-$($env:PLATFORM)"
-    New-Item -Path "./build/$($env:CONFIGURATION)-$($env:PLATFORM)" -ItemType Directory
+
+    Write-Host $env:APPVEYOR_BUILD_VERSION
+
+    New-Item -Force -Path "./build/$($env:CONFIGURATION)-$($env:PLATFORM)" -ItemType Directory
+
     cd "./build/$($env:CONFIGURATION)-$($env:PLATFORM)"
-    cmake ../..
+
+    cmake -G Ninja -DCMAKE_INSTALL_PREFIX:PATH="../../install/Scylla-$($env:PLATFORM)" -DCMAKE_BUILD_TYPE="$($env:CONFIGURATION)" -DVERSION_TCHAR="$($env:APPVEYOR_BUILD_VERSION)" -DVERSION_DWORD="$($env:APPVEYOR_REPO_COMMIT.substring(0,8))" ../..
+
     cmake --build . --config "$($env:CONFIGURATION)"
+test_script:
+- ps: >-
+    cmake --build . --config "$($env:CONFIGURATION)" --target check
+
+    cmake --build . --config "$($env:CONFIGURATION)" --target install
+
+    cd ../../install
+
+    7z a "Scylla-$($env:PLATFORM)-$($env:APPVEYOR_BUILD_VERSION).zip" ./*
+artifacts:
+- path: install\*.zip
+deploy:
+- provider: GitHub
+  auth_token:
+    secure: RYkdCrFbwQ5ntgLpueRUbN3krvMrkbpyk+wnN7wHNxcbjG3/O+myXXPtKxSPdAAA
+  artifact: /.*\.zip/
+  force_update: true
