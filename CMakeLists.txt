@@ -1,14 +1,11 @@
 cmake_minimum_required(VERSION 3.12)
 
-if(POLICY CMP0063)
-    cmake_policy(SET CMP0063 NEW)
-endif()
+project(Scylla)
 
+cmake_policy(PUSH)
 if(POLICY CMP0077)
     cmake_policy(SET CMP0077 NEW)
 endif()
-
-project(Scylla)
 
 # Compilation options
 option(SCYLLA_USE_MINIDUMP_FOR_CRASH "Use dbghelp.lib to create minidumps on crashs" OFF)
@@ -59,7 +56,7 @@ set(Scylla_dir	"${src_dir}/Scylla")
 set(ScyllaTest_dir	"${src_dir}/ScyllaDllTest")
 
 message(STATUS "-- Configuring : tinyxml2")
-set(BUILD_SHARED_LIBS OFF)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "build as shared library" FORCE)
 add_subdirectory(${tinyxml2_dir})
 
 # diStorm static library
@@ -144,3 +141,5 @@ endif()
 # ScyllaExeTest
 add_executable(ScyllaExeTest "${ScyllaTest_dir}/ScyllaTestExe/main.cpp")
 set_target_properties (ScyllaExeTest PROPERTIES	FOLDER "tests" LINK_FLAGS "/SUBSYSTEM:WINDOWS")
+
+cmake_policy(POP)
