@@ -28,15 +28,16 @@ endif()
 
 ### OS level checks
 if ( "${CMAKE_SIZEOF_VOID_P}" EQUAL "8" )
-	message( "-- 64 bits compiler detected" )
+	message(STATUS "-- 64 bits compiler detected" )
 	set(ARCH "x64")
 elseif( "${CMAKE_SIZEOF_VOID_P}" EQUAL "4" )
-	message( "-- 32 bits compiler detected" )
+	message(STATUS "-- 32 bits compiler detected" )
 	set(ARCH "x86")
 else()
+	message(FATAL_ERROR "-- Unknown compiler detected")
 	set(ARCH "Unkown")
 endif()
-message("-- Configuring project for arch ${ARCH}.")
+message(STATUS "-- Configuring project for arch ${ARCH}.")
 
 get_filename_component(src_dir		"${PROJECT_SOURCE_DIR}" 	REALPATH)
 set(vendor_dir "${src_dir}/vendor")
@@ -48,12 +49,12 @@ set(libScylla_static_dir "${src_dir}/libScylla_static")
 set(Scylla_dir	"${src_dir}/Scylla")
 set(ScyllaTest_dir	"${src_dir}/ScyllaDllTest")
 
-message("-- Configuring : tinyxml2")
+message(STATUS "-- Configuring : tinyxml2")
 set(BUILD_SHARED_LIBS OFF)
 add_subdirectory(${tinyxml2_dir})
 
 # diStorm static library
-message("-- Configuring : diStorm")
+message(STATUS "-- Configuring : diStorm")
 file (GLOB diStorm_files 
 			"${diStorm_dir}/src/*.c"
 			"${diStorm_dir}/src/*.h"
@@ -62,14 +63,14 @@ add_library(diStorm ${diStorm_files})
 target_include_directories(diStorm PUBLIC "${diStorm_dir}/include")
 set_target_properties (diStorm PROPERTIES FOLDER "vendor")
 
-message("-- Configuring : libScylla_static")
+message(STATUS "-- Configuring : libScylla_static")
 file (GLOB libScylla_files "${libScylla_static_dir}/*.cpp")
 add_library(libScylla_static ${libScylla_files})
 target_link_libraries(libScylla_static tinyxml2 diStorm Psapi Imagehlp)
 target_include_directories(libScylla_static PUBLIC "${libScylla_static_dir}/" "${WTL_dir}/Include")
 set_target_properties(libScylla_static PROPERTIES FOLDER "Scylla")
 
-message("-- Configuring : libScylla")
+message(STATUS "-- Configuring : libScylla")
 file(GLOB libScylla_files "${libScylla_dir}/*.cpp")
 add_library(libScylla SHARED ${libScylla_files})
 target_link_libraries(libScylla libScylla_static)
@@ -78,7 +79,7 @@ set_target_properties(libScylla PROPERTIES FOLDER "Scylla")
 
 #### Scylla targets
 # Scylla executable
-message("-- Configuring : Scylla")
+message(STATUS "-- Configuring : Scylla")
 file (GLOB Scylla_files 
 			"${Scylla_dir}/*.cpp"
 			"${Scylla_dir}/*.ico"
@@ -104,7 +105,7 @@ endif()
 #### Scylla tests
 
 # ScyllaDllTest
-message("-- Configuring : ScyllaDllTest")
+message(STATUS "-- Configuring : ScyllaDllTest")
 file (GLOB ScyllaDllTest_files 
 			"${ScyllaTest_dir}/ScyllaDllTest/*.cpp"
 			"${ScyllaTest_dir}/ScyllaDllTest/*.h"
