@@ -62,6 +62,7 @@ file (GLOB diStorm_files
 add_library(diStorm ${diStorm_files})
 target_include_directories(diStorm PUBLIC "${diStorm_dir}/include")
 set_target_properties (diStorm PROPERTIES FOLDER "vendor")
+install(TARGETS diStorm DESTINATION lib)
 
 message(STATUS "-- Configuring : libScylla_static")
 file (GLOB libScylla_files "${libScylla_static_dir}/*.cpp")
@@ -69,6 +70,7 @@ add_library(libScylla_static ${libScylla_files})
 target_link_libraries(libScylla_static tinyxml2 diStorm Psapi Imagehlp)
 target_include_directories(libScylla_static PUBLIC "${libScylla_static_dir}/" "${WTL_dir}/Include")
 set_target_properties(libScylla_static PROPERTIES FOLDER "Scylla")
+install(TARGETS libScylla_static DESTINATION lib)
 
 message(STATUS "-- Configuring : libScylla")
 file(GLOB libScylla_files "${libScylla_dir}/*.cpp")
@@ -76,6 +78,7 @@ add_library(libScylla SHARED ${libScylla_files})
 target_link_libraries(libScylla libScylla_static)
 target_include_directories(libScylla_static PUBLIC "${libScylla_dir}/")
 set_target_properties(libScylla PROPERTIES FOLDER "Scylla")
+install(TARGETS libScylla DESTINATION lib)
 
 #### Scylla targets
 # Scylla executable
@@ -90,6 +93,7 @@ target_include_directories(Scylla PRIVATE "${Scylla_dir}/")
 target_link_libraries(Scylla libScylla_static)
 set_target_properties(Scylla PROPERTIES FOLDER "Scylla"
 	LINK_FLAGS "/SUBSYSTEM:WINDOWS  /MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\" /MANIFESTDEPENDENCY:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df'\" /DYNAMICBASE")
+install(TARGETS Scylla DESTINATION bin)
 
 if (SCYLLA_USE_MINIDUMP_FOR_CRASH)
 	find_library(dbghelp_lib dbghelp ${WDK_LIBPATH}/${ARCH})
