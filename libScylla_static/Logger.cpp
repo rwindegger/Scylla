@@ -4,7 +4,6 @@
 #include <shlwapi.h>
 #include <cstdio>
 #include <atlbase.h> 
-#include <atlconv.h>
 
 void Logger::log(LPCTSTR format, ...)
 {
@@ -28,14 +27,14 @@ void ConsoleLogger::write(LPCTSTR str)
 
 FileLog::FileLog(LPCTSTR fileName)
 {
-	GetModuleFileName(0, this->filePath, _countof(this->filePath));
+	GetModuleFileName(nullptr, this->filePath, _countof(this->filePath));
 	PathRemoveFileSpec(this->filePath);
 	PathAppend(this->filePath, fileName);
 }
 
 void FileLog::write(LPCTSTR str)
 {
-	FILE * pFile = 0;
+	FILE * pFile = nullptr;
 	if (_tfopen_s(&pFile, filePath, TEXT("a")) == 0)
 	{
 		_fputts(str, pFile);

@@ -1,26 +1,26 @@
 #include "NativeWinApi.h"
 
-def_NtCreateThreadEx NativeWinApi::NtCreateThreadEx = 0;
-def_NtDuplicateObject NativeWinApi::NtDuplicateObject = 0;
-def_NtOpenProcess NativeWinApi::NtOpenProcess = 0;
-def_NtOpenThread NativeWinApi::NtOpenThread = 0;
-def_NtQueryObject NativeWinApi::NtQueryObject = 0;
-def_NtQueryInformationFile NativeWinApi::NtQueryInformationFile = 0;
-def_NtQueryInformationProcess NativeWinApi::NtQueryInformationProcess = 0;
-def_NtQueryInformationThread NativeWinApi::NtQueryInformationThread = 0;
-def_NtQuerySystemInformation NativeWinApi::NtQuerySystemInformation = 0;
-def_NtQueryVirtualMemory NativeWinApi::NtQueryVirtualMemory = 0;
-def_NtResumeProcess NativeWinApi::NtResumeProcess = 0;
-def_NtResumeThread NativeWinApi::NtResumeThread = 0;
-def_NtSetInformationThread NativeWinApi::NtSetInformationThread = 0;
-def_NtSuspendProcess NativeWinApi::NtSuspendProcess = 0;
-def_NtTerminateProcess NativeWinApi::NtTerminateProcess = 0;
+def_NtCreateThreadEx NativeWinApi::NtCreateThreadEx = nullptr;
+def_NtDuplicateObject NativeWinApi::NtDuplicateObject = nullptr;
+def_NtOpenProcess NativeWinApi::NtOpenProcess = nullptr;
+def_NtOpenThread NativeWinApi::NtOpenThread = nullptr;
+def_NtQueryObject NativeWinApi::NtQueryObject = nullptr;
+def_NtQueryInformationFile NativeWinApi::NtQueryInformationFile = nullptr;
+def_NtQueryInformationProcess NativeWinApi::NtQueryInformationProcess = nullptr;
+def_NtQueryInformationThread NativeWinApi::NtQueryInformationThread = nullptr;
+def_NtQuerySystemInformation NativeWinApi::NtQuerySystemInformation = nullptr;
+def_NtQueryVirtualMemory NativeWinApi::NtQueryVirtualMemory = nullptr;
+def_NtResumeProcess NativeWinApi::NtResumeProcess = nullptr;
+def_NtResumeThread NativeWinApi::NtResumeThread = nullptr;
+def_NtSetInformationThread NativeWinApi::NtSetInformationThread = nullptr;
+def_NtSuspendProcess NativeWinApi::NtSuspendProcess = nullptr;
+def_NtTerminateProcess NativeWinApi::NtTerminateProcess = nullptr;
 
-def_NtOpenSymbolicLinkObject NativeWinApi::NtOpenSymbolicLinkObject = 0;
-def_NtQuerySymbolicLinkObject NativeWinApi::NtQuerySymbolicLinkObject = 0;
+def_NtOpenSymbolicLinkObject NativeWinApi::NtOpenSymbolicLinkObject = nullptr;
+def_NtQuerySymbolicLinkObject NativeWinApi::NtQuerySymbolicLinkObject = nullptr;
 
-def_RtlNtStatusToDosError NativeWinApi::RtlNtStatusToDosError = 0;
-def_NtClose NativeWinApi::NtClose = 0;
+def_RtlNtStatusToDosError NativeWinApi::RtlNtStatusToDosError = nullptr;
+def_NtClose NativeWinApi::NtClose = nullptr;
 
 void NativeWinApi::initialize()
 {
@@ -29,33 +29,33 @@ void NativeWinApi::initialize()
         return;
     }
 
-	HMODULE hModuleNtdll = GetModuleHandle(TEXT("ntdll.dll"));
+    const auto hModuleNtdll = GetModuleHandle(TEXT("ntdll.dll"));
 
 	if (!hModuleNtdll)
 	{
 		return;
 	}
 
-	NtCreateThreadEx = (def_NtCreateThreadEx)GetProcAddress(hModuleNtdll, "NtCreateThreadEx");
-	NtDuplicateObject = (def_NtDuplicateObject)GetProcAddress(hModuleNtdll, "NtDuplicateObject");
-	NtOpenProcess = (def_NtOpenProcess)GetProcAddress(hModuleNtdll, "NtOpenProcess");
-	NtOpenThread = (def_NtOpenThread)GetProcAddress(hModuleNtdll, "NtOpenThread");
-	NtQueryObject = (def_NtQueryObject)GetProcAddress(hModuleNtdll, "NtQueryObject");
-	NtQueryInformationFile = (def_NtQueryInformationFile)GetProcAddress(hModuleNtdll, "NtQueryInformationFile");
-	NtQueryInformationProcess = (def_NtQueryInformationProcess)GetProcAddress(hModuleNtdll, "NtQueryInformationProcess");
-	NtQueryInformationThread = (def_NtQueryInformationThread)GetProcAddress(hModuleNtdll, "NtQueryInformationThread");
-	NtQuerySystemInformation = (def_NtQuerySystemInformation)GetProcAddress(hModuleNtdll, "NtQuerySystemInformation");
-	NtQueryVirtualMemory = (def_NtQueryVirtualMemory)GetProcAddress(hModuleNtdll, "NtQueryVirtualMemory");
-	NtResumeProcess = (def_NtResumeProcess)GetProcAddress(hModuleNtdll, "NtResumeProcess");
-	NtResumeThread = (def_NtResumeThread)GetProcAddress(hModuleNtdll, "NtResumeThread");
-	NtSetInformationThread = (def_NtSetInformationThread)GetProcAddress(hModuleNtdll, "NtSetInformationThread");
-	NtSuspendProcess = (def_NtSuspendProcess)GetProcAddress(hModuleNtdll, "NtSuspendProcess");
-	NtTerminateProcess = (def_NtTerminateProcess)GetProcAddress(hModuleNtdll, "NtTerminateProcess");
-    NtOpenSymbolicLinkObject = (def_NtOpenSymbolicLinkObject)GetProcAddress(hModuleNtdll, "NtOpenSymbolicLinkObject");
-    NtQuerySymbolicLinkObject = (def_NtQuerySymbolicLinkObject)GetProcAddress(hModuleNtdll, "NtQuerySymbolicLinkObject");
+	NtCreateThreadEx = reinterpret_cast<def_NtCreateThreadEx>(GetProcAddress(hModuleNtdll, "NtCreateThreadEx"));
+	NtDuplicateObject = reinterpret_cast<def_NtDuplicateObject>(GetProcAddress(hModuleNtdll, "NtDuplicateObject"));
+	NtOpenProcess = reinterpret_cast<def_NtOpenProcess>(GetProcAddress(hModuleNtdll, "NtOpenProcess"));
+	NtOpenThread = reinterpret_cast<def_NtOpenThread>(GetProcAddress(hModuleNtdll, "NtOpenThread"));
+	NtQueryObject = reinterpret_cast<def_NtQueryObject>(GetProcAddress(hModuleNtdll, "NtQueryObject"));
+	NtQueryInformationFile = reinterpret_cast<def_NtQueryInformationFile>(GetProcAddress(hModuleNtdll, "NtQueryInformationFile"));
+	NtQueryInformationProcess = reinterpret_cast<def_NtQueryInformationProcess>(GetProcAddress(hModuleNtdll, "NtQueryInformationProcess"));
+	NtQueryInformationThread = reinterpret_cast<def_NtQueryInformationThread>(GetProcAddress(hModuleNtdll, "NtQueryInformationThread"));
+	NtQuerySystemInformation = reinterpret_cast<def_NtQuerySystemInformation>(GetProcAddress(hModuleNtdll, "NtQuerySystemInformation"));
+	NtQueryVirtualMemory = reinterpret_cast<def_NtQueryVirtualMemory>(GetProcAddress(hModuleNtdll, "NtQueryVirtualMemory"));
+	NtResumeProcess = reinterpret_cast<def_NtResumeProcess>(GetProcAddress(hModuleNtdll, "NtResumeProcess"));
+	NtResumeThread = reinterpret_cast<def_NtResumeThread>(GetProcAddress(hModuleNtdll, "NtResumeThread"));
+	NtSetInformationThread = reinterpret_cast<def_NtSetInformationThread>(GetProcAddress(hModuleNtdll, "NtSetInformationThread"));
+	NtSuspendProcess = reinterpret_cast<def_NtSuspendProcess>(GetProcAddress(hModuleNtdll, "NtSuspendProcess"));
+	NtTerminateProcess = reinterpret_cast<def_NtTerminateProcess>(GetProcAddress(hModuleNtdll, "NtTerminateProcess"));
+    NtOpenSymbolicLinkObject = reinterpret_cast<def_NtOpenSymbolicLinkObject>(GetProcAddress(hModuleNtdll, "NtOpenSymbolicLinkObject"));
+    NtQuerySymbolicLinkObject = reinterpret_cast<def_NtQuerySymbolicLinkObject>(GetProcAddress(hModuleNtdll, "NtQuerySymbolicLinkObject"));
 
-	RtlNtStatusToDosError = (def_RtlNtStatusToDosError)GetProcAddress(hModuleNtdll, "RtlNtStatusToDosError");
-    NtClose = (def_NtClose)GetProcAddress(hModuleNtdll, "NtClose");
+	RtlNtStatusToDosError = reinterpret_cast<def_RtlNtStatusToDosError>(GetProcAddress(hModuleNtdll, "RtlNtStatusToDosError"));
+    NtClose = reinterpret_cast<def_NtClose>(GetProcAddress(hModuleNtdll, "NtClose"));
 }
 
 
@@ -78,6 +78,6 @@ PPEB NativeWinApi::getProcessEnvironmentBlockAddress(HANDLE processHandle)
 	else
 	{
 		//printf("NtQueryInformationProcess failed %d vs %d\n",lReturnLength,sizeof(PROCESS_BASIC_INFORMATION));
-		return 0;
+		return nullptr;
 	}
 }

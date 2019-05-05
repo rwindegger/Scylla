@@ -22,7 +22,7 @@ private:
     //DWORD_PTR findAddressFromNormalCALLString(char * stringBuffer);
     bool isIATPointerValid(DWORD_PTR iatPointer, bool checkRedirects);
 
-    bool findIATStartAndSize(DWORD_PTR address, DWORD_PTR * addressIAT, size_t *sizeIAT);
+    bool findIATStartAndSize(DWORD_PTR address, DWORD_PTR * addressIAT, size_t *sizeIAT) const;
 
     DWORD_PTR findIATStartAddress(DWORD_PTR baseAddress, DWORD_PTR startAddress, BYTE * dataBuffer) const;
     size_t findIATSize(DWORD_PTR baseAddress, DWORD_PTR iatAddress, BYTE * dataBuffer, size_t bufferSize) const;

@@ -8,22 +8,29 @@
 
 class ImportRebuilder : public PeParser {
 public:
-	ImportRebuilder(LPCTSTR file) : PeParser(file, true)
-	{
-		pImportDescriptor = 0;
-		pThunkData = 0;
-		pImportByName = 0;
+	ImportRebuilder(LPCTSTR file)
+        : PeParser(file, true)
+        , iatReferenceScan(nullptr)
+        , IatAddress(0)
+        , IatSize(0)
+        , directImportsJumpTableRVA(0)
+        , JMPTableMemory(nullptr)
+        , newIatBaseAddressRVA(0)
+    {
+        pImportDescriptor = nullptr;
+        pThunkData = nullptr;
+        pImportByName = nullptr;
 
-		numberOfImportDescriptors = 0;
-		sizeOfImportSection = 0;
-		sizeOfApiAndModuleNames = 0;
-		importSectionIndex = 0;
-		useOFT = false;
-		sizeOfOFTArray = 0;
-		newIatInSection = false;
-		BuildDirectImportsJumpTable = false;
-		sizeOfJumpTable = 0;
-	}
+        numberOfImportDescriptors = 0;
+        sizeOfImportSection = 0;
+        sizeOfApiAndModuleNames = 0;
+        importSectionIndex = 0;
+        useOFT = false;
+        sizeOfOFTArray = 0;
+        newIatInSection = false;
+        BuildDirectImportsJumpTable = false;
+        sizeOfJumpTable = 0;
+    }
 
 	bool rebuildImportTable(LPCTSTR newFilePath, std::map<DWORD_PTR, ImportModuleThunk> & moduleList);
 	void enableOFTSupport();

@@ -232,7 +232,7 @@ bool IATSearch::isIATPointerValid(DWORD_PTR iatPointer, bool checkRedirects)
     return false;
 }
 
-bool IATSearch::findIATStartAndSize(DWORD_PTR address, DWORD_PTR * addressIAT, size_t *sizeIAT)
+bool IATSearch::findIATStartAndSize(DWORD_PTR address, DWORD_PTR * addressIAT, size_t *sizeIAT) const
 {
     DWORD_PTR baseAddress = 0;
     DWORD baseSize = 0;

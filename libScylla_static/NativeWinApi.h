@@ -476,7 +476,7 @@ public:
     static void RtlInitUnicodeString(PUNICODE_STRING DestinationString, PWSTR SourceString)
     {
         DestinationString->Buffer = SourceString;
-        DestinationString->MaximumLength = DestinationString->Length = (USHORT)wcslen(SourceString) * sizeof(WCHAR);
+        DestinationString->MaximumLength = DestinationString->Length = static_cast<USHORT>(wcslen(SourceString)) * sizeof(WCHAR);
     }
 
 	static void initialize();

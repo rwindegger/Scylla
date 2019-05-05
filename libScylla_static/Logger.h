@@ -36,5 +36,5 @@ public:
 private:
     void write(LPCTSTR str) override;
 
-    TCHAR filePath[MAX_PATH];
+    TCHAR filePath[MAX_PATH]{};
 };
