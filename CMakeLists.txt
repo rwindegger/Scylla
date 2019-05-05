@@ -74,7 +74,7 @@ message(STATUS "-- Configuring : libScylla_static")
 file (GLOB libScylla_files "${libScylla_static_dir}/*.cpp")
 add_library(libScylla_static ${libScylla_files})
 target_link_libraries(libScylla_static tinyxml2 diStorm Psapi Imagehlp)
-target_include_directories(libScylla_static PUBLIC "${libScylla_static_dir}/" "${WTL_dir}/Include")
+target_include_directories(libScylla_static PUBLIC "${libScylla_static_dir}/" "${CMAKE_CURRENT_BINARY_DIR}/include" "${WTL_dir}/Include")
 set_target_properties(libScylla_static PROPERTIES FOLDER "Scylla"
 												  VERSION "${CMAKE_VERSION}")
 configure_file("${libScylla_static_dir}/Scylla.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/Scylla.h")
