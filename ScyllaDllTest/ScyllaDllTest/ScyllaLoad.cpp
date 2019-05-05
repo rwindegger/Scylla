@@ -8,54 +8,54 @@
 //#define DecorateSymbolName(s)   "_" ## s
 #endif
 
-bool ScyllaLoadDll(TCHAR *ScyllaDllPath, SCYLLA_DLL *pScyllaDllObject)
+bool ScyllaLoadDll(LPCTSTR ScyllaDllPath, SCYLLA_DLL *pScyllaDllObject)
 {
-	HMODULE hScylla;
-	bool bScyllaProcAddressSuccessful;
+    memset(pScyllaDllObject, 0, sizeof(SCYLLA_DLL));
 
-	memset(pScyllaDllObject, 0, sizeof(SCYLLA_DLL));
-	
-	// Loading Test
-	hScylla = LoadLibrary(ScyllaDllPath);
-	if (!hScylla)
-		return false;
+    // Loading Test
+    const HMODULE hScylla = LoadLibrary(ScyllaDllPath);
+    if (!hScylla)
+        return false;
 
-	pScyllaDllObject->hScyllaDll = hScylla;
+    pScyllaDllObject->hScyllaDll = hScylla;
 
-	bScyllaProcAddressSuccessful = true;
-	pScyllaDllObject->VersionInformationW = (def_ScyllaVersionInformationW) GetProcAddress(hScylla, DecorateSymbolName("ScyllaVersionInformationW"));
-	bScyllaProcAddressSuccessful &= (pScyllaDllObject->VersionInformationW != NULL);
-	
-	pScyllaDllObject->VersionInformationA = (def_ScyllaVersionInformationA) GetProcAddress(hScylla, DecorateSymbolName("ScyllaVersionInformationA"));
-	bScyllaProcAddressSuccessful &= (pScyllaDllObject->VersionInformationA != NULL);
+    bool bScyllaProcAddressSuccessful = true;
+    pScyllaDllObject->VersionInformationW = reinterpret_cast<def_ScyllaVersionInformationW>(GetProcAddress(
+        hScylla, DecorateSymbolName("ScyllaVersionInformationW")));
+    bScyllaProcAddressSuccessful &= (pScyllaDllObject->VersionInformationW != nullptr);
 
-	pScyllaDllObject->VersionInformationDword = (def_ScyllaVersionInformationDword) GetProcAddress(hScylla, DecorateSymbolName("ScyllaVersionInformationDword"));
-	bScyllaProcAddressSuccessful &= (pScyllaDllObject->VersionInformationDword != NULL);
+    pScyllaDllObject->VersionInformationA = reinterpret_cast<def_ScyllaVersionInformationA>(GetProcAddress(
+        hScylla, DecorateSymbolName("ScyllaVersionInformationA")));
+    bScyllaProcAddressSuccessful &= (pScyllaDllObject->VersionInformationA != nullptr);
 
-	pScyllaDllObject->ScyllaIatSearch = (def_ScyllaIatSearch) GetProcAddress(hScylla, DecorateSymbolName("ScyllaIatSearch"));
-	bScyllaProcAddressSuccessful &= (pScyllaDllObject->ScyllaIatSearch != NULL);
+    pScyllaDllObject->VersionInformationDword = reinterpret_cast<def_ScyllaVersionInformationDword>(GetProcAddress(
+        hScylla, DecorateSymbolName("ScyllaVersionInformationDword")));
+    bScyllaProcAddressSuccessful &= (pScyllaDllObject->VersionInformationDword != nullptr);
 
-	pScyllaDllObject->ScyllaStartGui = (def_ScyllaStartGui) GetProcAddress(hScylla, DecorateSymbolName("ScyllaStartGui"));
-	bScyllaProcAddressSuccessful &= (pScyllaDllObject->ScyllaStartGui != NULL);
+    pScyllaDllObject->ScyllaIatSearch = reinterpret_cast<def_ScyllaIatSearch>(GetProcAddress(hScylla, DecorateSymbolName("ScyllaIatSearch")));
+    bScyllaProcAddressSuccessful &= (pScyllaDllObject->ScyllaIatSearch != nullptr);
 
-	pScyllaDllObject->ScyllaInitContext = (def_ScyllaInitContext)GetProcAddress(hScylla, DecorateSymbolName("ScyllaInitContext"));
-	bScyllaProcAddressSuccessful &= (pScyllaDllObject->ScyllaInitContext != NULL);
+    pScyllaDllObject->ScyllaStartGui = reinterpret_cast<def_ScyllaStartGui>(GetProcAddress(hScylla, DecorateSymbolName("ScyllaStartGui")));
+    bScyllaProcAddressSuccessful &= (pScyllaDllObject->ScyllaStartGui != nullptr);
 
-	pScyllaDllObject->ScyllaUnInitContext = (def_ScyllaUnInitContext)GetProcAddress(hScylla, DecorateSymbolName("ScyllaUnInitContext"));
-	bScyllaProcAddressSuccessful &= (pScyllaDllObject->ScyllaUnInitContext != NULL);
+    pScyllaDllObject->ScyllaInitContext = reinterpret_cast<def_ScyllaInitContext>(GetProcAddress(hScylla, DecorateSymbolName("ScyllaInitContext")));
+    bScyllaProcAddressSuccessful &= (pScyllaDllObject->ScyllaInitContext != nullptr);
 
-	// Test if every GetProcAddress was successful
-	if (!bScyllaProcAddressSuccessful)
-	{
-		ScyllaUnloadDll(pScyllaDllObject);
-		return false;
-	}
+    pScyllaDllObject->ScyllaUnInitContext = reinterpret_cast<def_ScyllaUnInitContext>(GetProcAddress(hScylla, DecorateSymbolName("ScyllaUnInitContext")));
+    bScyllaProcAddressSuccessful &= (pScyllaDllObject->ScyllaUnInitContext != nullptr);
 
-	return true;
+    // Test if every GetProcAddress was successful
+    if (!bScyllaProcAddressSuccessful)
+    {
+        ScyllaUnloadDll(pScyllaDllObject);
+        return false;
+    }
+
+    return true;
 }
 
 void ScyllaUnloadDll(SCYLLA_DLL *pScyllaDllObject)
 {
-	FreeLibrary(pScyllaDllObject->hScyllaDll);
-	memset(pScyllaDllObject, 0, sizeof(SCYLLA_DLL));
+    FreeLibrary(pScyllaDllObject->hScyllaDll);
+    memset(pScyllaDllObject, 0, sizeof(SCYLLA_DLL));
 }

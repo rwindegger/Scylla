@@ -1,6 +1,5 @@
 #pragma once
 #include <windows.h>
-#include <stdbool.h>
 
 /* Scylla current context. */
 typedef size_t SCY_HANDLE, *PSCY_HANDLE;
@@ -26,6 +25,6 @@ typedef struct SCYLLA_DLL_T {
 	def_ScyllaUnInitContext ScyllaUnInitContext;
 } SCYLLA_DLL;
 
-bool ScyllaLoadDll(TCHAR *ScyllaDllPath, SCYLLA_DLL *pScyllaDllObject);
+bool ScyllaLoadDll(LPCTSTR ScyllaDllPath, SCYLLA_DLL *pScyllaDllObject);
 
 void ScyllaUnloadDll(SCYLLA_DLL *pScyllaDllObject);

@@ -555,6 +555,7 @@ void IATReferenceScan::checkMemoryRangeAndAddToList( IATReference * ref, _DInst 
 
 void IATReferenceScan::patchDirectJumpTableEntry(DWORD_PTR targetIatPointer, DWORD_PTR stdImagebase, DWORD directImportsJumpTableRVA, PeParser * peParser, BYTE * jmpTableMemory, DWORD newIatBase )
 {
+    DWORD patchBytes;
 	for (auto& iter : iatDirectImportList)
 	{
 		IATReference * ref = &iter;

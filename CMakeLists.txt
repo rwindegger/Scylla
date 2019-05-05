@@ -4,8 +4,14 @@ project(Scylla)
 # Compilation options
 option(SCYLLA_USE_MINIDUMP_FOR_CRASH "Use dbghelp.lib to create minidumps on crashs" OFF)
 option(SCYLLA_USE_DEBUGGING_LOG "Create a debugging log file" OFF)
+option(SCYLLA_BUILD_UNICODE "Builds the unicode version of Scylla" OFF)
 set(WDK_LIBPATH "" CACHE FILEPATH "Path to your Windows Kit library folder (usually C:/Program Files (x86)/Windows Kits/10/Debuggers/lib)" )
 
+if(SCYLLA_BUILD_UNICODE)
+# compile projects as unicode
+ADD_DEFINITIONS(-DUNICODE)
+ADD_DEFINITIONS(-D_UNICODE)
+endif()
 
 #  Global properties for VS project to use folders
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -19,16 +25,6 @@ elseif(NOT MSVC_VERSION VERSION_LESS 1800 AND MSVC_VERSION VERSION_LESS 1900)
 elseif(NOT MSVC_VERSION VERSION_LESS 1900 AND MSVC_VERSION VERSION_LESS 2000)
 	set(DUMPBIN_PATH "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/BIN/dumpbin.exe")
 endif()
-
-# set the correct defines for projects to compile
-# using Unicode strings
-function(set_msvc_unicode targets)
-	foreach(target IN LISTS ${targets})
-		message("-- Configuring Unicode for : ${target}")
-		target_compile_definitions(${target} PUBLIC "-DUNICODE" "-D_UNICODE"
-		)
-	endforeach()
-endfunction()
 
 ### OS level checks
 if ( "${CMAKE_SIZEOF_VOID_P}" EQUAL "8" )
@@ -134,7 +130,3 @@ endif()
 # ScyllaExeTest
 add_executable(ScyllaExeTest "${ScyllaTest_dir}/ScyllaTestExe/main.cpp")
 set_target_properties (ScyllaExeTest PROPERTIES	FOLDER "tests" LINK_FLAGS "/SUBSYSTEM:WINDOWS")
-
-# compile projects as unicode
-set(unicode_targets Scylla libScylla libScylla_static)
-# set_msvc_unicode(unicode_targets)

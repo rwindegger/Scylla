@@ -1,9 +1,9 @@
 
 #include <windows.h>
-#include <inttypes.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cinttypes>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <tlhelp32.h>
 #include <tchar.h>
 #include <psapi.h>
@@ -12,12 +12,11 @@
 
 
 //void testGui(SCYLLA_DLL ScyllaDllObject);
-bool testIatSearch(TCHAR *TargetProcess, SCYLLA_DLL ScyllaDllObject, uintptr_t TargetIATOffset, size_t TargetIATSize);
+bool testIatSearch(LPCTSTR TargetProcess, SCYLLA_DLL ScyllaDllObject, uintptr_t TargetIATOffset, size_t TargetIATSize);
 
+LPCTSTR default_target = TEXT("ScyllaTestExe.exe");
 
-TCHAR default_target[] = "ScyllaTestExe.exe";
-
-HMODULE hScylla = 0;
+HMODULE hScylla = nullptr;
 
 /*DWORD GetCreatedProcessPID(DWORD ControllerPID)
 {
@@ -43,26 +42,26 @@ HMODULE hScylla = 0;
     return UniquePID;
 }*/
 
-int _tmain(int argc, TCHAR *argv[])
+int _tmain(int argc, LPTSTR argv[])
 {
     SCYLLA_DLL ScyllaDll;
 
     // Target Executable to analyze
-    TCHAR *target = default_target;
+    LPCTSTR target = default_target;
     uintptr_t target_iat_offset = 0x00;
     size_t target_iat_size = 0x00;
     if (argc >= 4)
     {
         target = argv[1];
 #pragma warning(suppress : 4244)
-        target_iat_offset = _tcstoumax(argv[2], NULL, 16);
+        target_iat_offset = _tcstoumax(argv[2], nullptr, 16);
 #pragma warning(suppress : 4244)
-        target_iat_size = _tcstoumax(argv[3], NULL, 16);
+        target_iat_size = _tcstoumax(argv[3], nullptr, 16);
     }
     else
         return false;
 
-    TCHAR *ScyllaDllPath = TEXT("libScylla.dll");
+    const LPCTSTR ScyllaDllPath = TEXT("libScylla.dll");
 
     if (!ScyllaLoadDll(ScyllaDllPath, &ScyllaDll))
     {
@@ -102,61 +101,61 @@ int _tmain(int argc, TCHAR *argv[])
 //}
 
 
-bool testIatSearch(TCHAR *TargetProcess, SCYLLA_DLL ScyllaDllObject, uintptr_t TargetIATOffset, size_t TargetIATSize)
+bool testIatSearch(LPCTSTR TargetProcess, SCYLLA_DLL ScyllaDllObject, uintptr_t TargetIATOffset, size_t TargetIATSize)
 {
-    _tprintf(("----------------\n"));
-    _tprintf(("IAT Search Test : \n"));
-    _tprintf(("\t Executable : %s \n"), TargetProcess);
-    _tprintf(("----------------\n"));
+    _tprintf(TEXT("----------------\n"));
+    _tprintf(TEXT("IAT Search Test : \n"));
+    _tprintf(TEXT("\t Executable : %s \n"), TargetProcess);
+    _tprintf(TEXT("----------------\n"));
 
 
     bool bIATCorrectlyRetrieved = false;
-    DBG_PROC_HANDLE hDbgProcess = 0;
+    DBG_PROC_HANDLE hDbgProcess = nullptr;
     DEBUG_PROCESS_INFOS DbgProcInfos = { 0 };
     SCY_HANDLE hScyContext = NULL;
 
     if (!FreezeProcessOnStartup(TargetProcess, &hDbgProcess))
     {
-        _tprintf(_T("[x] Error while creating process %s  : %d \n"), TargetProcess, GetLastError());
+        _tprintf(TEXT("[x] Error while creating process %s  : %d \n"), TargetProcess, GetLastError());
         return false;
     }
 
     if (!GetProcessInfos(hDbgProcess, &DbgProcInfos))
     {
-        _tprintf(_T("[x] Could not retrieve informations about process %s  : %d \n"), TargetProcess, GetLastError());
+        _tprintf(TEXT("[x] Could not retrieve informations about process %s  : %d \n"), TargetProcess, GetLastError());
         goto testIatSearch_END;
     }
 
-    uintptr_t RefIATStart = DbgProcInfos.ExeBaseAddress + TargetIATOffset;
-    size_t RefIATSize = TargetIATSize;
+    const uintptr_t RefIATStart = DbgProcInfos.ExeBaseAddress + TargetIATOffset;
+    const size_t RefIATSize = TargetIATSize;
 
 
     uintptr_t CalcIatStartAddress = 0x00;
     size_t CalcIatSize = 0x00;
 
-    if (!ScyllaDllObject.ScyllaInitContext(&hScyContext, (DWORD)DbgProcInfos.ProcessPID))
+    if (!ScyllaDllObject.ScyllaInitContext(&hScyContext, static_cast<DWORD>(DbgProcInfos.ProcessPID)))
     {
-        _tprintf(_T("[x] Could not init a scylla contexty on process %s  : %d \n"), TargetProcess, GetLastError());
+        _tprintf(TEXT("[x] Could not init a scylla contexty on process %s  : %d \n"), TargetProcess, GetLastError());
         goto testIatSearch_END;
     }
 
     // Starting a IAT automatic search on exe entry point.
-    if (!ScyllaDllObject.ScyllaIatSearch(hScyContext, (DWORD_PTR*)&CalcIatStartAddress, (DWORD*)&CalcIatSize, (DWORD_PTR)DbgProcInfos.ExeEntryPoint, FALSE))
+    if (!ScyllaDllObject.ScyllaIatSearch(hScyContext, reinterpret_cast<DWORD_PTR*>(&CalcIatStartAddress), reinterpret_cast<DWORD*>(&CalcIatSize), static_cast<DWORD_PTR>(DbgProcInfos.ExeEntryPoint), FALSE))
     {
         bIATCorrectlyRetrieved = true;
 
         // Checking that the calculated IAT at least contains the origin IAT (surjective mapping).
-        bool bContainsOrigIAT = (CalcIatStartAddress <= RefIATStart) && (CalcIatStartAddress + CalcIatSize >= RefIATStart + RefIATSize);
+        const bool bContainsOrigIAT = (CalcIatStartAddress <= RefIATStart) && (CalcIatStartAddress + CalcIatSize >= RefIATStart + RefIATSize);
 
         if (!bContainsOrigIAT)
             bIATCorrectlyRetrieved = false;
     }
 
-    _tprintf(_T("[.] Reference IAT address: %p - %p \n"), (void*)RefIATStart, (void*)(RefIATStart + RefIATSize));
-    _tprintf(_T("[.] Reference IAT Size: %zx \n"), RefIATSize);
-    _tprintf(_T("[.] Computed  IAT address: %p - %p \n"), (void*)CalcIatStartAddress, (void*)(CalcIatStartAddress + CalcIatSize));
-    _tprintf(_T("[.] Computed  IAT Size: %zx \n"), CalcIatSize);
-    _tprintf(_T("[.] IAT Correctly retrieved : %s \n"), bIATCorrectlyRetrieved ? _T("true") : _T("false"));
+    _tprintf(TEXT("[.] Reference IAT address: %p - %p \n"), (void*)RefIATStart, (void*)(RefIATStart + RefIATSize));
+    _tprintf(TEXT("[.] Reference IAT Size: %zx \n"), RefIATSize);
+    _tprintf(TEXT("[.] Computed  IAT address: %p - %p \n"), (void*)CalcIatStartAddress, (void*)(CalcIatStartAddress + CalcIatSize));
+    _tprintf(TEXT("[.] Computed  IAT Size: %zx \n"), CalcIatSize);
+    _tprintf(TEXT("[.] IAT Correctly retrieved : %s \n"), bIATCorrectlyRetrieved ? _T("true") : _T("false"));
 
 testIatSearch_END:
     ScyllaDllObject.ScyllaUnInitContext(hScyContext);
