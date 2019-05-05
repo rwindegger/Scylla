@@ -16,7 +16,7 @@ build:
   parallel: true
   verbosity: minimal
 build_script:
-- cmd: >-
+- sh: >-
     mkdir -p build/%CONFIGURATION%-%PLATFORM%
 
     cd build/%CONFIGURATION%-%PLATFORM%
