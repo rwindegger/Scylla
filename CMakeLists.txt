@@ -76,7 +76,7 @@ add_library(libScylla_static ${libScylla_files})
 target_link_libraries(libScylla_static tinyxml2 diStorm Psapi Imagehlp)
 target_include_directories(libScylla_static PUBLIC "${libScylla_static_dir}/" "${CMAKE_CURRENT_BINARY_DIR}/include" "${WTL_dir}/Include")
 set_target_properties(libScylla_static PROPERTIES FOLDER "Scylla"
-												  VERSION "${CMAKE_VERSION}")
+												  VERSION "${VERSION_TCHAR}")
 configure_file("${libScylla_static_dir}/Scylla.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/Scylla.h")
 install(TARGETS libScylla_static DESTINATION lib)
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/ DESTINATION include)
@@ -87,7 +87,7 @@ add_library(libScylla SHARED ${libScylla_files})
 target_link_libraries(libScylla libScylla_static)
 target_include_directories(libScylla_static PUBLIC "${libScylla_dir}/")
 set_target_properties(libScylla PROPERTIES FOLDER "Scylla"
-										   VERSION "${CMAKE_VERSION}")
+										   VERSION "${VERSION_TCHAR}")
 install(TARGETS libScylla DESTINATION lib)
 
 #### Scylla targets
@@ -102,7 +102,7 @@ add_executable(Scylla ${Scylla_files})
 target_include_directories(Scylla PRIVATE "${Scylla_dir}/")
 target_link_libraries(Scylla libScylla_static)
 set_target_properties(Scylla PROPERTIES FOLDER "Scylla"
-										VERSION "${CMAKE_VERSION}"
+										VERSION "${VERSION_TCHAR}"
 										LINK_FLAGS "/SUBSYSTEM:WINDOWS  /MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\" /MANIFESTDEPENDENCY:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df'\" /DYNAMICBASE")
 install(TARGETS Scylla DESTINATION bin)
 
