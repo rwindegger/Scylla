@@ -2,40 +2,16 @@
 branches:
   # whitelist
   only:
-    - master
-    - cmake
+  - master
 
 # Operating system (build VM template)
-os:
-  - Visual Studio 2015
-  - Visual Studio 2013
-
-
+image: Visual Studio 2017
 configuration:
-  - Release
-  - Debug
-
-# cmake generator name
-environment:
-
-  matrix:
-    - CMAKE_GEN_PLATFORM: ""
-    - CMAKE_GEN_PLATFORM: "x64"      
-      
-
+- Release
+- Debug
+platform:
+- x86
+- x64
 build:
-  project: C:/projects/scylla/tmp/Scylla.vcxproj      # path to Visual Studio solution or project
-
-before_build:
-    - rmdir /S /Q tinyxml
-    - git clone https://github.com/rjpcomputing/ticpp tinyxml
-    - rmdir /S /Q WTL
-    - git clone https://github.com/lucasg/WindowsTemplateLibrary WTL
-    - mkdir tmp
-    - cd tmp
-    - cmake -A "%CMAKE_GEN_PLATFORM%" ..
-
-test_script:
-    - cmake --build . --config %CONFIGURATION%
-    - ps: Get-ChildItem -Path $($env:CONFIGURATION) -Recurse | Write-Host
-    - ctest . -V -C %CONFIGURATION%
+  parallel: true
+  verbosity: minimal
