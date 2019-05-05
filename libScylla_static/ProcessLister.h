@@ -13,13 +13,13 @@ typedef BOOL (WINAPI *def_IsWow64Process)(HANDLE hProcess,PBOOL Wow64Process);
 class Process {
 public:
 	size_t PID;
-    DWORD sessionId;
-	intptr_t imageBase;
-	intptr_t pebAddress;
-	DWORD entryPoint; //RVA without imagebase
-	DWORD imageSize;
-	TCHAR filename[MAX_PATH];
-	TCHAR fullPath[MAX_PATH];
+    DWORD sessionId{};
+	intptr_t imageBase{};
+	intptr_t pebAddress{};
+	DWORD entryPoint{}; //RVA without imagebase
+	DWORD imageSize{};
+	TCHAR filename[MAX_PATH]{};
+	TCHAR fullPath[MAX_PATH]{};
 
 	Process()
 	{
@@ -42,7 +42,7 @@ public:
 	ProcessLister()
 	{
 		deviceNameResolver = new DeviceNameResolver();
-		_IsWow64Process = (def_IsWow64Process)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "IsWow64Process");
+		_IsWow64Process = reinterpret_cast<def_IsWow64Process>(GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "IsWow64Process"));
 	}
 	~ProcessLister()
 	{
@@ -58,12 +58,12 @@ private:
 
 	DeviceNameResolver * deviceNameResolver;
 
-	ProcessType checkIsProcess64(HANDLE hProcess);
+    static ProcessType checkIsProcess64(HANDLE hProcess);
 
-	bool getAbsoluteFilePath(HANDLE hProcess, Process * process);
+	bool getAbsoluteFilePath(HANDLE hProcess, Process * process) const;
 
 
     void handleProcessInformationAndAddToList( PSYSTEM_PROCESS_INFORMATION pProcess );
-    void getProcessImageInformation( HANDLE hProcess, Process* process );
-    DWORD_PTR getPebAddressFromProcess( HANDLE hProcess );
+    static void getProcessImageInformation( HANDLE hProcess, Process* process );
+    static DWORD_PTR getPebAddressFromProcess( HANDLE hProcess );
 };

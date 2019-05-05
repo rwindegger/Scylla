@@ -35,11 +35,11 @@ void DonateGui::CopyBtcAddress(UINT uNotifyCode, int nID, CWindow wndCtl)
 	if(OpenClipboard())
 	{
 		EmptyClipboard();
-		size_t len = _tcslen(DONATE_BTC_ADDRESS);
-		HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, (len + 1) * sizeof(CHAR));
+	    const size_t len = _tcslen(DONATE_BTC_ADDRESS);
+	    const HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, (len + 1) * sizeof(CHAR));
 		if(hMem)
 		{
-            StringConversion::ToCStr(DONATE_BTC_ADDRESS, (LPSTR)hMem, len + 1);
+            StringConversion::ToCStr(DONATE_BTC_ADDRESS, reinterpret_cast<LPSTR>(hMem), len + 1);
 			GlobalUnlock(hMem);
 			if(!SetClipboardData(CF_TEXT, hMem))
 			{

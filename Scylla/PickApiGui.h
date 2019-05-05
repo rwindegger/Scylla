@@ -89,6 +89,6 @@ protected:
 
 	// GUI functions
 
-	void fillDllComboBox(CComboBox& combo);
+	void fillDllComboBox(CComboBox& combo) const;
 	void fillApiListBox(CListBox& list, const std::vector<ApiInfo *> &apis);
 };

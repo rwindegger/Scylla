@@ -49,23 +49,23 @@ protected:
 
 	// Settings (filled by DDX)
 
-	TCHAR iatSectionName[IMAGE_SIZEOF_SHORT_NAME+1];
-	bool updateHeaderChecksum;
-	bool createBackup;
-	bool dllInjectionAutoUnload;
-	bool usePEHeaderFromDisk;
-	bool debugPrivilege;
-	bool removeDosHeaderStub;
-	bool fixIatAndOep;
-	bool suspendProcessForDumping;
-	bool oftSupport;
-	bool useAdvancedIatSearch;
-	bool scanDirectImports;
-	bool fixDirectImportsNormal;
-	bool fixDirectImportsUniversal;
-	bool createNewIatInSection;
-    bool dontCreateNewSection;
-    bool readApisAlwaysFromDisk;
+	TCHAR iatSectionName[IMAGE_SIZEOF_SHORT_NAME + 1]{};
+    bool updateHeaderChecksum{};
+	bool createBackup{};
+	bool dllInjectionAutoUnload{};
+	bool usePEHeaderFromDisk{};
+	bool debugPrivilege{};
+	bool removeDosHeaderStub{};
+	bool fixIatAndOep{};
+	bool suspendProcessForDumping{};
+	bool oftSupport{};
+	bool useAdvancedIatSearch{};
+	bool scanDirectImports{};
+	bool fixDirectImportsNormal{};
+	bool fixDirectImportsUniversal{};
+	bool createNewIatInSection{};
+    bool dontCreateNewSection{};
+    bool readApisAlwaysFromDisk{};
 	// Controls
 
 	CEdit EditSectionName;

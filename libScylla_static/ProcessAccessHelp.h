@@ -23,7 +23,7 @@ class ModuleInfo
 {
 public:
 
-    TCHAR fullPath[MAX_PATH];
+    TCHAR fullPath[MAX_PATH]{};
     DWORD_PTR modBaseAddr;
     DWORD modBaseSize;
 
@@ -55,9 +55,9 @@ public:
         parsing = false;
     }
 
-    const LPCTSTR getFilename() const
+    LPCTSTR getFilename() const
     {
-        LPCTSTR slash = _tcsrchr(fullPath, TEXT('\\'));
+        const LPCTSTR slash = _tcsrchr(fullPath, TEXT('\\'));
         if (slash)
         {
             return slash + 1;
@@ -118,7 +118,7 @@ public:
      */
     static bool openProcessHandle(size_t szPID);
 
-    static HANDLE NativeOpenProcess(DWORD dwDesiredAccess, size_t szPID);
+    static HANDLE NativeOpenProcess(DWORD dwDesiredAccess, size_t szProcessId);
 
     static void closeProcessHandle();
 

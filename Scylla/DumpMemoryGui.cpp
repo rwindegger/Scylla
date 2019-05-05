@@ -15,11 +15,17 @@ LPCTSTR DumpMemoryGui::MemoryProtectionValues[] = { TEXT("EXECUTE"),TEXT("EXECUT
 
 
 DumpMemoryGui::DumpMemoryGui()
+    : dumpFilename{}
+    , selectedMemory(nullptr)
+    , prevColumn(0)
+    , ascending(false)
+    , forceDump(false)
 {
     dumpedMemory = nullptr;
     dumpedMemorySize = 0;
     deviceNameResolver = new DeviceNameResolver();
 }
+
 DumpMemoryGui::~DumpMemoryGui()
 {
     if (dumpedMemory)
@@ -229,7 +235,7 @@ LPTSTR DumpMemoryGui::getMemoryProtectionString(DWORD value)
 
 LRESULT DumpMemoryGui::OnListMemoryColumnClicked(NMHDR* pnmh)
 {
-    NMLISTVIEW* list = reinterpret_cast<NMLISTVIEW*>(pnmh);
+    const auto list = reinterpret_cast<NMLISTVIEW*>(pnmh);
     const int column = list->iSubItem;
 
     if (column == prevColumn)
@@ -329,6 +335,7 @@ int DumpMemoryGui::listviewCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lP
     case COL_MAPPED_FILE:
         diff = _tcsicmp(module1->mappedFilename, module2->mappedFilename);
         break;
+    default: ;
     }
 
     return ascending ? diff : -diff;
@@ -337,8 +344,8 @@ int DumpMemoryGui::listviewCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lP
 void DumpMemoryGui::getMemoryList()
 {
     DWORD_PTR address = 0;
-    MEMORY_BASIC_INFORMATION memBasic = { nullptr };
-    Memory memory;
+    MEMORY_BASIC_INFORMATION memBasic{};
+    Memory memory{};
     HMODULE * hMods = nullptr;
     TCHAR target[MAX_PATH];
 
@@ -531,7 +538,7 @@ bool DumpMemoryGui::getMappedFilename(Memory* memory) const
 {
     TCHAR filename[MAX_PATH] = { 0 };
 
-    if (GetMappedFileName(ProcessAccessHelp::hProcess, (LPVOID)memory->address, filename, _countof(filename)) > 0)
+    if (GetMappedFileName(ProcessAccessHelp::hProcess, reinterpret_cast<LPVOID>(memory->address), filename, _countof(filename)) > 0)
     {
         if (!deviceNameResolver->resolveDeviceLongNameToShort(filename, memory->mappedFilename))
         {

@@ -6,24 +6,17 @@
 
 bool PeRebuild::truncateFile(LPCTSTR szFilePath, DWORD dwNewFsize)
 {
-    bool retValue = true;
-    const HANDLE hFile = CreateFile(szFilePath, GENERIC_WRITE, FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    bool retValue;
+    const auto hFile = CreateFile(szFilePath, GENERIC_WRITE, FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
     if (hFile == INVALID_HANDLE_VALUE)
     {
         return false;
     }
 
-    if (SetFilePointer(hFile, dwNewFsize, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
+    if (SetFilePointer(hFile, dwNewFsize, nullptr, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
     {
-        if (GetLastError() == NO_ERROR)
-        {
-            retValue = true;
-        }
-        else
-        {
-            retValue = false;
-        }
+        retValue = GetLastError() == NO_ERROR;
     }
     else
     {
@@ -84,39 +77,32 @@ bool PeRebuild::isRoundedTo(DWORD_PTR dwTarNum, DWORD_PTR dwRoundNum)
 
 void PeRebuild::cleanSectionPointer()
 {
-    if (pSections)
+    for (auto& pSection : pSections)
     {
-        for (int j = 0; j < MAX_SEC_NUM; j++)
+        if (pSection)
         {
-            if (pSections[j])
-            {
-                free(pSections[j]);
-                pSections[j] = 0;
-            }
+            free(pSection);
+            pSection = nullptr;
         }
     }
 }
 
 DWORD PeRebuild::realignPE(LPVOID AddressOfMapFile, DWORD dwFsize)
 {
-    PIMAGE_DOS_HEADER pDosh = 0;
-    PIMAGE_NT_HEADERS pPeh = 0;
-    PIMAGE_SECTION_HEADER pSectionh = 0;
-    int i = 0;
-    DWORD extraAlign = 0;
+    int i;
 
     ZeroMemory(&pSections, sizeof pSections);
 
     // get the other parameters
     pMap = AddressOfMapFile;
-    dwMapBase = (DWORD_PTR)pMap;
+    dwMapBase = reinterpret_cast<DWORD_PTR>(pMap);
 
-    if (dwFsize == 0 || pMap == NULL)
+    if (dwFsize == 0 || pMap == nullptr)
         return 1;
 
     // access the PE Header and check whether it's a valid one
-    pDosh = (PIMAGE_DOS_HEADER)pMap;
-    pPeh = (PIMAGE_NT_HEADERS)((DWORD_PTR)pDosh + pDosh->e_lfanew);
+    auto pDosh = static_cast<PIMAGE_DOS_HEADER>(pMap);
+    auto pPeh = reinterpret_cast<PIMAGE_NT_HEADERS>(reinterpret_cast<DWORD_PTR>(pDosh) + pDosh->e_lfanew);
 
     if (!validatePeHeaders(pDosh))
     {
@@ -140,28 +126,28 @@ DWORD PeRebuild::realignPE(LPVOID AddressOfMapFile, DWORD dwFsize)
 
         // kill room between the "win32 pls" message and the PE signature
         // find the end of the message
-        pW = (WORD*)(dwMapBase + ScanStartDS);
-        while (*pW != 0 || !isRoundedTo((DWORD_PTR)pW, 0x10))
+        pW = reinterpret_cast<WORD*>(dwMapBase + ScanStartDS);
+        while (*pW != 0 || !isRoundedTo(reinterpret_cast<DWORD_PTR>(pW), 0x10))
         {
-            pW = (WORD*)((DWORD_PTR)pW + 1);
+            pW = reinterpret_cast<WORD*>(reinterpret_cast<DWORD_PTR>(pW) + 1);
         }
 
-        wTmpNum = (WORD)((DWORD_PTR)pW - dwMapBase);
+        wTmpNum = static_cast<WORD>(reinterpret_cast<DWORD_PTR>(pW) - dwMapBase);
         if (wTmpNum < pDosh->e_lfanew)
         {
-            CopyMemory((LPVOID)pW, (VOID*)pPeh, dwTmpNum); // copy the Header to the right place
+            CopyMemory(static_cast<LPVOID>(pW), (VOID*)pPeh, dwTmpNum); // copy the Header to the right place
             pDosh->e_lfanew = wTmpNum;
         }
 
         dwSectionBase = validAlignment(dwTmpNum + pDosh->e_lfanew);
-        pPeh = (PIMAGE_NT_HEADERS)(dwMapBase + pDosh->e_lfanew); // because the NT header moved
+        pPeh = reinterpret_cast<PIMAGE_NT_HEADERS>(dwMapBase + pDosh->e_lfanew); // because the NT header moved
         // correct the SizeOfHeaders
         pPeh->OptionalHeader.SizeOfHeaders = dwSectionBase;
 
         /* Realign all sections */
         // make a copy of all sections
         // this is needed if the sections aren't sorted by their RawOffset (e.g. Petite)
-        pSectionh = IMAGE_FIRST_SECTION(pPeh);
+        PIMAGE_SECTION_HEADER pSectionh = IMAGE_FIRST_SECTION(pPeh);
 
         for (i = 0; i < pPeh->FileHeader.NumberOfSections; i++)
         {
@@ -187,19 +173,19 @@ DWORD PeRebuild::realignPE(LPVOID AddressOfMapFile, DWORD dwFsize)
             }
 
             //because of validAlignment we need some extra space, max 0x200 extra
-            extraAlign = validAlignmentNew(dwTmpNum);
+            const DWORD extraAlign = validAlignmentNew(dwTmpNum);
 
             pSections[i] = malloc(dwTmpNum + extraAlign);
             ZeroMemory(pSections[i], dwTmpNum + extraAlign);
 
-            if (pSections[i] == NULL) // fatal error !!!
+            if (pSections[i] == nullptr) // fatal error !!!
             {
                 Scylla::debugLog.log(TEXT("realignPE :: malloc failed with dwTmpNum %08X %08X"), dwTmpNum, extraAlign);
                 cleanSectionPointer();
 
                 return 4;
             }
-            CopyMemory(pSections[i], (LPVOID)(pSectionh->PointerToRawData + dwMapBase), dwTmpNum);
+            CopyMemory(pSections[i], reinterpret_cast<LPVOID>(pSectionh->PointerToRawData + dwMapBase), dwTmpNum);
             ++pSectionh;
         }
 
@@ -222,11 +208,11 @@ DWORD PeRebuild::realignPE(LPVOID AddressOfMapFile, DWORD dwFsize)
             // let pCH point to the end of the current section
             if (pSectionh->PointerToRawData + pSectionh->SizeOfRawData <= dwFsize)
             {
-                pCH = (char*)(dwMapBase + pSectionh->PointerToRawData + pSectionh->SizeOfRawData - 1);
+                pCH = reinterpret_cast<char*>(dwMapBase + pSectionh->PointerToRawData + pSectionh->SizeOfRawData - 1);
             }
             else
             {
-                pCH = (char*)(dwMapBase + dwFsize - 1);
+                pCH = reinterpret_cast<char*>(dwMapBase + dwFsize - 1);
             }
             // look for the end of this section
             while (*pCH == 0)
@@ -234,7 +220,7 @@ DWORD PeRebuild::realignPE(LPVOID AddressOfMapFile, DWORD dwFsize)
                 --pCH;
             }
             // calculate the new RawSize
-            dwTmpNum = (DWORD)((DWORD_PTR)pCH - dwMapBase + MinSectionTerm - pSectionh->PointerToRawData);
+            dwTmpNum = static_cast<DWORD>(reinterpret_cast<DWORD_PTR>(pCH) - dwMapBase + MinSectionTerm - pSectionh->PointerToRawData);
             if (dwTmpNum < pSectionh->SizeOfRawData)
             {
                 pSectionh->SizeOfRawData = dwTmpNum;
@@ -249,7 +235,7 @@ DWORD PeRebuild::realignPE(LPVOID AddressOfMapFile, DWORD dwFsize)
                 dwTmpNum = validAlignment(dwTmpNum);
             }
 
-            CopyMemory((LPVOID)(dwMapBase + dwSectionBase), pSections[i], dwTmpNum);
+            CopyMemory(reinterpret_cast<LPVOID>(dwMapBase + dwSectionBase), pSections[i], dwTmpNum);
             // set the RawOffset
             pSectionh->PointerToRawData = dwSectionBase;
             // get the RawOffset for the next section
@@ -291,41 +277,38 @@ DWORD PeRebuild::realignPE(LPVOID AddressOfMapFile, DWORD dwFsize)
 //  else the new raw size
 DWORD PeRebuild::wipeReloc(void* pMap, DWORD dwFsize)
 {
-    PIMAGE_DOS_HEADER       pDosH;
-    PIMAGE_NT_HEADERS       pNTH;
-    PIMAGE_SECTION_HEADER   pSecH;
-    PIMAGE_SECTION_HEADER   pSH, pSH2;
-    DWORD                   dwRelocRVA, i;
+    PIMAGE_SECTION_HEADER pSH2;
+    DWORD i;
     BOOL                    bOwnSec = FALSE;
     DWORD                   dwNewFsize;
 
     __try  // =)
     {
         // get pe header pointers
-        pDosH = (PIMAGE_DOS_HEADER)pMap;
+        auto pDosH = reinterpret_cast<PIMAGE_DOS_HEADER>(pMap);
 
         if (pDosH->e_magic != IMAGE_DOS_SIGNATURE)
             return -5;
 
-        pNTH = (PIMAGE_NT_HEADERS)((DWORD_PTR)pDosH + pDosH->e_lfanew);
+        auto pNTH = reinterpret_cast<PIMAGE_NT_HEADERS>(reinterpret_cast<DWORD_PTR>(pDosH) + pDosH->e_lfanew);
 
         if (pNTH->Signature != IMAGE_NT_SIGNATURE)
             return -5;
 
-        pSecH = IMAGE_FIRST_SECTION(pNTH);
+        const auto pSecH = IMAGE_FIRST_SECTION(pNTH);
 
         // has PE dll characteristics ?
         if (pNTH->FileHeader.Characteristics & IMAGE_FILE_DLL)
             return -4;
 
         // is there a reloc section ?
-        dwRelocRVA = pNTH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress;
+        const DWORD dwRelocRVA = pNTH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress;
 
         if (!dwRelocRVA)
             return -2;
 
         // check whether the relocation has an own section
-        pSH = pSecH;
+        PIMAGE_SECTION_HEADER pSH = pSecH;
         for (i = 0; i < pNTH->FileHeader.NumberOfSections; i++)
         {
             if (pSH->VirtualAddress == dwRelocRVA)
@@ -353,8 +336,8 @@ DWORD PeRebuild::wipeReloc(void* pMap, DWORD dwFsize)
             pSH2 = pSH;
             ++pSH2; // pSH2 -> pointer to first section after relocation
             memcpy(
-                (void*)(pSH->PointerToRawData + (DWORD)pMap),
-                (const void*)(pSH2->PointerToRawData + (DWORD)pMap),
+                reinterpret_cast<void*>(pSH->PointerToRawData + reinterpret_cast<DWORD>(pMap)),
+                reinterpret_cast<const void*>(pSH2->PointerToRawData + reinterpret_cast<DWORD>(pMap)),
                 dwFsize - pSH2->PointerToRawData);
 
             //-> fix the section headers
@@ -369,8 +352,8 @@ DWORD PeRebuild::wipeReloc(void* pMap, DWORD dwFsize)
 
                 // apply section name
                 memcpy(
-                    (void*)pSH->Name,
-                    (const void*)pSH2->Name,
+                    static_cast<void*>(pSH->Name),
+                    static_cast<const void*>(pSH2->Name),
                     sizeof pSH2->Name);
                 ++pSH;
                 ++pSH2;
@@ -387,7 +370,7 @@ DWORD PeRebuild::wipeReloc(void* pMap, DWORD dwFsize)
         // fix virtual parts of the PE Header (a must for win2k)
         pSH2 = pSH = pSecH;
         ++pSH2;
-        for (i = 0; i < (DWORD)pNTH->FileHeader.NumberOfSections - 1; i++)
+        for (i = 0; i < static_cast<DWORD>(pNTH->FileHeader.NumberOfSections) - 1; i++)
         {
             pSH->Misc.VirtualSize = pSH2->VirtualAddress - pSH->VirtualAddress;
             ++pSH;
@@ -410,24 +393,20 @@ DWORD PeRebuild::wipeReloc(void* pMap, DWORD dwFsize)
 
 bool PeRebuild::validatePE(void* pPEImage, DWORD dwFileSize)
 {
-    PIMAGE_NT_HEADERS       pNTh;
-    PIMAGE_SECTION_HEADER   pSech, pSH, pSH2, pLastSH;
     UINT                    i;
-    DWORD                   dwHeaderSize;
 
     // get PE base information
-    pNTh = ImageNtHeader(pPEImage);
+    PIMAGE_NT_HEADERS pNTh = ImageNtHeader(pPEImage);
 
     if (!pNTh)
         return FALSE;
 
-
-    pSech = IMAGE_FIRST_SECTION(pNTh);
+    const auto pSech = IMAGE_FIRST_SECTION(pNTh);
 
     // FIX:
     // ... the SizeOfHeaders
-    pSH = pSech;
-    dwHeaderSize = 0xFFFFFFFF;
+    PIMAGE_SECTION_HEADER pSH = pSech;
+    DWORD dwHeaderSize = 0xFFFFFFFF;
     for (i = 0; i < pNTh->FileHeader.NumberOfSections; i++)
     {
         if (pSH->PointerToRawData && pSH->PointerToRawData < dwHeaderSize)
@@ -439,9 +418,9 @@ bool PeRebuild::validatePE(void* pPEImage, DWORD dwFileSize)
     pNTh->OptionalHeader.SizeOfHeaders = dwHeaderSize;
 
     // ...Virtual Sizes
-    pSH2 = pSH = pSech;
+    PIMAGE_SECTION_HEADER pSH2 = pSH = pSech;
     ++pSH2;
-    for (i = 0; i < (DWORD)pNTh->FileHeader.NumberOfSections - 1; i++)
+    for (i = 0; i < static_cast<DWORD>(pNTh->FileHeader.NumberOfSections) - 1; i++)
     {
         pSH->Misc.VirtualSize = pSH2->VirtualAddress - pSH->VirtualAddress;
         ++pSH;
@@ -449,7 +428,7 @@ bool PeRebuild::validatePE(void* pPEImage, DWORD dwFileSize)
     }
 
     // (pSH -> pointer to last section)
-    pLastSH = pSH;
+    const auto pLastSH = pSH;
 
     // ...RawSize of the last section
     pLastSH->SizeOfRawData = dwFileSize - pLastSH->PointerToRawData;
@@ -469,12 +448,8 @@ bool PeRebuild::validatePE(void* pPEImage, DWORD dwFileSize)
 
 ReBaseErr PeRebuild::reBasePEImage(void* pPE, DWORD_PTR dwNewBase)
 {
-    PIMAGE_NT_HEADERS    pNT;
-    PIMAGE_RELOCATION    pR;
     ReBaseErr            ret;
-    DWORD_PTR            dwDelta;
-    DWORD                *pdwAddr, dwRva, dwType;
-    UINT                 iItems, i;
+    UINT                 iItems;
     WORD                 *pW;
 
     // dwNewBase valid ?
@@ -487,7 +462,7 @@ ReBaseErr PeRebuild::reBasePEImage(void* pPE, DWORD_PTR dwNewBase)
     //
     // get relocation dir ptr
     //
-    pNT = ImageNtHeader(pPE);
+    const auto pNT = ImageNtHeader(pPE);
     if (!pNT)
     {
         ret = RB_INVALIDPE;
@@ -505,11 +480,11 @@ ReBaseErr PeRebuild::reBasePEImage(void* pPE, DWORD_PTR dwNewBase)
         goto Exit; // ERR
     }
 
-    pR = (PIMAGE_RELOCATION)ImageRvaToVa(
+    auto pR = reinterpret_cast<PIMAGE_RELOCATION>(ImageRvaToVa(
         pNT,
         pPE,
         pNT->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress,
-        NULL);
+        nullptr));
 
     if (!pR)
     {
@@ -520,7 +495,7 @@ ReBaseErr PeRebuild::reBasePEImage(void* pPE, DWORD_PTR dwNewBase)
     //
     // add delta to relocation items
     //
-    dwDelta = dwNewBase - pNT->OptionalHeader.ImageBase;
+    const DWORD_PTR dwDelta = dwNewBase - pNT->OptionalHeader.ImageBase;
     __try
     {
         do
@@ -532,20 +507,20 @@ ReBaseErr PeRebuild::reBasePEImage(void* pPE, DWORD_PTR dwNewBase)
                 break; // no items in this block
 
             // trace/list block items...
-            pW = (WORD*)((DWORD_PTR)pR + 8);
+            pW = reinterpret_cast<WORD*>(reinterpret_cast<DWORD_PTR>(pR) + 8);
 
-            for (i = 0; i < iItems; i++)
+            for (UINT i = 0; i < iItems; i++)
             {
-                dwRva = (*pW & 0xFFF) + pR->VirtualAddress;
-                dwType = *pW >> 12;
+                const DWORD dwRva = (*pW & 0xFFF) + pR->VirtualAddress;
+                const DWORD dwType = *pW >> 12;
                 if (dwType != 0) // fully compatible ???
                 {
                     // add delta
-                    pdwAddr = (PDWORD)ImageRvaToVa(
+                    const auto pdwAddr = static_cast<PDWORD>(ImageRvaToVa(
                         pNT,
                         pPE,
                         dwRva,
-                        NULL);
+                        nullptr));
                     if (!pdwAddr)
                     {
                         ret = RB_INVALIDRVA;
@@ -557,8 +532,8 @@ ReBaseErr PeRebuild::reBasePEImage(void* pPE, DWORD_PTR dwNewBase)
                 ++pW;
             }
 
-            pR = (PIMAGE_RELOCATION)pW; // pR -> next block header
-        } while (*(DWORD*)pW);
+            pR = reinterpret_cast<PIMAGE_RELOCATION>(pW); // pR -> next block header
+        } while (*reinterpret_cast<DWORD*>(pW));
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
@@ -578,12 +553,10 @@ Exit:
 
 bool PeRebuild::updatePeHeaderChecksum(LPVOID AddressOfMapFile, DWORD dwFsize)
 {
-    PIMAGE_NT_HEADERS32 pNTHeader32 = 0;
-    PIMAGE_NT_HEADERS64 pNTHeader64 = 0;
     DWORD headerSum = 0;
     DWORD checkSum = 0;
 
-    pNTHeader32 = (PIMAGE_NT_HEADERS32)CheckSumMappedFile(AddressOfMapFile, dwFsize, &headerSum, &checkSum);
+    const auto pNTHeader32 = reinterpret_cast<PIMAGE_NT_HEADERS32>(CheckSumMappedFile(AddressOfMapFile, dwFsize, &headerSum, &checkSum));
 
     if (!pNTHeader32)
     {
@@ -596,7 +569,7 @@ bool PeRebuild::updatePeHeaderChecksum(LPVOID AddressOfMapFile, DWORD dwFsize)
 
     if (pNTHeader32->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC)
     {
-        pNTHeader64 = (PIMAGE_NT_HEADERS64)pNTHeader32;
+        const auto pNTHeader64 = reinterpret_cast<PIMAGE_NT_HEADERS64>(pNTHeader32);
         pNTHeader64->OptionalHeader.CheckSum = checkSum;
     }
     else
@@ -609,29 +582,29 @@ bool PeRebuild::updatePeHeaderChecksum(LPVOID AddressOfMapFile, DWORD dwFsize)
 
 LPVOID PeRebuild::createFileMappingViewFull(LPCTSTR filePath)
 {
-    hFileToMap = CreateFile(filePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+    hFileToMap = CreateFile(filePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
     if (hFileToMap == INVALID_HANDLE_VALUE)
     {
         Scylla::debugLog.log(TEXT("createFileMappingView :: INVALID_HANDLE_VALUE %u"), GetLastError());
 
-        hMappedFile = 0;
-        hFileToMap = 0;
-        addrMappedDll = 0;
-        return NULL;
+        hMappedFile = nullptr;
+        hFileToMap = nullptr;
+        addrMappedDll = nullptr;
+        return nullptr;
     }
 
-    hMappedFile = CreateFileMapping(hFileToMap, 0, PAGE_READWRITE, 0, 0, NULL);
+    hMappedFile = CreateFileMapping(hFileToMap, nullptr, PAGE_READWRITE, 0, 0, nullptr);
 
-    if (hMappedFile == NULL)
+    if (hMappedFile == nullptr)
     {
         Scylla::debugLog.log(TEXT("createFileMappingViewFull :: hMappedFile == NULL"));
 
         CloseHandle(hFileToMap);
-        hMappedFile = 0;
-        hFileToMap = 0;
-        addrMappedDll = 0;
-        return NULL;
+        hMappedFile = nullptr;
+        hFileToMap = nullptr;
+        addrMappedDll = nullptr;
+        return nullptr;
     }
 
     if (GetLastError() == ERROR_ALREADY_EXISTS)
@@ -639,10 +612,10 @@ LPVOID PeRebuild::createFileMappingViewFull(LPCTSTR filePath)
         Scylla::debugLog.log(TEXT("createFileMappingView :: GetLastError() == ERROR_ALREADY_EXISTS"));
 
         CloseHandle(hFileToMap);
-        hMappedFile = 0;
-        hFileToMap = 0;
-        addrMappedDll = 0;
-        return NULL;
+        hMappedFile = nullptr;
+        hFileToMap = nullptr;
+        addrMappedDll = nullptr;
+        return nullptr;
     }
 
     addrMappedDll = MapViewOfFile(hMappedFile, FILE_MAP_ALL_ACCESS, 0, 0, 0);
@@ -653,9 +626,9 @@ LPVOID PeRebuild::createFileMappingViewFull(LPCTSTR filePath)
 
         CloseHandle(hFileToMap);
         CloseHandle(hMappedFile);
-        hMappedFile = 0;
-        hFileToMap = 0;
-        return NULL;
+        hMappedFile = nullptr;
+        hFileToMap = nullptr;
+        return nullptr;
     }
 
     return addrMappedDll;
@@ -671,38 +644,31 @@ void PeRebuild::closeAllMappingHandles()
         }
 
         UnmapViewOfFile(addrMappedDll);
-        addrMappedDll = 0;
+        addrMappedDll = nullptr;
     }
     if (hMappedFile)
     {
         CloseHandle(hMappedFile);
-        hMappedFile = 0;
+        hMappedFile = nullptr;
     }
     if (hFileToMap)
     {
         CloseHandle(hFileToMap);
-        hFileToMap = 0;
+        hFileToMap = nullptr;
     }
 }
 
 bool PeRebuild::validatePeHeaders(PIMAGE_DOS_HEADER pDosh)
 {
-    PIMAGE_NT_HEADERS pNTHeader = (PIMAGE_NT_HEADERS)((DWORD_PTR)pDosh + pDosh->e_lfanew);
+    const auto pNTHeader = reinterpret_cast<PIMAGE_NT_HEADERS>(reinterpret_cast<DWORD_PTR>(pDosh) + pDosh->e_lfanew);
 
-    if (pDosh != 0 && pDosh->e_magic == IMAGE_DOS_SIGNATURE && pNTHeader->Signature == IMAGE_NT_SIGNATURE)
+    if (pDosh != nullptr && pDosh->e_magic == IMAGE_DOS_SIGNATURE && pNTHeader->Signature == IMAGE_NT_SIGNATURE)
     {
 #ifdef _WIN64
-        if (pNTHeader->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC)
+        return pNTHeader->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC;
 #else
-        if (pNTHeader->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC)
+        return pNTHeader->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC;
 #endif
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
     }
     else
     {

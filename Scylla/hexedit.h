@@ -1,22 +1,22 @@
 #pragma once
 
 #ifndef __cplusplus
-  #error WTL requires C++ compilation (use a .cpp suffix)
+#error WTL requires C++ compilation (use a .cpp suffix)
 #endif
 
 #ifndef __ATLMISC_H__
-  #error hexedit.h requires atlmisc.h to be included first
+#error hexedit.h requires atlmisc.h to be included first
 #endif
 
 #ifndef __ATLCTRLS_H__
-  #error hexedit.h requires atlctrls.h to be included first
+#error hexedit.h requires atlctrls.h to be included first
 #endif
 
 /*
 #ifdef _WIN64
-	address = _wcstoui64(hexString, NULL, 16);
+    address = _wcstoui64(hexString, NULL, 16);
 #else
-	address = wcstoul(hexString, NULL, 16);
+    address = wcstoul(hexString, NULL, 16);
 #endif
 */
 
@@ -25,211 +25,210 @@ class ATL_NO_VTABLE CHexEditImpl : public CWindowImpl< T, TBase, TWinTraits >
 {
 public:
 
-	static const short int BASE = 16;
-	static const size_t  DIGITS = sizeof(NUM_T) * 2; // 2 digits / byte
-	static const size_t STRSIZE = DIGITS + 1;
+    static const short int BASE = 16;
+    static const size_t  DIGITS = sizeof(NUM_T) * 2; // 2 digits / byte
+    static const size_t STRSIZE = DIGITS + 1;
 
-	static const TCHAR Digits[];
-	static const TCHAR OldProcProp[];
+    static const TCHAR Digits[];
+    static const TCHAR OldProcProp[];
 
-	// Operations
+    // Operations
 
-	BOOL SubclassWindow(HWND hWnd)
-	{
-		ATLASSERT(m_hWnd == NULL);
-		ATLASSERT(::IsWindow(hWnd));
-		BOOL bRet = CWindowImpl< T, TBase, TWinTraits >::SubclassWindow(hWnd);
-		if( bRet ) _Init();
-		return bRet;
-	}
+    BOOL SubclassWindow(HWND hWnd)
+    {
+        ATLASSERT(m_hWnd == NULL);
+        ATLASSERT(::IsWindow(hWnd));
+        BOOL bRet = CWindowImpl< T, TBase, TWinTraits >::SubclassWindow(hWnd);
+        if (bRet) _Init();
+        return bRet;
+    }
 
-	NUM_T GetValue() const
-	{
-		ATLASSERT(::IsWindow(m_hWnd));
+    NUM_T GetValue() const
+    {
+        ATLASSERT(::IsWindow(m_hWnd));
 
-		TCHAR String[STRSIZE] = { 0 };
-		GetWindowText(String, _countof(String));
-		return _StringToNum(String);
-	}
+        TCHAR String[STRSIZE] = { 0 };
+        GetWindowText(String, _countof(String));
+        return _StringToNum(String);
+    }
 
-	void SetValue(NUM_T Num, bool Fill = true)
-	{
-		ATLASSERT(::IsWindow(m_hWnd));
+    void SetValue(NUM_T Num, bool Fill = true)
+    {
+        ATLASSERT(::IsWindow(m_hWnd));
 
-		TCHAR String[STRSIZE] = { 0 };
-		_NumToString(Num, String, Fill);
-		SetWindowText(String);
-	}
+        TCHAR String[STRSIZE] = { 0 };
+        _NumToString(Num, String, Fill);
+        SetWindowText(String);
+    }
 
-	// Implementation
+    // Implementation
 
-	void _Init()
-	{
-		ATLASSERT(::IsWindow(m_hWnd));
+    void _Init()
+    {
+        ATLASSERT(::IsWindow(m_hWnd));
 
-		LimitText(DIGITS);
-	}
+        LimitText(DIGITS);
+    }
 
-	bool _IsValidChar(TCHAR Char) const
-	{
-		return ((NUM_T)-1 != _CharToNum(Char));
-	}
+    bool _IsValidChar(TCHAR Char) const
+    {
+        return (static_cast<NUM_T>(-1) != _CharToNum(Char));
+    }
 
-	bool _IsValidString(const TCHAR String[STRSIZE]) const
-	{
-		for(int i = 0; String[i]; i++)
-		{
-			if(!_IsValidChar(String[i]))
-				return false;
-		}
-		return true;
-	}
+    bool _IsValidString(const TCHAR String[STRSIZE]) const
+    {
+        for (int i = 0; String[i]; i++)
+        {
+            if (!_IsValidChar(String[i]))
+                return false;
+        }
+        return true;
+    }
 
-	NUM_T _CharToNum(TCHAR Char) const
-	{
-		Char = _totupper(Char);
+    NUM_T _CharToNum(TCHAR Char) const
+    {
+        Char = _totupper(Char);
 
-		for(int i = 0; Digits[i]; i++)
-		{
-			if(Char == Digits[i])
-				return i;
-		}
+        for (int i = 0; Digits[i]; i++)
+        {
+            if (Char == Digits[i])
+                return i;
+        }
 
-		return -1;
-	}
+        return -1;
+    }
 
-	NUM_T _StringToNum(const TCHAR String[STRSIZE]) const
-	{
-	NUM_T CharNum;
-	NUM_T Num = 0;
+    NUM_T _StringToNum(const TCHAR String[STRSIZE]) const
+    {
+        NUM_T Num = 0;
 
-		for(int i = 0; String[i]; i++)
-		{
-			CharNum = _CharToNum(String[i]);
-			if(CharNum == (NUM_T)-1)
-				break;
+        for (int i = 0; String[i]; i++)
+        {
+            NUM_T CharNum = _CharToNum(String[i]);
+            if (CharNum == static_cast<NUM_T>(-1))
+                break;
 
-			Num *= BASE;
-			Num += CharNum;
-		}
+            Num *= BASE;
+            Num += CharNum;
+        }
 
-		return Num;
-	}
+        return Num;
+    }
 
-	TCHAR _NumToChar(NUM_T Num) const
-	{
-		return Digits[Num % BASE];
-	}
+    TCHAR _NumToChar(NUM_T Num) const
+    {
+        return Digits[Num % BASE];
+    }
 
-	void _NumToString(NUM_T Num, TCHAR String[STRSIZE], bool Fill) const
-	{
-	NUM_T Nums[DIGITS];
-	int i, j;
+    void _NumToString(NUM_T Num, TCHAR String[STRSIZE], bool Fill) const
+    {
+        NUM_T Nums[DIGITS];
+        int i, j;
 
-		for(i = DIGITS-1; i >= 0; i--)
-		{
-			Nums[i] = Num % BASE;
-			Num /= BASE;
-		}
-		for(i = j = 0; i < DIGITS; i++)
-		{
-			// Only copy num if : non-null OR Fill OR non-null encountered before OR last num
-			if(Nums[i] || Fill || j || i == DIGITS-1)
-			{
-				String[j++] = _NumToChar(Nums[i]);
-			}
-		}
-		String[j] = '\0';
-	}
+        for (i = DIGITS - 1; i >= 0; i--)
+        {
+            Nums[i] = Num % BASE;
+            Num /= BASE;
+        }
+        for (i = j = 0; i < DIGITS; i++)
+        {
+            // Only copy num if : non-null OR Fill OR non-null encountered before OR last num
+            if (Nums[i] || Fill || j || i == DIGITS - 1)
+            {
+                String[j++] = _NumToChar(Nums[i]);
+            }
+        }
+        String[j] = '\0';
+    }
 
-	bool _GetClipboardText(TCHAR String[STRSIZE])
-	{
-	#ifdef UNICODE
-	const UINT Format = CF_UNICODETEXT;
-	#else
-	const UINT Format = CF_TEXT;
-	#endif
+    bool _GetClipboardText(TCHAR String[STRSIZE])
+    {
+#ifdef UNICODE
+        const UINT Format = CF_UNICODETEXT;
+#else
+        const UINT Format = CF_TEXT;
+#endif
 
-		bool RetVal = false;
+        bool RetVal = false;
 
-		if(IsClipboardFormatAvailable(Format) && OpenClipboard())
-		{
-			HANDLE HMem = GetClipboardData(Format);
-			if(HMem)
-			{
-				_tcsncpy_s(String, STRSIZE, (TCHAR *)GlobalLock(HMem), STRSIZE-1);
-				String[STRSIZE-1] = '\0';
-				GlobalUnlock(HMem);
-				RetVal = true;
-			}
-			CloseClipboard();
-		}
+        if (IsClipboardFormatAvailable(Format) && OpenClipboard())
+        {
+            const auto HMem = GetClipboardData(Format);
+            if (HMem)
+            {
+                _tcsncpy_s(String, STRSIZE, static_cast<TCHAR *>(GlobalLock(HMem)), STRSIZE - 1);
+                String[STRSIZE - 1] = '\0';
+                GlobalUnlock(HMem);
+                RetVal = true;
+            }
+            CloseClipboard();
+        }
 
-		return RetVal;
-	}
+        return RetVal;
+    }
 
-	// Message map and handlers
+    // Message map and handlers
 
-	BEGIN_MSG_MAP_EX(CHexEditImpl)
-		MESSAGE_HANDLER_EX(WM_CREATE, OnCreate)
-		MSG_WM_SETTEXT(OnSetText)
-		MSG_WM_PASTE(OnPaste)
-		MSG_WM_CHAR(OnChar)
-	END_MSG_MAP()
+    BEGIN_MSG_MAP_EX(CHexEditImpl)
+        MESSAGE_HANDLER_EX(WM_CREATE, OnCreate)
+        MSG_WM_SETTEXT(OnSetText)
+        MSG_WM_PASTE(OnPaste)
+        MSG_WM_CHAR(OnChar)
+        END_MSG_MAP()
 
-	LRESULT OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam)
-	{
-		LRESULT lRes = DefWindowProc();
-		_Init();
-		return lRes;
-	}
+    LRESULT OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam)
+    {
+        const LRESULT lRes = DefWindowProc();
+        _Init();
+        return lRes;
+    }
 
-	int OnSetText(LPCTSTR lpstrText)
-	{
-		bool PassThrough = (_tcslen(lpstrText) <= DIGITS) && _IsValidString(lpstrText);
-		if(!PassThrough)
-		{
-			MessageBeep(-1);
-			return FALSE;
-		}
+    int OnSetText(LPCTSTR lpstrText)
+    {
+        const bool PassThrough = (_tcslen(lpstrText) <= DIGITS) && _IsValidString(lpstrText);
+        if (!PassThrough)
+        {
+            MessageBeep(-1);
+            return FALSE;
+        }
 
-		SetMsgHandled(FALSE);
-		return TRUE;
-	}
+        SetMsgHandled(FALSE);
+        return TRUE;
+    }
 
-	void OnPaste()
-	{
-		TCHAR String[STRSIZE];
-		bool PassThrough = !_GetClipboardText(String) || _IsValidString(String);
-		if(!PassThrough)
-		{
-			MessageBeep(-1);
-			return;
-		}
+    void OnPaste()
+    {
+        TCHAR String[STRSIZE];
+        const bool PassThrough = !_GetClipboardText(String) || _IsValidString(String);
+        if (!PassThrough)
+        {
+            MessageBeep(-1);
+            return;
+        }
 
-		SetMsgHandled(FALSE);
-		return;
-	}
+        SetMsgHandled(FALSE);
+        return;
+    }
 
-	void OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
-	{
-		// ignore all printable chars (incl. space) which are not valid digits
-		bool PassThrough = !_istprint((TCHAR)nChar) || _IsValidChar((TCHAR)nChar);
-		if(!PassThrough)
-		{
-			MessageBeep(-1);
-			return;
-		}
+    void OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
+    {
+        // ignore all printable chars (incl. space) which are not valid digits
+        const bool PassThrough = !_istprint(static_cast<TCHAR>(nChar)) || _IsValidChar(static_cast<TCHAR>(nChar));
+        if (!PassThrough)
+        {
+            MessageBeep(-1);
+            return;
+        }
 
-		SetMsgHandled(FALSE);
-		return;
-	}
+        SetMsgHandled(FALSE);
+        return;
+    }
 };
 
-template< class T, typename NUM_T, class TBase, class TWinTraits > const TCHAR CHexEditImpl< T, NUM_T, TBase, TWinTraits >::Digits[] = _T("0123456789ABCDEF");
+template< class T, typename NUM_T, class TBase, class TWinTraits > const TCHAR CHexEditImpl< T, NUM_T, TBase, TWinTraits >::Digits[] = TEXT("0123456789ABCDEF");
 
 template<typename NUM_T> class CHexEdit : public CHexEditImpl<CHexEdit<NUM_T>, NUM_T>
 {
 public:
-  DECLARE_WND_CLASS(_T("WTL_HexEdit"))
+    DECLARE_WND_CLASS(TEXT("WTL_HexEdit"))
 };

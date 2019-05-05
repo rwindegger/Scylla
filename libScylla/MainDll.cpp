@@ -2,7 +2,7 @@
 #include "Scylla.h"
 #include "ExceptionHandler.h"
 
-HINSTANCE hDllModule = 0;
+HINSTANCE hDllModule = nullptr;
 
 ConsoleLogger logger;
 
@@ -36,6 +36,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 		// Perform any necessary cleanup.
 		RemoveScyllaUnhandledExceptionHandler();
 		break;
+	default: ;
 	}
 	return TRUE;  // Successful DLL_PROCESS_ATTACH.
 }

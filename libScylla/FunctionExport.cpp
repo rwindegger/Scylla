@@ -12,7 +12,7 @@ extern HINSTANCE hDllModule;
 // Internal structure of a SCY_HANDLE
 typedef struct SCY_CONTEXT_T_
 {
-    size_t targetProcId;
+    size_t targetProcId{};
     ApiReader apiReader;
 } SCY_CONTEXT_T;
 
@@ -28,7 +28,7 @@ DWORD GetVersionNumber()
 
 BOOL _dumpProcess(SCY_HANDLE hScyllaContext, LPCTSTR fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, LPCTSTR fileResult)
 {
-    PeParser * peFile = 0;
+    PeParser * peFile;
 
     if (fileToDump)
     {
@@ -39,7 +39,7 @@ BOOL _dumpProcess(SCY_HANDLE hScyllaContext, LPCTSTR fileToDump, DWORD_PTR image
         peFile = new PeParser(imagebase, true);
     }
 
-    bool result = peFile->dumpProcess(imagebase, entrypoint, fileResult);
+    const bool result = peFile->dumpProcess(imagebase, entrypoint, fileResult);
 
     delete peFile;
     return result;
@@ -87,13 +87,12 @@ BOOL DumpCurrentProcess(SCY_HANDLE hScyllaContext, LPCTSTR fileToDump, DWORD_PTR
 
 BOOL DumpProcess(DWORD_PTR pid, LPCTSTR fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, LPCTSTR fileResult)
 {
-    BOOL bDumpResult;
     SCY_HANDLE hScyllaContext;
 
     if (!InitContext(&hScyllaContext, pid))
         return FALSE;
 
-    bDumpResult = _dumpProcess(hScyllaContext, fileToDump, imagebase, entrypoint, fileResult);
+    BOOL bDumpResult = _dumpProcess(hScyllaContext, fileToDump, imagebase, entrypoint, fileResult);
     DeinitializeContext(hScyllaContext);
 
     return bDumpResult;
@@ -101,15 +100,15 @@ BOOL DumpProcess(DWORD_PTR pid, LPCTSTR fileToDump, DWORD_PTR imagebase, DWORD_P
 
 BOOL DumpProcessEx(DWORD_PTR pid, LPCTSTR fileResult)
 {
-    Scylla::processLister.setDebugPrivileges();
+    ProcessLister::setDebugPrivileges();
     auto procList = Scylla::processLister.getProcessListSnapshotNative();
 
     Process process{};
-    for (auto procit = procList.begin(); procit != procList.end(); ++procit)
+    for (auto& procit : procList)
     {
-        if (procit->PID == pid)
+        if (procit.PID == pid)
         {
-            process = *procit;
+            process = procit;
             break;
         }
     }
@@ -120,7 +119,7 @@ BOOL DumpProcessEx(DWORD_PTR pid, LPCTSTR fileResult)
         return ERROR_DLL_INIT_FAILED;
 
     ProcessAccessHelp::getProcessModules(ProcessAccessHelp::hProcess, ProcessAccessHelp::moduleList);
-    ProcessAccessHelp::selectedModule = 0;
+    ProcessAccessHelp::selectedModule = nullptr;
 
     ProcessAccessHelp::targetImageBase = process.imageBase;
     ProcessAccessHelp::targetSizeOfImage = process.imageSize;
@@ -139,8 +138,7 @@ BOOL DumpProcessEx(DWORD_PTR pid, LPCTSTR fileResult)
         bDumpResult = peFileD.dumpProcess(process.imageBase, process.entryPoint + process.imageBase, fileResult);
         if (bDumpResult)
         {
-            DWORD newSize = 0;
-            DWORD fileSize = (DWORD)ProcessAccessHelp::getFileSize(fileResult);
+            const auto fileSize = static_cast<DWORD>(ProcessAccessHelp::getFileSize(fileResult));
             PeParser peFile(fileResult, true);
             bDumpResult = peFile.readPeSectionsFromFile();
             if (bDumpResult)
@@ -151,7 +149,7 @@ BOOL DumpProcessEx(DWORD_PTR pid, LPCTSTR fileResult)
                 bDumpResult = peFile.savePeFileToDisk(fileResult);
                 if (bDumpResult)
                 {
-                    newSize = (DWORD)ProcessAccessHelp::getFileSize(fileResult);
+                    const auto newSize = static_cast<DWORD>(ProcessAccessHelp::getFileSize(fileResult));
 
                     if (Scylla::config[UPDATE_HEADER_CHECKSUM].isTrue())
                     {
@@ -188,7 +186,7 @@ int IatFixAuto(SCY_HANDLE hScyllaContext, DWORD_PTR iatAddr, DWORD iatSize, DWOR
 {
     std::map<DWORD_PTR, ImportModuleThunk> moduleList;
 
-    SCY_CONTEXT_T* pPrivScyContext = (SCY_CONTEXT_T*)hScyllaContext;
+    auto* pPrivScyContext = reinterpret_cast<SCY_CONTEXT_T*>(hScyllaContext);
 
     if (!pPrivScyContext)
         return SCY_ERROR_PIDNOTFOUND;
@@ -203,7 +201,7 @@ int IatFixAuto(SCY_HANDLE hScyllaContext, DWORD_PTR iatAddr, DWORD iatSize, DWOR
     //}
 
     ProcessAccessHelp::getProcessModules(ProcessAccessHelp::hProcess, ProcessAccessHelp::moduleList);
-    ProcessAccessHelp::selectedModule = 0;
+    ProcessAccessHelp::selectedModule = nullptr;
 
     pPrivScyContext->apiReader.readApisFromModuleList();
 

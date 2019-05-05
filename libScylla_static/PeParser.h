@@ -15,7 +15,7 @@ public:
 
     bool isDumped;
 
-    bool highlightVirtualSize();
+    bool highlightVirtualSize() const;
 };
 
 class PeFileSection {

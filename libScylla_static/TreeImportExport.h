@@ -16,7 +16,7 @@ public:
 
 private:
 
-	TCHAR xmlPath[MAX_PATH];
+	TCHAR xmlPath[MAX_PATH]{};
 
 	char xmlStringBuffer[MAX_PATH];
 
@@ -32,9 +32,9 @@ private:
     static bool saveXmlToFile(tinyxml2::XMLDocument& doc, LPCTSTR xmlFilePath);
     static bool readXmlFile(tinyxml2::XMLDocument& doc, LPCTSTR xmlFilePath);
 
-	void ConvertBoolToString(const bool boolValue);
-	void ConvertWordToString(const WORD dwValue);
-	void ConvertDwordPtrToString(const DWORD_PTR dwValue);
+	void ConvertBoolToString(bool boolValue);
+	void ConvertWordToString(WORD dwValue);
+	void ConvertDwordPtrToString(DWORD_PTR dwValue);
 
     static DWORD_PTR ConvertStringToDwordPtr(const char * strValue);
     static WORD ConvertStringToWord(const char * strValue);

@@ -148,7 +148,7 @@ bool ProcessAccessHelp::readMemoryPartlyFromProcess(DWORD_PTR address, SIZE_T si
             }
             else
             {
-                ZeroMemory(reinterpret_cast<LPVOID>(reinterpret_cast<DWORD_PTR>(dataBuffer)+ readBytes), bytesToRead);
+                ZeroMemory(reinterpret_cast<LPVOID>(reinterpret_cast<DWORD_PTR>(dataBuffer) + readBytes), bytesToRead);
             }
 
 
@@ -531,7 +531,7 @@ LPVOID ProcessAccessHelp::createFileMappingView(LPCTSTR filePath, DWORD accessFi
         Scylla::debugLog.log(TEXT("createFileMappingView :: INVALID_HANDLE_VALUE %u"), GetLastError());
         return nullptr;
     }
-    
+
     const auto hMappedFile = CreateFileMapping(hFile, nullptr, flProtect, 0, 0, nullptr);
     CloseHandle(hFile);
 

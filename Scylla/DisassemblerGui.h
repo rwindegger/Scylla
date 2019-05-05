@@ -76,7 +76,7 @@ protected:
 
     static const size_t DISASSEMBLER_GUI_MEMORY_SIZE = 0x120;
 
-    TCHAR tempBuffer[500];
+    TCHAR tempBuffer[500]{};
     int addressHistoryIndex;
 
     std::vector<DWORD_PTR> addressHistory;
@@ -120,7 +120,7 @@ protected:
 
 private:
     ApiReader * apiReader;
-    BYTE data[DISASSEMBLER_GUI_MEMORY_SIZE];
+    BYTE data[DISASSEMBLER_GUI_MEMORY_SIZE]{};
 
     static void toUpperCase(LPTSTR lowercase);
     static void doColorInstruction(LPNMLVCUSTOMDRAW lpLVCustomDraw, DWORD_PTR itemIndex);

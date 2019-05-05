@@ -24,7 +24,7 @@ Logger* Scylla::Log;
 // Internal structure of a SCY_HANDLE
 typedef struct SCY_CONTEXT_T_
 {
-    size_t targetProcId;
+    size_t targetProcId{};
     ApiReader apiReader;
 } SCY_CONTEXT_T;
 
@@ -33,7 +33,7 @@ LPCTSTR Scylla::get_version_information()
     return APPNAME TEXT(" ") ARCHITECTURE TEXT(" ") APPVERSION;
 }
 
-const DWORD Scylla::get_version()
+DWORD Scylla::get_version()
 {
     return APPVERSIONDWORD;
 }
@@ -56,7 +56,7 @@ void Scylla::initialize(Logger *log, bool isStandalone)
 
     if (isStandalone && config[DEBUG_PRIVILEGE].isTrue())
     {
-        processLister.setDebugPrivileges();
+        ProcessLister::setDebugPrivileges();
     }
 
     ProcessAccessHelp::getProcessModules(GetCurrentProcess(), ProcessAccessHelp::ownModuleList);
@@ -64,12 +64,10 @@ void Scylla::initialize(Logger *log, bool isStandalone)
 
 bool Scylla::initialize_context(PSCY_HANDLE phCtxt, DWORD_PTR TargetProcessPid)
 {
-    SCY_CONTEXT_T* pPrivScyContext = NULL;
-
     *phCtxt = NULL;
 
-    pPrivScyContext = (SCY_CONTEXT_T*)calloc(1, sizeof(SCY_CONTEXT_T));
-    if (NULL == pPrivScyContext)
+    auto pPrivScyContext = reinterpret_cast<SCY_CONTEXT_T*>(calloc(1, sizeof(SCY_CONTEXT_T)));
+    if (nullptr == pPrivScyContext)
         return FALSE;
     memset(pPrivScyContext, 0, sizeof(SCY_CONTEXT_T));
 
@@ -80,13 +78,13 @@ bool Scylla::initialize_context(PSCY_HANDLE phCtxt, DWORD_PTR TargetProcessPid)
     }
     pPrivScyContext->apiReader.readApisFromModuleList();
 
-    *phCtxt = (SCY_HANDLE)pPrivScyContext;
+    *phCtxt = reinterpret_cast<SCY_HANDLE>(pPrivScyContext);
     return TRUE;
 }
 
 bool Scylla::deinitialize_context(SCY_HANDLE hCtxt)
 {
-    SCY_CONTEXT_T* pPrivScyContext = (SCY_CONTEXT_T*)hCtxt;
+    const auto pPrivScyContext = reinterpret_cast<SCY_CONTEXT_T*>(hCtxt);
 
     if (!pPrivScyContext)
         return FALSE;
@@ -106,7 +104,7 @@ int Scylla::iat_search(SCY_HANDLE hScyllaContext, DWORD_PTR* iatStart, size_t* i
     ProcessLister processLister;
     //Process *processPtr = 0;
     IATSearch iatSearch;
-    SCY_CONTEXT_T* pPrivScyContext = (SCY_CONTEXT_T*)hScyllaContext;
+    auto pPrivScyContext = reinterpret_cast<SCY_CONTEXT_T*>(hScyllaContext);
 
     if (!pPrivScyContext)
         return SCY_ERROR_PIDNOTFOUND;
@@ -121,7 +119,7 @@ int Scylla::iat_search(SCY_HANDLE hScyllaContext, DWORD_PTR* iatStart, size_t* i
     //}
 
     ProcessAccessHelp::getProcessModules(ProcessAccessHelp::hProcess, ProcessAccessHelp::moduleList);
-    ProcessAccessHelp::selectedModule = 0;
+    ProcessAccessHelp::selectedModule = nullptr;
 
 
     pPrivScyContext->apiReader.readApisFromModuleList();

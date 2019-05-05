@@ -74,7 +74,7 @@ void DisassemblerGui::OnContextMenu(CWindow wnd, CPoint point)
             {
                 disassembleNewAddress(static_cast<DWORD_PTR>(ProcessAccessHelp::decomposerResult[selection].addr));
             }
-
+            default: ;
             }
             if (column != -1)
             {
@@ -89,15 +89,14 @@ void DisassemblerGui::OnContextMenu(CWindow wnd, CPoint point)
 LRESULT DisassemblerGui::OnNMCustomdraw(NMHDR* pnmh)
 {
     LRESULT pResult = 0;
-    const LPNMLVCUSTOMDRAW lpLVCustomDraw = reinterpret_cast<LPNMLVCUSTOMDRAW>(pnmh);
-    DWORD_PTR itemIndex = 0;
+    const auto lpLVCustomDraw = reinterpret_cast<LPNMLVCUSTOMDRAW>(pnmh);
 
     switch (lpLVCustomDraw->nmcd.dwDrawStage)
     {
     case CDDS_ITEMPREPAINT:
     case CDDS_ITEMPREPAINT | CDDS_SUBITEM:
     {
-        itemIndex = lpLVCustomDraw->nmcd.dwItemSpec;
+        const DWORD_PTR itemIndex = lpLVCustomDraw->nmcd.dwItemSpec;
 
         if (lpLVCustomDraw->iSubItem == COL_INSTRUCTION)
         {
@@ -110,6 +109,7 @@ LRESULT DisassemblerGui::OnNMCustomdraw(NMHDR* pnmh)
         }
     }
     break;
+    default: ;
     }
 
 
@@ -296,7 +296,7 @@ void DisassemblerGui::doColorInstruction(LPNMLVCUSTOMDRAW lpLVCustomDraw, DWORD_
 void DisassemblerGui::followInstruction(int index)
 {
     DWORD_PTR address = 0;
-    DWORD_PTR addressTemp = 0;
+    DWORD_PTR addressTemp;
     const DWORD type = META_GET_FC(ProcessAccessHelp::decomposerResult[index].meta);
 
     if (ProcessAccessHelp::decomposerResult[index].flags != FLAG_NOT_DECODABLE)
@@ -342,7 +342,7 @@ void DisassemblerGui::followInstruction(int index)
 bool DisassemblerGui::getDisassemblyComment(unsigned int index)
 {
     DWORD_PTR address = 0;
-    DWORD_PTR addressTemp = 0;
+    DWORD_PTR addressTemp;
     const DWORD type = META_GET_FC(ProcessAccessHelp::decomposerResult[index].meta);
 
     tempBuffer[0] = 0;
@@ -354,7 +354,7 @@ bool DisassemblerGui::getDisassemblyComment(unsigned int index)
             if (ProcessAccessHelp::decomposerResult[index].flags & FLAG_RIP_RELATIVE)
             {
 #ifdef _WIN64
-                addressTemp = (DWORD_PTR)INSTRUCTION_GET_RIP_TARGET(&ProcessAccessHelp::decomposerResult[index]);
+                addressTemp = static_cast<DWORD_PTR>(INSTRUCTION_GET_RIP_TARGET(&ProcessAccessHelp::decomposerResult[index]));
 
                 _stprintf_s(tempBuffer, TEXT("-> ") PRINTF_DWORD_PTR_FULL, addressTemp);
 
@@ -398,7 +398,6 @@ bool DisassemblerGui::getDisassemblyComment(unsigned int index)
 void DisassemblerGui::initAddressCommentList()
 {
     HMODULE * hMods = nullptr;
-    HMODULE hModResult = nullptr;
     TCHAR target[MAX_PATH];
 
     const DWORD numHandles = ProcessAccessHelp::getModuleHandlesFromProcess(ProcessAccessHelp::hProcess, &hMods);
@@ -428,7 +427,7 @@ void DisassemblerGui::initAddressCommentList()
 
 void DisassemblerGui::addModuleAddressCommentEntry(DWORD_PTR address, DWORD moduleSize, LPCTSTR modulePath)
 {
-    DisassemblerAddressComment commentObj;
+    DisassemblerAddressComment commentObj{};
     //get filename
     const TCHAR* slash = _tcsrchr(modulePath, TEXT('\\'));
     if (slash)

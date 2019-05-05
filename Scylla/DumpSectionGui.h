@@ -56,7 +56,7 @@ class DumpSectionGui : public CDialogImpl<DumpSectionGui>, public CWinDataExchan
 
 		DWORD_PTR imageBase;  //VA
 		DWORD_PTR entryPoint;
-		TCHAR fullpath[MAX_PATH];
+		TCHAR fullpath[MAX_PATH]{};
 
 		std::vector<PeSection> & getSectionList();
 
@@ -89,7 +89,7 @@ private:
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
 
 	LRESULT OnListSectionColumnClicked(NMHDR* pnmh);
-	LRESULT OnListSectionClick(NMHDR* pnmh);
+    static LRESULT OnListSectionClick(NMHDR* pnmh);
 	LRESULT OnNMCustomdraw(NMHDR* pnmh);
 	LRESULT OnListDoubleClick(NMHDR* pnmh);
 
@@ -100,7 +100,7 @@ private:
 
 	// GUI functions
 
-	void addColumnsToSectionList(CListViewCtrl& list);
+    static void addColumnsToSectionList(CListViewCtrl& list);
 	void displaySectionList(CListViewCtrl& list);
 
 	static int CALLBACK listviewCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);

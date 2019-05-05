@@ -103,12 +103,12 @@ protected:
 
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
 	void OnClose();
-	LRESULT OnLink(NMHDR* pnmh);
+	LRESULT OnLink(NMHDR* pnmh) const;
 	void OnExit(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 	// GUI helpers
 
 	void setupLinks();
-	void setLinkURL(CLinkCtrl& link, LPCTSTR url, int index = 0);
-	void setupTooltip(CToolTipCtrl tooltip, CWindow window, LPCTSTR text);
+    static void setLinkURL(CLinkCtrl& link, LPCTSTR url, int index = 0);
+    static void setupTooltip(CToolTipCtrl tooltip, CWindow window, LPCTSTR text);
 };

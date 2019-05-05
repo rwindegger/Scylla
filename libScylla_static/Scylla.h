@@ -18,7 +18,7 @@ class Scylla
 {
 public:
     static LPCTSTR get_version_information();
-    static const DWORD get_version();
+    static DWORD get_version();
     static void initialize(Logger *log, bool isStandalone);
     static bool initialize_context(PSCY_HANDLE phCtxt, DWORD_PTR TargetProcessPid);
     static bool deinitialize_context(SCY_HANDLE hCtxt);

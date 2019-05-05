@@ -82,8 +82,8 @@ protected:
 
 	// GUI functions
 
-	void addColumnsToModuleList(CListViewCtrl& list);
-	void displayModuleList(CListViewCtrl& list);
+    static void addColumnsToModuleList(CListViewCtrl& list);
+	void displayModuleList(CListViewCtrl& list) const;
 
 	static int CALLBACK listviewCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
 };

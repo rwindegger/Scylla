@@ -23,11 +23,11 @@ public:
 
     static bool truncateFile(LPCTSTR szFilePath, DWORD dwNewFsize);
 	DWORD realignPE(LPVOID AddressOfMapFile,DWORD dwFsize);
-	DWORD wipeReloc(void* pMap, DWORD dwFsize);
-	bool validatePE(void* pPEImage, DWORD dwFileSize);
-	ReBaseErr reBasePEImage(void* pPE, DWORD_PTR dwNewBase);
+    static DWORD wipeReloc(void* pMap, DWORD dwFsize);
+    static bool validatePE(void* pPEImage, DWORD dwFileSize);
+    static ReBaseErr reBasePEImage(void* pPE, DWORD_PTR dwNewBase);
 
-	bool updatePeHeaderChecksum(LPVOID AddressOfMapFile, DWORD dwFsize);
+    static bool updatePeHeaderChecksum(LPVOID AddressOfMapFile, DWORD dwFsize);
 
 	LPVOID createFileMappingViewFull(LPCTSTR filePath);
 	void closeAllMappingHandles();
