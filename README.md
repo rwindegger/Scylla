@@ -1,5 +1,5 @@
-Scylla - x64/x86 Imports Reconstruction
-=======================================
+# Scylla - x64/x86 Imports Reconstruction
+
 [![Build status](https://ci.appveyor.com/api/projects/status/uc42jlobm1kjnwbk?svg=true)](https://ci.appveyor.com/project/rwindegger/scylla)
 
 ImpREC, CHimpREC, Imports Fixer... this are all great tools to rebuild an import table, 
@@ -18,9 +18,23 @@ But it may work with XP and Vista, too.
 
 Source code is licensed under GNU GENERAL PUBLIC LICENSE v3.0
 
+## Building
 
-Known Bugs
-----------
+Scylla uses CMake as build system. A quick guide on how to build can be found in the [compiling](COMPILING.md) document. You can also look at the CI script that can be found in [appveyor.yml](appveyor.yml).
+
+
+## Keyboard Shortcuts
+
+- CTRL + D: [D]ump
+- CTRL + F: [F]ix Dump
+- CTRL + R: PE [R]ebuild
+- CTRL + O: L[o]ad Tree
+- CTRL + S: [S]ave Tree
+- CTRL + T: Auto[t]race
+- CTRL + G: [G]et Imports
+- CTRL + I: [I]AT Autosearch
+
+## Known Bugs
 
 ### Windows 7 x64
 
@@ -40,20 +54,7 @@ If you still want to use XP x64, here are some hints:
 
 Some ImpREC Plugins don't work with Windows Vista/7 because they don't "return 1" in the DllMain function.
 
-Keyboard Shortcuts
-------------------
-
-- CTRL + D: [D]ump
-- CTRL + F: [F]ix Dump
-- CTRL + R: PE [R]ebuild
-- CTRL + O: L[o]ad Tree
-- CTRL + S: [S]ave Tree
-- CTRL + T: Auto[t]race
-- CTRL + G: [G]et Imports
-- CTRL + I: [I]AT Autosearch
-
-Changelog
----------
+## Changelog
 
 Version 0.10.0
 
