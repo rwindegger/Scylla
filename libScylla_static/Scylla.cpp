@@ -2,7 +2,6 @@
 
 #include "NativeWinApi.h"
 #include "ProcessAccessHelp.h"
-#include "FunctionExport.h"
 #include "ApiReader.h"
 #include "IATSearch.h"
 #include "Architecture.h"

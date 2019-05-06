@@ -80,6 +80,11 @@ set_target_properties(libScylla_static PROPERTIES FOLDER "Scylla"
 configure_file("${libScylla_static_dir}/Scylla.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/Scylla.h")
 install(TARGETS libScylla_static DESTINATION lib)
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/ DESTINATION include)
+install(FILES ${libScylla_static_dir}/Logger.h DESTINATION include)
+install(FILES ${libScylla_static_dir}/ProcessLister.h DESTINATION include)
+install(FILES ${libScylla_static_dir}/NativeWinApi.h DESTINATION include)
+install(FILES ${libScylla_static_dir}/PluginLoader.h DESTINATION include)
+install(FILES ${libScylla_static_dir}/ConfigurationHolder.h DESTINATION include)
 
 message(STATUS "-- Configuring : libScylla")
 file(GLOB libScylla_files "${libScylla_dir}/*.cpp")
@@ -89,9 +94,8 @@ target_include_directories(libScylla_static PUBLIC "${libScylla_dir}/")
 set_target_properties(libScylla PROPERTIES FOLDER "Scylla"
 										   VERSION "${VERSION_TCHAR}")
 install(TARGETS libScylla DESTINATION lib)
+install(FILES ${libScylla_dir}/ScyllaDLL.h DESTINATION include)
 
-#### Scylla targets
-# Scylla executable
 message(STATUS "-- Configuring : Scylla")
 file (GLOB Scylla_files 
 			"${Scylla_dir}/*.cpp"

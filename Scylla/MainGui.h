@@ -15,14 +15,12 @@
 #include "multitree.h"
 #include "hexedit.h"
 
-#include "Logger.h"
-#include "ProcessLister.h"
+#include "Scylla.h"
 #include "IATSearch.h"
 #include "PickDllGui.h"
 #include "DumpMemoryGui.h"
 #include "DumpSectionGui.h"
 #include "ImportsHandling.h"
-#include "FunctionExport.h"
 #include "IATReferenceScan.h"
 
 typedef struct _GUI_DLL_PARAMETER {

@@ -8,28 +8,6 @@
 extern "C" {
 #endif
 
-#if defined (WIN32)
-#if defined (_MSC_VER)
-#define SCYLLA_DECL_API _cdecl
-#pragma warning(disable: 4251)
-#endif
-#if defined(libScylla_EXPORTS)
-#define  SCYLLA_DLL_EXPORT __declspec(dllexport)
-#else
-#define  SCYLLA_DLL_EXPORT  /*__declspec(dllimport)*/
-#endif
-#else
-#define SCYLLA_DLL_EXPORT 
-#endif
-
-/* Scylla Dll API error IDs */
-const int SCY_ERROR_SUCCESS = 0;
-const int SCY_ERROR_PROCOPEN = -1;
-const int SCY_ERROR_IATWRITE = -2;
-const int SCY_ERROR_IATSEARCH = -3;
-const int SCY_ERROR_IATNOTFOUND = -4;
-const int SCY_ERROR_PIDNOTFOUND = -5;
-
 /*
 	Init new context for Scylla. Necessary to call it before any other API (except for ScyllaVersionInformation APIs).
 	@param phCtxt : pointer to output Scylla context

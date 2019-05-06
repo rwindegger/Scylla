@@ -1,4 +1,4 @@
-#include "FunctionExport.h"
+#include "ScyllaDLL.h"
 #include "PeParser.h"
 #include "ProcessAccessHelp.h"
 #include "Architecture.h"
