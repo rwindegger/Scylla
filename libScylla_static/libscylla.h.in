@@ -1,0 +1,85 @@
+#pragma once
+#include "scylla_types.h"
+
+#include <vector>
+#include <memory>
+#include <unordered_map>
+#include <Windows.h>
+
+#define APPNAME TEXT("Scylla")
+#define APPVERSION TEXT("v@VERSION_TCHAR@")
+#define APPVERSIONDWORD 0x@VERSION_DWORD@
+
+#include "scylla_codes.h"
+
+enum class scylla_severity
+{
+    verbose = 0,
+    debug = 1,
+    information = 2,
+    warning = 3,
+    error = 4,
+    fatal = 5
+};
+
+struct iat_search_result
+{
+    scylla_status status;
+    uintptr_t start;
+    size_t size;
+};
+
+class libscylla
+    : private std::enable_shared_from_this<libscylla>
+{
+public:
+    static LPCTSTR get_version_information();
+    static DWORD get_version();
+    static std::shared_ptr<native_win_api> windows_api();
+
+	static std::shared_ptr<libscylla> create(std::shared_ptr<Logger> log, pid_t target_pid, bool is_standalone = false);
+
+private:
+    libscylla(std::shared_ptr<Logger> log, pid_t target_pid, bool is_standalone = false);
+	void initialize(std::shared_ptr<libscylla> self);
+
+public:
+	~libscylla();
+	
+    void log(scylla_severity severity, LPCTSTR format, ...) const;
+
+    pid_t target_pid() const;
+    std::shared_ptr<configuration_holder> config() const;
+
+	std::shared_ptr<iat_searcher> local_api_reader() const;
+	std::shared_ptr<iat_searcher> target_api_reader() const;
+
+	const std::vector<std::shared_ptr<module_info>> *local_modules() const;
+	const std::unordered_multimap<uintptr_t, std::shared_ptr<api_info>> *local_apis() const;
+
+	const std::vector<std::shared_ptr<module_info>> *target_modules() const;
+	const std::unordered_multimap<uintptr_t, std::shared_ptr<api_info>> *target_apis() const;
+
+	void add_target_api_by_virtual_address(uintptr_t virtual_address, uintptr_t iat_address, bool* is_suspect);
+		
+    iat_search_result iat_search(uintptr_t search_start, bool advanced_search);
+	scylla_status iat_auto_fix(uintptr_t iat_address, size_t iat_size, LPCTSTR dump_file, LPCTSTR iat_fix_file);
+
+private:
+	void update_local_information();
+	void update_target_information();
+
+    std::shared_ptr<Logger> log_{ nullptr };
+    std::shared_ptr<configuration_holder> config_{ nullptr };
+    std::unique_ptr<PluginLoader> plugins_{ nullptr };
+    pid_t pid_{ 0 };
+    std::shared_ptr<iat_searcher> local_api_reader_{ nullptr };
+    std::shared_ptr<iat_searcher> target_api_reader_{ nullptr };
+    bool is_standalone_{ false };
+	std::shared_ptr<std::shared_ptr<module_info>> selected_module_{};
+    std::vector<std::shared_ptr<module_info>> local_modules_{};
+	std::unordered_multimap<uintptr_t, std::shared_ptr<api_info>> local_apis_;
+    std::vector<std::shared_ptr<module_info>> target_modules_{};
+    std::unordered_multimap<uintptr_t, std::shared_ptr<api_info>> target_apis_;
+	std::map<DWORD_PTR, ImportModuleThunk> target_thunks_;
+};

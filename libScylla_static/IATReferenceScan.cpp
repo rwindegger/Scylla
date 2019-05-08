@@ -1,7 +1,12 @@
 #include "IATReferenceScan.h"
+
+#include "libscylla.h"
+#include "iat_searcher.h"
+#include "module_info.h"
+#include "api_info.h"
+
 #include "Scylla.h"
 #include "Architecture.h"
-#include <set>
 
 FileLog IATReferenceScan::directImportLog(TEXT("Scylla_direct_imports.log"));
 
@@ -414,7 +419,7 @@ void IATReferenceScan::printDirectImportLog()
 	{
 		IATReference * ref = &iter;
 		
-		ApiInfo * apiInfo = apiReader->getApiByVirtualAddress(ref->targetAddressInIat, &isSuspect);
+		auto apiInfo = context->target_api_reader()->get_api_by_virtual_address(ref->targetAddressInIat, &isSuspect);
 
 		count++;
 		LPCTSTR type = TEXT("U");
@@ -440,7 +445,7 @@ void IATReferenceScan::printDirectImportLog()
 			type = TEXT("LEA");
 		}
 
-		IATReferenceScan::directImportLog.log(TEXT("%04d AddrVA ") PRINTF_DWORD_PTR_FULL TEXT(" Type %s Value ") PRINTF_DWORD_PTR_FULL TEXT(" IatRefPointer ") PRINTF_DWORD_PTR_FULL TEXT(" Api %s %S"), count, ref->addressVA, type, ref->targetAddressInIat, ref->targetPointer,apiInfo->module->getFilename(), apiInfo->name);
+		IATReferenceScan::directImportLog.log(TEXT("%04d AddrVA ") PRINTF_DWORD_PTR_FULL TEXT(" Type %s Value ") PRINTF_DWORD_PTR_FULL TEXT(" IatRefPointer ") PRINTF_DWORD_PTR_FULL TEXT(" Api %s %S"), count, ref->addressVA, type, ref->targetAddressInIat, ref->targetPointer,apiInfo->module()->filename().c_str(), apiInfo->name());
 
 	}
 
@@ -536,7 +541,7 @@ void IATReferenceScan::checkMemoryRangeAndAddToList( IATReference * ref, _DInst 
 			//if (isAddressValidImageMemory(ref->targetAddressInIat))
 			{
 				bool isSuspect = false;
-				if (apiReader->getApiByVirtualAddress(ref->targetAddressInIat, &isSuspect) != nullptr)
+				if (context->target_api_reader()->get_api_by_virtual_address(ref->targetAddressInIat, &isSuspect) != nullptr)
 				{
 					ref->addressVA = static_cast<DWORD_PTR>(instruction->addr);
 					ref->instructionSize = instruction->size;
@@ -717,8 +722,8 @@ DWORD IATReferenceScan::addAdditionalApisToList()
 			if (ref->targetPointer == 0  && ref->targetAddressInIat == apiPointer)
 			{
 				ref->targetPointer = iatAddy;
-				ApiInfo * apiInfo = apiReader->getApiByVirtualAddress(ref->targetAddressInIat, &isSuspect);
-				apiReader->addFoundApiToModuleList(iatAddy, apiInfo, true, isSuspect);
+                context->add_target_api_by_virtual_address(ref->targetPointer, ref->targetAddressInIat, &isSuspect);
+                
 			}
 		}
 

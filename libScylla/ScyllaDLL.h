@@ -1,8 +1,13 @@
 #pragma once
 
 #include <windows.h>
+#include <memory>
+#include "scylla_export.h"
+#include "scylla_codes.h"
 
-#include "Scylla.h"
+class libscylla;
+/* Scylla current context. */
+typedef std::shared_ptr<libscylla> SCY_HANDLE, *PSCY_HANDLE;
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,7 +45,7 @@ SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  DumpCurrentProcess(SCY_HANDLE hScyllaCo
 SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  DumpProcess(DWORD_PTR pid, LPCTSTR fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, LPCTSTR fileResult);
 SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  DumpProcessEx(DWORD_PTR pid, LPCTSTR fileResult);
 
-    /*
+/*
 	Rebuild PE ?
 */
 SCYLLA_DLL_EXPORT  BOOL SCYLLA_DECL_API  RebuildFile(SCY_HANDLE hScyllaContext, LPCTSTR fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup);
@@ -67,14 +72,14 @@ SCYLLA_DLL_EXPORT DWORD SCYLLA_DECL_API GetVersionNumber();
 
 	If the heuristics didn't found an IAT, iatStart and iatSize are set to 0.
 */
-SCYLLA_DLL_EXPORT  int SCYLLA_DECL_API  IatSearch(SCY_HANDLE hScyllaContext, DWORD_PTR * iatStart, size_t * iatSize, DWORD_PTR searchStart, BOOL advancedSearch);
+SCYLLA_DLL_EXPORT  int SCYLLA_DECL_API  IatSearch(const SCY_HANDLE& hScyllaContext, DWORD_PTR * iatStart, size_t * iatSize, DWORD_PTR searchStart, BOOL advancedSearch);
 
 
 /*
 	Scylla AutoFix import address ?
 	@param
 */
-SCYLLA_DLL_EXPORT  int SCYLLA_DECL_API  IatFixAuto(SCY_HANDLE hScyllaContext, DWORD_PTR iatAddr, DWORD iatSize, DWORD dwProcessId, LPCTSTR dumpFile, LPCTSTR iatFixFile);
+SCYLLA_DLL_EXPORT  int SCYLLA_DECL_API  IatFixAuto(const SCY_HANDLE& hScyllaContext, DWORD_PTR iatAddr, DWORD iatSize, LPCTSTR dumpFile, LPCTSTR iatFixFile);
 
 #ifdef __cplusplus
 }

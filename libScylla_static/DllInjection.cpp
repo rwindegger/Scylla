@@ -1,8 +1,9 @@
 #include "DllInjection.h"
+#include "libscylla.h"
+#include "native_win_api.h"
+
 #include <Psapi.h>
 #include "Scylla.h"
-
-#include "NativeWinApi.h"
 #include "ProcessAccessHelp.h"
 
 HMODULE DllInjection::dllInjection(HANDLE hProcess, LPCTSTR filename)
@@ -40,10 +41,10 @@ HMODULE DllInjection::dllInjection(HANDLE hProcess, LPCTSTR filename)
 
 #else
             //returns only 32 bit values -> design bug by microsoft
-            if (!GetExitCodeThread(hThread, (LPDWORD)&hModule))
+            if (!GetExitCodeThread(hThread, reinterpret_cast<LPDWORD>(&hModule)))
             {
                 Scylla::debugLog.log(TEXT("dllInjection :: GetExitCodeThread failed 0x%X"), GetLastError());
-                hModule = 0;
+                hModule = nullptr;
             }
 #endif
 
@@ -138,9 +139,9 @@ void DllInjection::specialThreadSettings(HANDLE hThread)
             Scylla::debugLog.log(TEXT("specialThreadSettings :: SetThreadPriority(hThread, THREAD_PRIORITY_TIME_CRITICAL) failed 0x%X"), GetLastError());
         }
 
-        if (NativeWinApi::NtSetInformationThread)
+        if (libscylla::windows_api()->NtSetInformationThread)
         {
-            if (NativeWinApi::NtSetInformationThread(hThread, ThreadHideFromDebugger, nullptr, 0) != STATUS_SUCCESS)
+            if (libscylla::windows_api()->NtSetInformationThread(hThread, ThreadHideFromDebugger, nullptr, 0) != STATUS_SUCCESS)
             {
                 Scylla::debugLog.log(TEXT("specialThreadSettings :: NtSetInformationThread ThreadHideFromDebugger failed"));
             }
@@ -166,17 +167,17 @@ HANDLE DllInjection::customCreateRemoteThread(HANDLE hProcess, LPCVOID lpStartAd
     DWORD lpThreadId = 0;
     HANDLE hThread = nullptr;
 
-    if (NativeWinApi::NtCreateThreadEx)
+    if (libscylla::windows_api()->NtCreateThreadEx)
     {
 #define THREAD_ALL_ACCESS_VISTA_7 (STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFFF)
 
         //for windows vista/7
-        const NTSTATUS ntStatus = NativeWinApi::NtCreateThreadEx(&hThread, THREAD_ALL_ACCESS_VISTA_7, nullptr, hProcess, reinterpret_cast<LPTHREAD_START_ROUTINE>(const_cast<LPVOID>(lpStartAddress)), const_cast<LPVOID>(lpParameter), NtCreateThreadExFlagCreateSuspended | NtCreateThreadExFlagHideFromDebugger, 0, nullptr, nullptr, nullptr);
+        const NTSTATUS ntStatus = libscylla::windows_api()->NtCreateThreadEx(&hThread, THREAD_ALL_ACCESS_VISTA_7, nullptr, hProcess, reinterpret_cast<LPTHREAD_START_ROUTINE>(const_cast<LPVOID>(lpStartAddress)), const_cast<LPVOID>(lpParameter), NtCreateThreadExFlagCreateSuspended | NtCreateThreadExFlagHideFromDebugger, 0, nullptr, nullptr, nullptr);
         if (NT_SUCCESS(ntStatus))
         {
             return hThread;
         }
-        Scylla::debugLog.log(TEXT("customCreateRemoteThread :: NtCreateThreadEx failed 0x%X"), NativeWinApi::RtlNtStatusToDosError(ntStatus));
+        Scylla::debugLog.log(TEXT("customCreateRemoteThread :: NtCreateThreadEx failed 0x%X"), libscylla::windows_api()->RtlNtStatusToDosError(ntStatus));
         return nullptr;
     }
     return CreateRemoteThread(hProcess, nullptr, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(const_cast<LPVOID>(lpStartAddress)), const_cast<LPVOID>(lpParameter), CREATE_SUSPENDED, &lpThreadId);

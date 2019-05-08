@@ -1,16 +1,21 @@
 #include "DisassemblerGui.h"
+
+#include "libscylla.h"
+#include "iat_searcher.h"
+#include "module_info.h"
+#include "api_info.h"
+
 #include <algorithm>
 #include <Psapi.h>
 
 #include "ProcessAccessHelp.h"
 #include "Architecture.h"
-#include "Scylla.h"
 #include "StringConversion.h"
 
 
-DisassemblerGui::DisassemblerGui(DWORD_PTR startAddress, ApiReader * apiReaderObject)
+DisassemblerGui::DisassemblerGui(DWORD_PTR startAddress, std::shared_ptr<libscylla> context)
 {
-    apiReader = apiReaderObject;
+    context = context;
     addressHistoryIndex = 0;
     addressHistory.push_back(startAddress);
     hMenuDisassembler.LoadMenu(IDR_MENU_DISASSEMBLER);
@@ -49,7 +54,7 @@ void DisassemblerGui::OnContextMenu(CWindow wnd, CPoint point)
         }
 
         CMenuHandle hSub = hMenuDisassembler.GetSubMenu(0);
-        BOOL menuItem = hSub.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, point.x, point.y, wnd);
+        const BOOL menuItem = hSub.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, point.x, point.y, wnd);
         if (menuItem)
         {
             int column = -1;
@@ -417,7 +422,7 @@ void DisassemblerGui::initAddressCommentList()
             }
             else
             {
-                Scylla::debugLog.log(TEXT("DllInjection::getModuleHandle :: GetModuleFileNameExW failed 0x%X"), GetLastError());
+                context->log(scylla_severity::debug, TEXT("DllInjection::getModuleHandle :: GetModuleFileNameExW failed 0x%X"), GetLastError());
             }
         }
     }
@@ -450,28 +455,28 @@ void DisassemblerGui::analyzeAddress(DWORD_PTR address, LPTSTR comment)
         return;
     }
     bool isSuspect;
-    ApiInfo * api = apiReader->getApiByVirtualAddress(address, &isSuspect);
+    auto api = context->target_api_reader()->get_api_by_virtual_address(address, &isSuspect);
 
-    if (api != nullptr && api != reinterpret_cast<ApiInfo *>(1))
+    if (api != nullptr && api.get() != reinterpret_cast<api_info *>(1))
     {
-        if (api->name[0] == 0)
+        if (api->name()[0] == 0)
         {
-            _stprintf_s(tempBuffer, TEXT("%s = %s.%04X"), comment, api->module->getFilename(), api->ordinal);
+            _stprintf_s(tempBuffer, TEXT("%s = %s.%04X"), comment, api->module()->filename().c_str(), api->ordinal());
         }
         else
         {
-            _stprintf_s(tempBuffer, TEXT("%s = %s.%s"), comment, api->module->getFilename(), api->name);
+            _stprintf_s(tempBuffer, TEXT("%s = %s.%s"), comment, api->module()->filename().c_str(), api->name());
         }
     }
     else
     {
-        for (size_t i = 0; i < addressCommentList.size(); i++)
+        for (auto& i : addressCommentList)
         {
-            if (addressCommentList[i].type == ADDRESS_TYPE_MODULE)
+            if (i.type == ADDRESS_TYPE_MODULE)
             {
-                if (address >= addressCommentList[i].address && address < (addressCommentList[i].address + addressCommentList[i].moduleSize))
+                if (address >= i.address && address < (i.address + i.moduleSize))
                 {
-                    _stprintf_s(tempBuffer, TEXT("%s = %s"), comment, addressCommentList[i].comment);
+                    _stprintf_s(tempBuffer, TEXT("%s = %s"), comment, i.comment);
                     return;
                 }
             }

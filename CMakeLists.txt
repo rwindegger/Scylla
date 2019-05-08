@@ -69,6 +69,7 @@ add_library(diStorm ${diStorm_files})
 target_include_directories(diStorm PUBLIC "${diStorm_dir}/include")
 set_target_properties (diStorm PROPERTIES FOLDER "vendor")
 install(TARGETS diStorm DESTINATION lib)
+install(FILES ${diStorm_dir}/include/distorm.h DESTINATION include)
 
 message(STATUS "-- Configuring : libScylla_static")
 file (GLOB libScylla_files "${libScylla_static_dir}/*.cpp")
@@ -78,11 +79,12 @@ target_include_directories(libScylla_static PUBLIC "${libScylla_static_dir}/" "$
 set_target_properties(libScylla_static PROPERTIES FOLDER "Scylla"
 												  VERSION "${VERSION_TCHAR}")
 configure_file("${libScylla_static_dir}/Scylla.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/Scylla.h")
+configure_file("${libScylla_static_dir}/libscylla.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/libscylla.h")
 install(TARGETS libScylla_static DESTINATION lib)
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/ DESTINATION include)
 install(FILES ${libScylla_static_dir}/Logger.h DESTINATION include)
 install(FILES ${libScylla_static_dir}/ProcessLister.h DESTINATION include)
-install(FILES ${libScylla_static_dir}/NativeWinApi.h DESTINATION include)
+install(FILES ${libScylla_static_dir}/native_win_api.h DESTINATION include)
 install(FILES ${libScylla_static_dir}/PluginLoader.h DESTINATION include)
 install(FILES ${libScylla_static_dir}/ConfigurationHolder.h DESTINATION include)
 
@@ -112,13 +114,12 @@ install(TARGETS Scylla DESTINATION bin)
 
 if (SCYLLA_USE_MINIDUMP_FOR_CRASH)
 	find_library(dbghelp_lib dbghelp ${WDK_LIBPATH}/${ARCH})
-	
-	target_link_libraries(Scylla ${dbghelp_lib})
-	target_compile_definitions(Scylla PUBLIC "-DSCYLLA_USE_MINIDUMP_FOR_CRASH")
+	target_link_libraries(libScylla_static ${dbghelp_lib})
+	target_compile_definitions(libScylla_static PUBLIC "-DSCYLLA_USE_MINIDUMP_FOR_CRASH")
 endif()
 
 if (SCYLLA_USE_DEBUGGING_LOG)
-	target_compile_definitions(Scylla PUBLIC "-DDEBUG_COMMENTS")
+	target_compile_definitions(libScylla_static PUBLIC "-DDEBUG_COMMENTS")
 endif()
 
 #### Scylla tests

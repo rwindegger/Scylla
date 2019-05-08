@@ -1,8 +1,6 @@
-
 #include "ProcessAccessHelp.h"
-
+#include "libscylla.h"
 #include "Scylla.h"
-#include "NativeWinApi.h"
 #include "PeParser.h"
 
 HANDLE ProcessAccessHelp::hProcess = nullptr;
@@ -82,7 +80,7 @@ HANDLE ProcessAccessHelp::NativeOpenProcess(DWORD dwDesiredAccess, size_t szProc
     InitializeObjectAttributes(&ObjectAttributes, nullptr, 0, nullptr, nullptr);
     cid.UniqueProcess = reinterpret_cast<HANDLE>(szProcessId);
 
-    const NTSTATUS ntStatus = NativeWinApi::NtOpenProcess(&hProcess, dwDesiredAccess, &ObjectAttributes, &cid);
+    const NTSTATUS ntStatus = libscylla::windows_api()->NtOpenProcess(&hProcess, dwDesiredAccess, &ObjectAttributes, &cid);
 
     if (NT_SUCCESS(ntStatus))
     {
@@ -90,7 +88,7 @@ HANDLE ProcessAccessHelp::NativeOpenProcess(DWORD dwDesiredAccess, size_t szProc
     }
     else
     {
-        Scylla::debugLog.log(TEXT("NativeOpenProcess :: Failed to open handle, PID %X Error 0x%X"), szProcessId, NativeWinApi::RtlNtStatusToDosError(ntStatus));
+        Scylla::debugLog.log(TEXT("NativeOpenProcess :: Failed to open handle, PID %X Error 0x%X"), szProcessId, libscylla::windows_api()->RtlNtStatusToDosError(ntStatus));
         return nullptr;
     }
 }
@@ -243,7 +241,6 @@ bool ProcessAccessHelp::readMemoryFromProcess(DWORD_PTR address, SIZE_T size, LP
 
 bool ProcessAccessHelp::decomposeMemory(const BYTE * dataBuffer, SIZE_T bufferSize, DWORD_PTR startAddress)
 {
-
     ZeroMemory(&decomposerCi, sizeof(_CodeInfo));
     decomposerCi.code = dataBuffer;
     decomposerCi.codeLen = static_cast<int>(bufferSize);
@@ -364,7 +361,6 @@ LONGLONG ProcessAccessHelp::getFileSize(HANDLE hFile)
         return 0;
     }
 }
-
 
 bool ProcessAccessHelp::readMemoryFromFile(HANDLE hFile, LONG offset, DWORD size, LPVOID dataBuffer)
 {
@@ -795,9 +791,9 @@ void ProcessAccessHelp::setCurrentProcessAsTarget()
 
 bool ProcessAccessHelp::suspendProcess()
 {
-    if (NativeWinApi::NtSuspendProcess)
+    if (libscylla::windows_api()->NtSuspendProcess)
     {
-        if (NT_SUCCESS(NativeWinApi::NtSuspendProcess(ProcessAccessHelp::hProcess)))
+        if (NT_SUCCESS(libscylla::windows_api()->NtSuspendProcess(ProcessAccessHelp::hProcess)))
         {
             return true;
         }
@@ -808,9 +804,9 @@ bool ProcessAccessHelp::suspendProcess()
 
 bool ProcessAccessHelp::resumeProcess()
 {
-    if (NativeWinApi::NtResumeProcess)
+    if (libscylla::windows_api()->NtResumeProcess)
     {
-        if (NT_SUCCESS(NativeWinApi::NtResumeProcess(ProcessAccessHelp::hProcess)))
+        if (NT_SUCCESS(libscylla::windows_api()->NtResumeProcess(ProcessAccessHelp::hProcess)))
         {
             return true;
         }
@@ -821,9 +817,9 @@ bool ProcessAccessHelp::resumeProcess()
 
 bool ProcessAccessHelp::terminateProcess()
 {
-    if (NativeWinApi::NtTerminateProcess)
+    if (libscylla::windows_api()->NtTerminateProcess)
     {
-        if (NT_SUCCESS(NativeWinApi::NtTerminateProcess(ProcessAccessHelp::hProcess, 0)))
+        if (NT_SUCCESS(libscylla::windows_api()->NtTerminateProcess(ProcessAccessHelp::hProcess, 0)))
         {
             return true;
         }
@@ -875,7 +871,7 @@ SIZE_T ProcessAccessHelp::getSizeOfImageProcessNative(HANDLE processHandle, DWOR
 {
     MEMORY_REGION_INFORMATION memRegion{};
     SIZE_T retLen = 0;
-    if (NativeWinApi::NtQueryVirtualMemory(processHandle, reinterpret_cast<PVOID>(moduleBase), MemoryRegionInformation, &memRegion, sizeof(MEMORY_REGION_INFORMATION), &retLen) == STATUS_SUCCESS)
+    if (libscylla::windows_api()->NtQueryVirtualMemory(processHandle, reinterpret_cast<PVOID>(moduleBase), MemoryRegionInformation, &memRegion, sizeof(MEMORY_REGION_INFORMATION), &retLen) == STATUS_SUCCESS)
     {
         return memRegion.RegionSize;
     }

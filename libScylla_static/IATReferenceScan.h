@@ -1,9 +1,8 @@
 #pragma once
-#include <vector>
+#include "scylla_types.h"
 #include "ProcessAccessHelp.h"
 #include "PeParser.h"
 #include "Logger.h"
-#include "ApiReader.h"
 
 enum IATReferenceType {
     IAT_REFERENCE_PTR_JMP,
@@ -32,7 +31,6 @@ public:
 
     IATReferenceScan()
     {
-        apiReader = nullptr;
         IatAddressVA = 0;
         IatSize = 0;
         ImageBase = 0;
@@ -56,7 +54,7 @@ public:
     bool ScanForDirectImports;
     bool ScanForNormalImports;
     bool JunkByteAfterInstruction{};
-    ApiReader * apiReader;
+    std::shared_ptr<libscylla> context{};
 
     void startScan(DWORD_PTR imageBase, DWORD imageSize, DWORD_PTR iatAddress, DWORD iatSize);
     //void patchNewIatBaseMemory(DWORD_PTR newIatBaseAddress);

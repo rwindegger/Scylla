@@ -1,28 +1,8 @@
 #pragma once
+#include "scylla_types.h"
+#include "scylla_export.h"
+#include "scylla_codes.h"
 
-#if defined (WIN32)
-#if defined (_MSC_VER)
-#define SCYLLA_DECL_API _cdecl
-#pragma warning(disable: 4251)
-#endif
-#if defined(libScylla_EXPORTS)
-#define  SCYLLA_DLL_EXPORT __declspec(dllexport)
-#else
-#define  SCYLLA_DLL_EXPORT  /*__declspec(dllimport)*/
-#endif
-#else
-#define SCYLLA_DLL_EXPORT 
-#endif
-
-/* Scylla Dll API error IDs */
-const int SCY_ERROR_SUCCESS = 0;
-const int SCY_ERROR_PROCOPEN = -1;
-const int SCY_ERROR_IATWRITE = -2;
-const int SCY_ERROR_IATSEARCH = -3;
-const int SCY_ERROR_IATNOTFOUND = -4;
-const int SCY_ERROR_PIDNOTFOUND = -5;
-
-#include "ConfigurationHolder.h"
 #include "PluginLoader.h"
 #include "ProcessLister.h"
 #include "Logger.h"
@@ -33,20 +13,12 @@ const int SCY_ERROR_PIDNOTFOUND = -5;
 
 #define DONATE_BTC_ADDRESS TEXT("1C6NN81V9pA6jq9r2HYBZkbrXPTTc7qTXq")
 
-/* Scylla current context. */
-typedef size_t SCY_HANDLE, *PSCY_HANDLE;
-
 class Scylla
 {
 public:
-    static LPCTSTR get_version_information();
-    static DWORD get_version();
     static void initialize(Logger *log, bool isStandalone);
-    static bool initialize_context(PSCY_HANDLE phCtxt, DWORD_PTR TargetProcessPid);
-    static bool deinitialize_context(SCY_HANDLE hCtxt);
-    static int iat_search(SCY_HANDLE hScyllaContext, DWORD_PTR *iatStart, size_t *iatSize, DWORD_PTR searchStart, BOOL advancedSearch);
-    
-    static ConfigurationHolder config;
+
+    static configuration_holder config;
     static PluginLoader plugins;
 
     static ProcessLister processLister;

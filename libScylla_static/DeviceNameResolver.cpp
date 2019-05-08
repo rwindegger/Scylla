@@ -1,68 +1,67 @@
 #include "StringConversion.h"
 #include "DeviceNameResolver.h"
-#include "NativeWinApi.h"
+#include "libscylla.h"
+#include "native_win_api.h"
 
 DeviceNameResolver::DeviceNameResolver()
 {
-    NativeWinApi::initialize();
-	initDeviceNameList();
+    initDeviceNameList();
 }
 
 DeviceNameResolver::~DeviceNameResolver()
 {
-	deviceNameList.clear();
+    deviceNameList.clear();
 }
 
 void DeviceNameResolver::initDeviceNameList()
 {
-	TCHAR shortName[3]{};
-	TCHAR longName[MAX_PATH]{};
-	HardDisk hardDisk{};
+    TCHAR shortName[3]{};
+    TCHAR longName[MAX_PATH]{};
+    HardDisk hardDisk{};
 
-	shortName[1] = TEXT(':');
+    shortName[1] = TEXT(':');
 
-	deviceNameList.reserve(3);
+    deviceNameList.reserve(3);
 
-	for ( TCHAR shortD = TEXT('a'); shortD <= TEXT('z'); shortD++ )
-	{
-		shortName[0] = shortD;
-		if (QueryDosDevice( shortName, longName, MAX_PATH ) > 0)
-		{
-			hardDisk.shortName[0] = _totupper(shortD);
-			hardDisk.shortName[1] = TEXT(':');
-			hardDisk.shortName[2] = 0;
+    for (TCHAR shortD = TEXT('a'); shortD <= TEXT('z'); shortD++)
+    {
+        shortName[0] = shortD;
+        if (QueryDosDevice(shortName, longName, MAX_PATH) > 0)
+        {
+            hardDisk.shortName[0] = _totupper(shortD);
+            hardDisk.shortName[1] = TEXT(':');
+            hardDisk.shortName[2] = 0;
 
-			hardDisk.longNameLength = _tcslen(longName);
+            hardDisk.longNameLength = _tcslen(longName);
 
-			
-			_tcscpy_s(hardDisk.longName, longName);
-			deviceNameList.push_back(hardDisk);
-		}
-	}
+            _tcscpy_s(hardDisk.longName, _countof(hardDisk.longName), longName);
+            deviceNameList.push_back(hardDisk);
+        }
+    }
 
     fixVirtualDevices();
 }
 
 bool DeviceNameResolver::resolveDeviceLongNameToShort(LPCTSTR sourcePath, LPTSTR targetPath)
 {
-	for (auto& i : deviceNameList)
-	{
-		if (!_tcsnicmp(i.longName, sourcePath, i.longNameLength) && sourcePath[i.longNameLength] == TEXT('\\'))
-		{
-			_tcscpy_s(targetPath, MAX_PATH, i.shortName);
+    for (auto& i : deviceNameList)
+    {
+        if (!_tcsnicmp(i.longName, sourcePath, i.longNameLength) && sourcePath[i.longNameLength] == TEXT('\\'))
+        {
+            _tcscpy_s(targetPath, MAX_PATH, i.shortName);
 
-			_tcscat_s(targetPath, MAX_PATH, sourcePath + i.longNameLength);
-			return true;
-		}
-	}
+            _tcscat_s(targetPath, MAX_PATH, sourcePath + i.longNameLength);
+            return true;
+        }
+    }
 
-	return false;
+    return false;
 }
 
 void DeviceNameResolver::fixVirtualDevices()
 {
     const USHORT BufferSize = MAX_PATH * 2 * sizeof(WCHAR);
-    WCHAR longCopy[MAX_PATH] = {0};
+    WCHAR longCopy[MAX_PATH] = { 0 };
     OBJECT_ATTRIBUTES oa{};
     UNICODE_STRING unicodeInput{};
     UNICODE_STRING unicodeOutput{};
@@ -77,24 +76,24 @@ void DeviceNameResolver::fixVirtualDevices()
     for (unsigned int i = 0; i < deviceNameList.size(); i++)
     {
         StringConversion::ToWStr(deviceNameList[i].longName, longCopy, MAX_PATH);
-        NativeWinApi::RtlInitUnicodeString(&unicodeInput, longCopy);
+        libscylla::windows_api()->RtlInitUnicodeString(&unicodeInput, longCopy);
         InitializeObjectAttributes(&oa, &unicodeInput, 0, NULL, NULL);
 
-        if(NT_SUCCESS(NativeWinApi::NtOpenSymbolicLinkObject(&hFile, SYMBOLIC_LINK_QUERY, &oa)))
+        if (NT_SUCCESS(libscylla::windows_api()->NtOpenSymbolicLinkObject(&hFile, SYMBOLIC_LINK_QUERY, &oa)))
         {
             unicodeOutput.Length = BufferSize;
             unicodeOutput.MaximumLength = unicodeOutput.Length;
             ZeroMemory(unicodeOutput.Buffer, unicodeOutput.Length);
 
-            if (NT_SUCCESS(NativeWinApi::NtQuerySymbolicLinkObject(hFile, &unicodeOutput, &retLen)))
+            if (NT_SUCCESS(libscylla::windows_api()->NtQuerySymbolicLinkObject(hFile, &unicodeOutput, &retLen)))
             {
                 hardDisk.longNameLength = wcslen(unicodeOutput.Buffer);
                 _tcscpy_s(hardDisk.shortName, deviceNameList[i].shortName);
-                StringConversion::ToTStr(unicodeOutput.Buffer, hardDisk.longName, MAX_PATH);                
+                StringConversion::ToTStr(unicodeOutput.Buffer, hardDisk.longName, MAX_PATH);
                 deviceNameList.push_back(hardDisk);
-            }  
+            }
 
-            NativeWinApi::NtClose(hFile);
+            libscylla::windows_api()->NtClose(hFile);
         }
     }
 

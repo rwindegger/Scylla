@@ -1,4 +1,6 @@
 #include "PeRebuild.h"
+#include "configuration_holder.h"
+#include "configuration.h"
 
 #include <imagehlp.h>
 #include "ProcessAccessHelp.h"
@@ -259,7 +261,7 @@ DWORD PeRebuild::realignPE(LPVOID AddressOfMapFile, DWORD dwFsize)
         return 0;
     }
 
-    if (Scylla::config[UPDATE_HEADER_CHECKSUM].isTrue())
+    if (Scylla::config[config_option::UPDATE_HEADER_CHECKSUM].isTrue())
     {
         updatePeHeaderChecksum(AddressOfMapFile, dwSectionBase);
     }

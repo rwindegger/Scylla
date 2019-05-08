@@ -1,6 +1,5 @@
 #include "ScyllaLoad.h"
 
-
 #if _WIN64
 #define DecorateSymbolName(s)   s
 #else

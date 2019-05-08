@@ -8,6 +8,7 @@ class Logger
 public:
     virtual ~Logger() = default;
     virtual void log(LPCTSTR format, ...);
+    virtual void log(LPCTSTR format, va_list args);
 protected:
     virtual void write(LPCTSTR str) = 0;
 };

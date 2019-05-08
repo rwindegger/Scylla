@@ -237,7 +237,6 @@ typedef struct _PROCESS_BASIC_INFORMATION {
 	PVOID Reserved3;
 } PROCESS_BASIC_INFORMATION;
 
-
 typedef struct _MEMORY_WORKING_SET_LIST
 {
 	ULONG	NumberOfPages;
@@ -320,7 +319,6 @@ typedef struct _SYSTEM_PROCESS_INFORMATION
     LARGE_INTEGER OtherTransferCount;
     SYSTEM_THREAD_INFORMATION Threads[1];
 } SYSTEM_PROCESS_INFORMATION, *PSYSTEM_PROCESS_INFORMATION;
-
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //Evolution of Process Environment Block (PEB) http://blog.rewolf.pl/blog/?p=573
@@ -449,38 +447,33 @@ typedef NTSTATUS (WINAPI *def_NtClose)(HANDLE Handle);
 
 #define SYMBOLIC_LINK_QUERY (0x0001)
 
-class NativeWinApi {
+class native_win_api {
 public:
-	
-	static def_NtCreateThreadEx NtCreateThreadEx;
-	static def_NtDuplicateObject NtDuplicateObject;
-	static def_NtOpenProcess NtOpenProcess;
-	static def_NtOpenThread NtOpenThread;
-	static def_NtQueryObject NtQueryObject;
-	static def_NtQueryInformationFile NtQueryInformationFile;
-	static def_NtQueryInformationProcess NtQueryInformationProcess;
-	static def_NtQueryInformationThread NtQueryInformationThread;
-	static def_NtQuerySystemInformation NtQuerySystemInformation;
-	static def_NtQueryVirtualMemory NtQueryVirtualMemory;
-	static def_NtResumeProcess NtResumeProcess;
-	static def_NtResumeThread NtResumeThread;
-	static def_NtSetInformationThread NtSetInformationThread;
-	static def_NtSuspendProcess NtSuspendProcess;
-	static def_NtTerminateProcess NtTerminateProcess;
-    static def_NtOpenSymbolicLinkObject NtOpenSymbolicLinkObject;
-    static def_NtQuerySymbolicLinkObject NtQuerySymbolicLinkObject;
+    def_NtCreateThreadEx NtCreateThreadEx;
+    def_NtDuplicateObject NtDuplicateObject;
+    def_NtOpenProcess NtOpenProcess;
+    def_NtOpenThread NtOpenThread;
+    def_NtQueryObject NtQueryObject;
+    def_NtQueryInformationFile NtQueryInformationFile;
+    def_NtQueryInformationProcess NtQueryInformationProcess;
+    def_NtQueryInformationThread NtQueryInformationThread;
+    def_NtQuerySystemInformation NtQuerySystemInformation;
+    def_NtQueryVirtualMemory NtQueryVirtualMemory;
+    def_NtResumeProcess NtResumeProcess;
+    def_NtResumeThread NtResumeThread;
+    def_NtSetInformationThread NtSetInformationThread;
+    def_NtSuspendProcess NtSuspendProcess;
+    def_NtTerminateProcess NtTerminateProcess;
+    def_NtOpenSymbolicLinkObject NtOpenSymbolicLinkObject;
+    def_NtQuerySymbolicLinkObject NtQuerySymbolicLinkObject;
 
-    static def_NtClose NtClose;
-	static def_RtlNtStatusToDosError RtlNtStatusToDosError;
+    def_NtClose NtClose;
+    def_RtlNtStatusToDosError RtlNtStatusToDosError;
 
-    static void RtlInitUnicodeString(PUNICODE_STRING DestinationString, PWSTR SourceString)
-    {
-        DestinationString->Buffer = SourceString;
-        DestinationString->MaximumLength = DestinationString->Length = static_cast<USHORT>(wcslen(SourceString)) * sizeof(WCHAR);
-    }
+    void RtlInitUnicodeString(PUNICODE_STRING DestinationString, PWSTR SourceString) const;
 
-	static void initialize();
+    native_win_api();
 
-	static PPEB getCurrentProcessEnvironmentBlock();
-	static PPEB getProcessEnvironmentBlockAddress(HANDLE processHandle);
+    PPEB getCurrentProcessEnvironmentBlock() const;
+    PPEB getProcessEnvironmentBlockAddress(HANDLE processHandle) const;
 };

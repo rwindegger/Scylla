@@ -1,9 +1,9 @@
 #pragma once
-
+#include "scylla_types.h"
 #include "DllInjection.h"
+
 #include "PluginLoader.h"
 #include "Thunks.h"
-#include "ApiReader.h"
 
 #define PLUGIN_IMPREC_EXCHANGE_DLL_PATH "ScyllaImprecPluginExchangePath"
 
@@ -37,7 +37,7 @@ public:
 	static LPCTSTR FILE_MAPPING_NAME;
 	static HANDLE hProcess;
 
-	ApiReader * apiReader;
+    std::shared_ptr<libscylla> context;
 	HANDLE hMapFile;
 	LPVOID lpViewOfFile;
 
@@ -45,7 +45,7 @@ public:
 	{
 		hMapFile = nullptr;
 		lpViewOfFile = nullptr;
-		apiReader = nullptr;
+		context = nullptr;
 	}
 
 	~DllInjectionPlugin()

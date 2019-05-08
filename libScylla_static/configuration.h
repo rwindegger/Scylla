@@ -2,7 +2,7 @@
 
 #include <windows.h>
 
-class Configuration
+class configuration
 {
 public:
 
@@ -16,7 +16,7 @@ public:
 	static const size_t CONFIG_NAME_LENGTH = 100;
 	static const size_t CONFIG_STRING_LENGTH = 100;
 
-	Configuration(LPCTSTR name = TEXT(""), Type type = String);
+	configuration(LPCTSTR name = TEXT(""), Type type = String);
 
     LPCTSTR getName() const;
 	Type getType() const;

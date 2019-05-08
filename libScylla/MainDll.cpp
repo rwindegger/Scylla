@@ -1,16 +1,5 @@
 #include <windows.h>
-#include "Scylla.h"
 #include "ExceptionHandler.h"
-
-HINSTANCE hDllModule = nullptr;
-
-ConsoleLogger logger;
-
-void InitializeDll(HINSTANCE hinstDLL)
-{
-	hDllModule = hinstDLL;
-	Scylla::initialize(&logger, false);
-}
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
@@ -21,7 +10,6 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 		// Initialize once for each new process.
 		// Return FALSE to fail DLL load.
 		AddScyllaUnhandledExceptionHandler();
-		InitializeDll(hinstDLL);
 		break;
 
 	case DLL_THREAD_ATTACH:

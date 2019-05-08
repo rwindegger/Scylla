@@ -15,7 +15,7 @@
 #include <vector>
 #include "hexedit.h"
 
-#include "ApiReader.h"
+#include "scylla_types.h"
 
 enum DisassemblerAddressType {
     ADDRESS_TYPE_MODULE,
@@ -68,7 +68,7 @@ public:
         DLGRESIZE_CONTROL(IDC_STATIC_ADDRESS_DISASSEMBLE, DLSZ_MOVE_Y)
     END_DLGRESIZE_MAP()
 
-    DisassemblerGui(DWORD_PTR startAddress, ApiReader * apiReaderObject);
+    DisassemblerGui(DWORD_PTR startAddress, std::shared_ptr<libscylla> apiReaderObject);
 
 protected:
 
@@ -119,7 +119,7 @@ protected:
     void copyToClipboard(LPCTSTR text);
 
 private:
-    ApiReader * apiReader;
+    std::shared_ptr<libscylla> context;
     BYTE data[DISASSEMBLER_GUI_MEMORY_SIZE]{};
 
     static void toUpperCase(LPTSTR lowercase);

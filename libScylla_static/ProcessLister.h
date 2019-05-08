@@ -5,7 +5,7 @@
 #include <vector>
 #include <psapi.h>
 
-#include "NativeWinApi.h"
+#include "native_win_api.h"
 #include "DeviceNameResolver.h"
 
 typedef BOOL (WINAPI *def_IsWow64Process)(HANDLE hProcess,PBOOL Wow64Process);

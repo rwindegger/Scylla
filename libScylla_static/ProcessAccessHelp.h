@@ -1,8 +1,10 @@
 #pragma once
+#include <filesystem>
+#include <memory>
+#include <vector>
 
 #include <windows.h>
 #include <tlhelp32.h>
-#include <vector>
 
 /************************************************************************/
 /* distorm                                                              */
@@ -10,6 +12,8 @@
 #include <distorm.h>
 #include <mnemonics.h>
 #include <tchar.h>
+
+#include "process_access_help.h"
 
 // The number of the array of instructions the decoder function will use to return the disassembled instructions.
 // Play with this value for performance...
@@ -93,11 +97,8 @@ public:
 
     static std::vector<ModuleInfo> moduleList; //target process module list
     static std::vector<ModuleInfo> ownModuleList; //own module list
-
-    static const size_t PE_HEADER_BYTES_COUNT = 2000;
-
+    
     static BYTE fileHeaderFromDisk[PE_HEADER_BYTES_COUNT];
-
 
     //for decomposer
     static _DInst decomposerResult[MAX_INSTRUCTIONS];

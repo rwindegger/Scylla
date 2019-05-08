@@ -1,15 +1,11 @@
 #include "MainGui.h"
-#include <cinttypes>
 #include <VersionHelpers.h>
 
 #include "Architecture.h"
-//#include "PluginLoader.h"
-//#include "ConfigurationHolder.h"
 #include "PeParser.h"
 #include "DllInjectionPlugin.h"
 #include "DisassemblerGui.h"
 #include "PickApiGui.h"
-//#include "NativeWinApi.h"
 #include "ImportRebuilder.h"
 #include "Scylla.h"
 #include "AboutGui.h"
@@ -17,6 +13,13 @@
 #include "OptionsGui.h"
 #include "TreeImportExport.h"
 #include "ListboxLog.h"
+#include "PickDllGui.h"
+#include "DumpSectionGui.h"
+
+#include "libscylla.h"
+#include "iat_searcher.h"
+#include "configuration_holder.h"
+#include "configuration.h"
 
 // Globals
 CAppModule _Module;
@@ -28,7 +31,7 @@ const TCHAR MainGui::filterTxt[] = TEXT("Text file (*.txt)\0*.txt\0All files\0*.
 const TCHAR MainGui::filterXml[] = TEXT("XML file (*.xml)\0*.xml\0All files\0*.*\0");
 const TCHAR MainGui::filterMem[] = TEXT("MEM file (*.mem)\0*.mem\0All files\0*.*\0");
 
-ListboxLog logger;
+std::shared_ptr<ListboxLog> logger = std::make_shared<ListboxLog>();
 
 int InitializeGui(HINSTANCE hInstance, LPARAM param)
 {
@@ -36,9 +39,10 @@ int InitializeGui(HINSTANCE hInstance, LPARAM param)
 
     AtlInitCommonControls(ICC_LISTVIEW_CLASSES | ICC_TREEVIEW_CLASSES);
 
-    Scylla::initialize(&logger, true);
 
-    HRESULT hRes = _Module.Init(nullptr, hInstance);
+    Scylla::initialize(logger.get(), true);
+
+    const HRESULT hRes = _Module.Init(nullptr, hInstance);
     ATLASSERT(SUCCEEDED(hRes));
 
     const int nRet = 0;
@@ -69,7 +73,7 @@ MainGui::MainGui()
     , importsHandling(TreeImports)
     , selectedProcess(nullptr)
     , isProcessSuspended(false)
-    , hProcessContext(NULL)
+    , context(nullptr)
     , TreeImportsSubclass(this, IDC_TREE_IMPORTS)
 {
     /*
@@ -98,10 +102,7 @@ MainGui::MainGui()
     hIconError.LoadIcon(IDI_ICON_ERROR, 16, 16);
 }
 
-MainGui::~MainGui()
-{
-    Scylla::deinitialize_context(hProcessContext);
-}
+MainGui::~MainGui() = default;
 
 BOOL MainGui::PreTranslateMessage(MSG* pMsg)
 {
@@ -190,7 +191,7 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
     DoDataExchange(); // attach controls
     DlgResize_Init(true, true); // init CDialogResize
 
-    logger.setWindow(ListLog);
+    logger->setWindow(ListLog);
 
     appendPluginListToMenu(hMenuImports.GetSubMenu(0));
     appendPluginListToMenu(CMenuHandle(GetMenu()).GetSubMenu(MenuImportsOffsetTrace));
@@ -642,7 +643,7 @@ void MainGui::startDisassemblerGui(const CTreeItem& selectedTreeNode)
         }
         else
         {
-            DisassemblerGui dlgDisassembler(address, &apiReader);
+            DisassemblerGui dlgDisassembler(address, context);
             dlgDisassembler.DoModal();
         }
     }
@@ -656,24 +657,24 @@ void MainGui::processSelectedActionHandler(int index)
 
     // Cleanup previous results
     clearImportsActionHandler();
-    Scylla::deinitialize_context(hProcessContext);
+    context = nullptr;
 
     Scylla::Log->log(TEXT("Analyzing %s"), process.fullPath);
 
+    context = libscylla::create(logger, process.PID, true);
+
     // Open Scylla handle on current process
-    if (!Scylla::initialize_context(&hProcessContext, process.PID))
-    {
+    if (!context.get())
+    {        
         enableDialogControls(FALSE);
-        Scylla::Log->log(TEXT("Error: Cannot open process handle."));
+        context->log(scylla_severity::information, TEXT("Error: Cannot open process handle."));
         updateStatusBar();
         return;
     }
 
     ProcessAccessHelp::getProcessModules(ProcessAccessHelp::hProcess, ProcessAccessHelp::moduleList);
 
-    apiReader.readApisFromModuleList();
-
-    Scylla::Log->log(TEXT("Loading modules done."));
+    context->log(scylla_severity::information, TEXT("Loading modules done."));
 
     //TODO improve
     ProcessAccessHelp::selectedModule = nullptr;
@@ -684,7 +685,7 @@ void MainGui::processSelectedActionHandler(int index)
     process.imageSize = static_cast<DWORD>(ProcessAccessHelp::targetSizeOfImage);
 
 
-    Scylla::Log->log(TEXT("Imagebase: ") PRINTF_DWORD_PTR_FULL TEXT(" Size: %08X"), process.imageBase, process.imageSize);
+    context->log(scylla_severity::information, TEXT("Imagebase: ") PRINTF_DWORD_PTR_FULL TEXT(" Size: %08X"), process.imageBase, process.imageSize);
 
     process.entryPoint = ProcessAccessHelp::getEntryPointFromFile(process.fullPath);
 
@@ -894,10 +895,12 @@ void MainGui::iatAutosearchActionHandler()
     if (!searchAddress)
         return;
 
-
+    auto result = context->iat_search(searchAddress, false);
     // Normal search
-    if (SCY_ERROR_SUCCESS == Scylla::iat_search(hProcessContext, &addressIAT, &sizeIAT, searchAddress, false))
+    if (result.status == scylla_status::success)
     {
+        addressIAT = result.start;
+        sizeIAT = result.size;
         Scylla::Log->log(TEXT("IAT Search Nor: IAT VA ") PRINTF_DWORD_PTR_FULL TEXT(" RVA ") PRINTF_DWORD_PTR_FULL TEXT(" Size 0x%04X (%d)"), addressIAT, addressIAT - ProcessAccessHelp::targetImageBase, sizeIAT, sizeIAT);
     }
     else
@@ -906,11 +909,14 @@ void MainGui::iatAutosearchActionHandler()
     }
 
     // optional advanced search
-    const bool bAdvancedSearch = Scylla::config[USE_ADVANCED_IAT_SEARCH].isTrue();
+    const bool bAdvancedSearch = Scylla::config[config_option::USE_ADVANCED_IAT_SEARCH].isTrue();
     if (bAdvancedSearch)
     {
-        if (SCY_ERROR_SUCCESS == Scylla::iat_search(hProcessContext, &addressIATAdv, &sizeIATAdv, searchAddress, true))
+        result = context->iat_search(searchAddress, false);
+        if (result.status == scylla_status::success)
         {
+            addressIAT = result.start;
+            sizeIAT = result.size;
             Scylla::Log->log(TEXT("IAT Search Adv: IAT VA ") PRINTF_DWORD_PTR_FULL TEXT(" RVA ") PRINTF_DWORD_PTR_FULL TEXT(" Size 0x%04X (%d)"), addressIATAdv, addressIATAdv - ProcessAccessHelp::targetImageBase, sizeIATAdv, sizeIATAdv);
         }
         else
@@ -960,17 +966,17 @@ void MainGui::getImportsActionHandler()
 
     if (addressIAT && sizeIAT)
     {
-        apiReader.readAndParseIAT(addressIAT, sizeIAT, importsHandling.moduleList);
+        context->target_api_reader()->read_and_parse_iat(addressIAT, sizeIAT, importsHandling.moduleList);
         importsHandling.scanAndFixModuleList();
         importsHandling.displayAllImports();
 
         updateStatusBar();
 
-        if (Scylla::config[SCAN_DIRECT_IMPORTS].isTrue())
+        if (Scylla::config[config_option::SCAN_DIRECT_IMPORTS].isTrue())
         {
             iatReferenceScan.ScanForDirectImports = true;
             iatReferenceScan.ScanForNormalImports = false;
-            iatReferenceScan.apiReader = &apiReader;
+            iatReferenceScan.context = context;
             iatReferenceScan.startScan(ProcessAccessHelp::targetImageBase, static_cast<DWORD>(ProcessAccessHelp::targetSizeOfImage), addressIAT, sizeIAT);
 
             Scylla::Log->log(TEXT("DIRECT IMPORTS - Found %d possible direct imports with %d unique APIs!"), iatReferenceScan.numberOfFoundDirectImports(), iatReferenceScan.numberOfFoundUniqueDirectImports());
@@ -989,7 +995,7 @@ void MainGui::getImportsActionHandler()
 
                 iatReferenceScan.printDirectImportLog();
 
-                if (Scylla::config[FIX_DIRECT_IMPORTS_NORMAL].isTrue() && (!Scylla::config[FIX_DIRECT_IMPORTS_UNIVERSAL]
+                if (Scylla::config[config_option::FIX_DIRECT_IMPORTS_NORMAL].isTrue() && (!Scylla::config[config_option::FIX_DIRECT_IMPORTS_UNIVERSAL]
                     .isTrue()))
                 {
                     const int msgboxID = MessageBox(TEXT("Direct Imports found. I can patch only direct imports by JMP/CALL (use universal method if you don't like this) but where is the junk byte?\r\n\r\nYES = After Instruction\r\nNO = Before the Instruction\r\nCancel = Do nothing"), TEXT("Information"), MB_YESNOCANCEL | MB_ICONINFORMATION);
@@ -1068,7 +1074,7 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
     SetupImportsMenuItems(over);
 
     CMenuHandle hSub = hMenuImports.GetSubMenu(0);
-    BOOL menuItem = hSub.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd);
+    const BOOL menuItem = hSub.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd);
     if (menuItem)
     {
         if ((menuItem >= PLUGIN_MENU_BASE_ID) && (menuItem <= static_cast<int>(Scylla::plugins.getScyllaPluginList().size() + Scylla::plugins.getImprecPluginList().size() +
@@ -1120,7 +1126,7 @@ void MainGui::DisplayContextMenuLog(CWindow hwnd, CPoint pt)
     }
 
     CMenuHandle hSub = hMenuLog.GetSubMenu(0);
-    BOOL menuItem = hSub.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd);
+    const BOOL menuItem = hSub.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd);
     if (menuItem)
     {
         switch (menuItem)
@@ -1236,7 +1242,7 @@ void MainGui::dumpSectionActionHandler()
         {
             checkSuspendProcess();
 
-            if (Scylla::config[USE_PE_HEADER_FROM_DISK].isTrue())
+            if (Scylla::config[config_option::USE_PE_HEADER_FROM_DISK].isTrue())
             {
                 peFile = new PeParser(dlgDumpSection.fullpath, true);
             }
@@ -1307,7 +1313,7 @@ void MainGui::dumpActionHandler()
             filename = selectedProcess->fullPath;
         }
 
-        if (Scylla::config[USE_PE_HEADER_FROM_DISK].isTrue())
+        if (Scylla::config[config_option::USE_PE_HEADER_FROM_DISK].isTrue())
         {
             peFile = new PeParser(filename, true);
         }
@@ -1344,7 +1350,7 @@ void MainGui::peRebuildActionHandler()
     getCurrentModulePath(stringBuffer, _countof(stringBuffer));
     if (showFileDialog(selectedFilePath, false, nullptr, filterExeDll, nullptr, stringBuffer))
     {
-        if (Scylla::config[CREATE_BACKUP].isTrue())
+        if (Scylla::config[config_option::CREATE_BACKUP].isTrue())
         {
             if (!ProcessAccessHelp::createBackupFile(selectedFilePath))
             {
@@ -1367,7 +1373,7 @@ void MainGui::peRebuildActionHandler()
         {
             peFile.setDefaultFileAlignment();
 
-            if (Scylla::config[REMOVE_DOS_HEADER_STUB].isTrue())
+            if (Scylla::config[config_option::REMOVE_DOS_HEADER_STUB].isTrue())
             {
                 peFile.removeDosStub();
             }
@@ -1379,7 +1385,7 @@ void MainGui::peRebuildActionHandler()
             {
                 const auto newSize = static_cast<DWORD>(ProcessAccessHelp::getFileSize(selectedFilePath));
 
-                if (Scylla::config[UPDATE_HEADER_CHECKSUM].isTrue())
+                if (Scylla::config[config_option::UPDATE_HEADER_CHECKSUM].isTrue())
                 {
                     Scylla::Log->log(TEXT("Generating PE header checksum"));
                     if (!PeParser::updatePeHeaderChecksum(selectedFilePath, newSize))
@@ -1457,17 +1463,17 @@ void MainGui::dumpFixActionHandler()
 
         ImportRebuilder importRebuild(selectedFilePath);
 
-        if (Scylla::config[IAT_FIX_AND_OEP_FIX].isTrue())
+        if (Scylla::config[config_option::IAT_FIX_AND_OEP_FIX].isTrue())
         {
             importRebuild.setEntryPointRva(static_cast<DWORD>(entrypoint - modBase));
         }
 
-        if (Scylla::config[OriginalFirstThunk_SUPPORT].isTrue())
+        if (Scylla::config[config_option::OriginalFirstThunk_SUPPORT].isTrue())
         {
             importRebuild.enableOFTSupport();
         }
 
-        if (Scylla::config[SCAN_DIRECT_IMPORTS].isTrue() && Scylla::config[FIX_DIRECT_IMPORTS_UNIVERSAL].isTrue())
+        if (Scylla::config[config_option::SCAN_DIRECT_IMPORTS].isTrue() && Scylla::config[config_option::FIX_DIRECT_IMPORTS_UNIVERSAL].isTrue())
         {
             if (iatReferenceScan.numberOfFoundDirectImports() > 0)
             {
@@ -1476,7 +1482,7 @@ void MainGui::dumpFixActionHandler()
             }
         }
 
-        if (Scylla::config[CREATE_NEW_IAT_IN_SECTION].isTrue())
+        if (Scylla::config[config_option::CREATE_NEW_IAT_IN_SECTION].isTrue())
         {
             importRebuild.iatReferenceScan = &iatReferenceScan;
 
@@ -1500,7 +1506,7 @@ void MainGui::dumpFixActionHandler()
 
 void MainGui::enableDialogControls(BOOL value)
 {
-    BOOL valButton = value ? TRUE : FALSE;
+    const BOOL valButton = value ? TRUE : FALSE;
 
     GetDlgItem(IDC_BTN_PICKDLL).EnableWindow(valButton);
     GetDlgItem(IDC_BTN_DUMP).EnableWindow(valButton);
@@ -1576,7 +1582,7 @@ void MainGui::dllInjectActionHandler()
     if (showFileDialog(selectedFilePath, false, nullptr, filterDll, nullptr, stringBuffer))
     {
         const auto hMod = DllInjection::dllInjection(ProcessAccessHelp::hProcess, selectedFilePath);
-        if (hMod && Scylla::config[DLL_INJECTION_AUTO_UNLOAD].isTrue())
+        if (hMod && Scylla::config[config_option::DLL_INJECTION_AUTO_UNLOAD].isTrue())
         {
             if (!DllInjection::unloadDllInProcess(ProcessAccessHelp::hProcess, hMod))
             {
@@ -1598,7 +1604,7 @@ void MainGui::dllInjectActionHandler()
 void MainGui::disassemblerActionHandler()
 {
     const DWORD_PTR oep = EditOEPAddress.GetValue();
-    DisassemblerGui disGuiDlg(oep, &apiReader);
+    DisassemblerGui disGuiDlg(oep, context);
     disGuiDlg.DoModal();
 }
 
@@ -1627,7 +1633,7 @@ void MainGui::pluginActionHandler(int menuItem)
     menuItem -= PLUGIN_MENU_BASE_ID;
 
     DllInjectionPlugin::hProcess = ProcessAccessHelp::hProcess;
-    dllInjectionPlugin.apiReader = &apiReader;
+    dllInjectionPlugin.context = context;
 
     if (menuItem < static_cast<int>(scyllaPluginList.size()))
     {
@@ -1675,7 +1681,7 @@ bool MainGui::getCurrentModulePath(LPTSTR buffer, size_t bufferSize) const
 
 void MainGui::checkSuspendProcess()
 {
-    if (Scylla::config[SUSPEND_PROCESS_FOR_DUMPING].isTrue())
+    if (Scylla::config[config_option::SUSPEND_PROCESS_FOR_DUMPING].isTrue())
     {
         if (!ProcessAccessHelp::suspendProcess())
         {

@@ -1,34 +1,14 @@
-#include "NativeWinApi.h"
+#include "native_win_api.h"
 
-def_NtCreateThreadEx NativeWinApi::NtCreateThreadEx = nullptr;
-def_NtDuplicateObject NativeWinApi::NtDuplicateObject = nullptr;
-def_NtOpenProcess NativeWinApi::NtOpenProcess = nullptr;
-def_NtOpenThread NativeWinApi::NtOpenThread = nullptr;
-def_NtQueryObject NativeWinApi::NtQueryObject = nullptr;
-def_NtQueryInformationFile NativeWinApi::NtQueryInformationFile = nullptr;
-def_NtQueryInformationProcess NativeWinApi::NtQueryInformationProcess = nullptr;
-def_NtQueryInformationThread NativeWinApi::NtQueryInformationThread = nullptr;
-def_NtQuerySystemInformation NativeWinApi::NtQuerySystemInformation = nullptr;
-def_NtQueryVirtualMemory NativeWinApi::NtQueryVirtualMemory = nullptr;
-def_NtResumeProcess NativeWinApi::NtResumeProcess = nullptr;
-def_NtResumeThread NativeWinApi::NtResumeThread = nullptr;
-def_NtSetInformationThread NativeWinApi::NtSetInformationThread = nullptr;
-def_NtSuspendProcess NativeWinApi::NtSuspendProcess = nullptr;
-def_NtTerminateProcess NativeWinApi::NtTerminateProcess = nullptr;
-
-def_NtOpenSymbolicLinkObject NativeWinApi::NtOpenSymbolicLinkObject = nullptr;
-def_NtQuerySymbolicLinkObject NativeWinApi::NtQuerySymbolicLinkObject = nullptr;
-
-def_RtlNtStatusToDosError NativeWinApi::RtlNtStatusToDosError = nullptr;
-def_NtClose NativeWinApi::NtClose = nullptr;
-
-void NativeWinApi::initialize()
+void native_win_api::RtlInitUnicodeString(PUNICODE_STRING DestinationString, PWSTR SourceString) const
 {
-    if (RtlNtStatusToDosError)
-    {
-        return;
-    }
+    DestinationString->Buffer = SourceString;
+    DestinationString->MaximumLength = DestinationString->Length = static_cast<USHORT>(wcslen(SourceString)) * sizeof(
+        WCHAR);
+}
 
+native_win_api::native_win_api()
+{
     const auto hModuleNtdll = GetModuleHandle(TEXT("ntdll.dll"));
 
 	if (!hModuleNtdll)
@@ -53,18 +33,18 @@ void NativeWinApi::initialize()
 	NtTerminateProcess = reinterpret_cast<def_NtTerminateProcess>(GetProcAddress(hModuleNtdll, "NtTerminateProcess"));
     NtOpenSymbolicLinkObject = reinterpret_cast<def_NtOpenSymbolicLinkObject>(GetProcAddress(hModuleNtdll, "NtOpenSymbolicLinkObject"));
     NtQuerySymbolicLinkObject = reinterpret_cast<def_NtQuerySymbolicLinkObject>(GetProcAddress(hModuleNtdll, "NtQuerySymbolicLinkObject"));
+    NtClose = reinterpret_cast<def_NtClose>(GetProcAddress(hModuleNtdll, "NtClose"));
 
 	RtlNtStatusToDosError = reinterpret_cast<def_RtlNtStatusToDosError>(GetProcAddress(hModuleNtdll, "RtlNtStatusToDosError"));
-    NtClose = reinterpret_cast<def_NtClose>(GetProcAddress(hModuleNtdll, "NtClose"));
 }
 
 
-PPEB NativeWinApi::getCurrentProcessEnvironmentBlock()
+PPEB native_win_api::getCurrentProcessEnvironmentBlock() const
 {
 	return getProcessEnvironmentBlockAddress(GetCurrentProcess());
 }
 
-PPEB NativeWinApi::getProcessEnvironmentBlockAddress(HANDLE processHandle)
+PPEB native_win_api::getProcessEnvironmentBlockAddress(HANDLE processHandle) const
 {
 	ULONG lReturnLength = 0;
 	PROCESS_BASIC_INFORMATION processBasicInformation;

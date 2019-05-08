@@ -1,29 +1,24 @@
 #include "ScyllaDLL.h"
+#include "libscylla.h"
 #include "PeParser.h"
 #include "ProcessAccessHelp.h"
 #include "Architecture.h"
 #include "ProcessLister.h"
-#include "ApiReader.h"
-#include "IATSearch.h"
 #include "ImportRebuilder.h"
+#include "Scylla.h"
+#include "configuration_holder.h"
+#include "configuration.h"
 
-extern HINSTANCE hDllModule;
-
-// Internal structure of a SCY_HANDLE
-typedef struct SCY_CONTEXT_T_
-{
-    size_t targetProcId{};
-    ApiReader apiReader;
-} SCY_CONTEXT_T;
+static std::shared_ptr<ConsoleLogger> console_logger = std::make_shared<ConsoleLogger>();
 
 LPCTSTR GetVersionInformation()
 {
-    return Scylla::get_version_information();
+    return libscylla::get_version_information();
 }
 
 DWORD GetVersionNumber()
 {
-    return Scylla::get_version();
+    return libscylla::get_version();
 }
 
 BOOL _dumpProcess(SCY_HANDLE hScyllaContext, LPCTSTR fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, LPCTSTR fileResult)
@@ -151,7 +146,7 @@ BOOL DumpProcessEx(DWORD_PTR pid, LPCTSTR fileResult)
                 {
                     const auto newSize = static_cast<DWORD>(ProcessAccessHelp::getFileSize(fileResult));
 
-                    if (Scylla::config[UPDATE_HEADER_CHECKSUM].isTrue())
+                    if (Scylla::config[config_option::UPDATE_HEADER_CHECKSUM].isTrue())
                     {
                         Scylla::Log->log(TEXT("Generating PE header checksum"));
                         if (!PeParser::updatePeHeaderChecksum(fileResult, newSize))
@@ -182,60 +177,30 @@ BOOL DumpProcessEx(DWORD_PTR pid, LPCTSTR fileResult)
         return ERROR_ACCESS_DENIED;
 }
 
-int IatFixAuto(SCY_HANDLE hScyllaContext, DWORD_PTR iatAddr, DWORD iatSize, DWORD dwProcessId, LPCTSTR dumpFile, LPCTSTR iatFixFile)
+int IatFixAuto(const SCY_HANDLE& hScyllaContext, DWORD_PTR iatAddr, DWORD iatSize, LPCTSTR dumpFile, LPCTSTR iatFixFile)
 {
-    std::map<DWORD_PTR, ImportModuleThunk> moduleList;
-
-    auto* pPrivScyContext = reinterpret_cast<SCY_CONTEXT_T*>(hScyllaContext);
-
-    if (!pPrivScyContext)
-        return SCY_ERROR_PIDNOTFOUND;
-
-
-    //ProcessAccessHelp::closeProcessHandle();
-    //apiReader.clearAll();
-
-    //if (!ProcessAccessHelp::openProcessHandle(processPtr->PID))
-    //{
-    //	return SCY_ERROR_PROCOPEN;
-    //}
-
-    ProcessAccessHelp::getProcessModules(ProcessAccessHelp::hProcess, ProcessAccessHelp::moduleList);
-    ProcessAccessHelp::selectedModule = nullptr;
-
-    pPrivScyContext->apiReader.readApisFromModuleList();
-
-    pPrivScyContext->apiReader.readAndParseIAT(iatAddr, iatSize, moduleList);
-
-    //add IAT section to dump
-    ImportRebuilder importRebuild(dumpFile);
-    importRebuild.enableOFTSupport();
-
-    int retVal = SCY_ERROR_IATWRITE;
-
-    if (importRebuild.rebuildImportTable(iatFixFile, moduleList))
-    {
-        retVal = SCY_ERROR_SUCCESS;
-    }
-
-    moduleList.clear();
-    //ProcessAccessHelp::closeProcessHandle();
-    //apiReader.clearAll();
-
-    return retVal;
+    return static_cast<int>(hScyllaContext->iat_auto_fix(iatAddr, iatSize, dumpFile, iatFixFile));
 }
 
-int IatSearch(SCY_HANDLE hScyllaContext, DWORD_PTR * iatStart, size_t *iatSize, DWORD_PTR searchStart, BOOL advancedSearch)
+int IatSearch(const SCY_HANDLE& hScyllaContext, DWORD_PTR * iatStart, size_t *iatSize, DWORD_PTR searchStart, BOOL advancedSearch)
 {
-    return Scylla::iat_search(hScyllaContext, iatStart, iatSize, searchStart, advancedSearch);
+    auto tmp = hScyllaContext->iat_search(searchStart, advancedSearch);
+    if (tmp.status == scylla_status::success)
+    {
+        *iatStart = tmp.start;
+        *iatSize = tmp.size;
+    }
+    return static_cast<int>(tmp.status);
 }
 
 BOOL InitContext(PSCY_HANDLE phCtxt, DWORD_PTR TargetProcessPid)
 {
-    return Scylla::initialize_context(phCtxt, TargetProcessPid);
+    *phCtxt = libscylla::create(console_logger, TargetProcessPid, false);
+    return *phCtxt != nullptr;
 }
 
 BOOL DeinitializeContext(SCY_HANDLE hCtxt)
 {
-    return Scylla::deinitialize_context(hCtxt);
+    hCtxt.reset();
+    return true;
 }

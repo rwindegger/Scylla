@@ -1,4 +1,10 @@
 #include "DllInjectionPlugin.h"
+
+#include "libscylla.h"
+#include "iat_searcher.h"
+#include "module_info.h"
+#include "api_info.h"
+
 #include "Scylla.h"
 
 LPCTSTR DllInjectionPlugin::FILE_MAPPING_NAME = TEXT("ScyllaPluginExchange");
@@ -11,7 +17,7 @@ void DllInjectionPlugin::injectPlugin(Plugin & plugin, std::map<DWORD_PTR, Impor
 
     if (numberOfUnresolvedImports == 0)
     {
-        Scylla::Log->log(TEXT("No unresolved Imports"));
+        context->log(scylla_severity::information, TEXT("No unresolved Imports"));
         return;
     }
 
@@ -39,10 +45,10 @@ void DllInjectionPlugin::injectPlugin(Plugin & plugin, std::map<DWORD_PTR, Impor
     const HMODULE hDll = dllInjection(hProcess, plugin.fullpath);
     if (hDll)
     {
-        Scylla::Log->log(TEXT("Plugin injection was successful"));
+        context->log(scylla_severity::information, TEXT("Plugin injection was successful"));
         if (!unloadDllInProcess(hProcess, hDll))
         {
-            Scylla::Log->log(TEXT("Plugin unloading failed"));
+            context->log(scylla_severity::information, TEXT("Plugin unloading failed"));
         }
         lpViewOfFile = MapViewOfFile(hMapFile, FILE_MAP_ALL_ACCESS, 0, 0, 0);
 
@@ -55,7 +61,7 @@ void DllInjectionPlugin::injectPlugin(Plugin & plugin, std::map<DWORD_PTR, Impor
     }
     else
     {
-        Scylla::Log->log(TEXT("Plugin injection failed"));
+        context->log(scylla_severity::information, TEXT("Plugin injection failed"));
     }
 
     closeAllHandles();
@@ -203,25 +209,25 @@ void DllInjectionPlugin::handlePluginResults(PSCYLLA_EXCHANGE scyllaExchange, st
     switch (scyllaExchange->status)
     {
     case SCYLLA_STATUS_SUCCESS:
-        Scylla::Log->log(TEXT("Plugin was successful"));
+        context->log(scylla_severity::information, TEXT("Plugin was successful"));
         updateImportsWithPluginResult(unresImp, moduleList);
         break;
     case SCYLLA_STATUS_UNKNOWN_ERROR:
-        Scylla::Log->log(TEXT("Plugin reported Unknown Error"));
+        context->log(scylla_severity::information, TEXT("Plugin reported Unknown Error"));
         break;
     case SCYLLA_STATUS_UNSUPPORTED_PROTECTION:
-        Scylla::Log->log(TEXT("Plugin detected unknown protection"));
+        context->log(scylla_severity::information, TEXT("Plugin detected unknown protection"));
         updateImportsWithPluginResult(unresImp, moduleList);
         break;
     case SCYLLA_STATUS_IMPORT_RESOLVING_FAILED:
-        Scylla::Log->log(TEXT("Plugin import resolving failed"));
+        context->log(scylla_severity::information, TEXT("Plugin import resolving failed"));
         updateImportsWithPluginResult(unresImp, moduleList);
         break;
     case SCYLLA_STATUS_MAPPING_FAILED:
-        Scylla::Log->log(TEXT("Plugin file mapping failed"));
+        context->log(scylla_severity::information, TEXT("Plugin file mapping failed"));
         break;
     default:
-        Scylla::Log->log(TEXT("Plugin failed without reason"));
+        context->log(scylla_severity::information, TEXT("Plugin failed without reason"));
     }
 }
 
@@ -243,21 +249,21 @@ void DllInjectionPlugin::updateImportsWithPluginResult(PUNRESOLVED_IMPORT firstU
 
             if (!importThunk->valid)
             {
-                if (apiReader->isApiAddressValid(firstUnresImp->InvalidApiAddress))
+                if (context->target_api_reader()->is_api_address_valid(firstUnresImp->InvalidApiAddress))
                 {
-                    ApiInfo * apiInfo = apiReader->getApiByVirtualAddress(firstUnresImp->InvalidApiAddress, &isSuspect);
+                    auto apiInfo = context->target_api_reader()->get_api_by_virtual_address(firstUnresImp->InvalidApiAddress, &isSuspect);
 
                     importThunk->suspect = isSuspect;
                     importThunk->valid = true;
                     importThunk->apiAddressVA = firstUnresImp->InvalidApiAddress;
-                    importThunk->hint = static_cast<WORD>(apiInfo->hint);
-                    importThunk->ordinal = apiInfo->ordinal;
-                    _tcscpy_s(importThunk->name, apiInfo->name);
-                    _tcscpy_s(importThunk->moduleName, apiInfo->module->getFilename());
+                    importThunk->hint = static_cast<WORD>(apiInfo->hint());
+                    importThunk->ordinal = apiInfo->ordinal();
+                    _tcscpy_s(importThunk->name, apiInfo->name());
+                    _tcscpy_s(importThunk->moduleName, apiInfo->module()->filename().c_str());
 
                     if (moduleThunk->moduleName[0] == TEXT('?'))
                     {
-                        _tcscpy_s(moduleThunk->moduleName, _countof(importThunk->moduleName), apiInfo->module->getFilename());
+                        _tcscpy_s(moduleThunk->moduleName, _countof(importThunk->moduleName), apiInfo->module()->filename().c_str());
                     }
                 }
 

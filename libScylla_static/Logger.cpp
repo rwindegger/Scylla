@@ -20,6 +20,18 @@ void Logger::log(LPCTSTR format, ...)
 	write(buf);
 }
 
+void Logger::log(LPCTSTR format, va_list args)
+{
+    static TCHAR buf[300];
+
+    if (!format)
+        return;
+
+    _vsntprintf_s(buf, _countof(buf) - 1, format, args);
+
+    write(buf);
+}
+
 void ConsoleLogger::write(LPCTSTR str)
 {
     _tprintf_s(TEXT("[SCYLLA] %s\r\n"), str);

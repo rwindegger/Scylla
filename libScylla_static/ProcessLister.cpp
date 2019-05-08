@@ -1,10 +1,10 @@
 #include "ProcessLister.h"
+#include "libscylla.h"
 #include <algorithm>
 
 #include "ProcessAccessHelp.h"
 #include "Scylla.h"
 #include "StringConversion.h"
-
 
 def_IsWow64Process ProcessLister::_IsWow64Process = nullptr;
 
@@ -155,7 +155,7 @@ std::vector<Process>& ProcessLister::getProcessListSnapshotNative()
         processList.reserve(34);
     }
 
-    if (NativeWinApi::NtQuerySystemInformation(SystemProcessInformation, pBuffer, bufferLength, &retLength) == STATUS_INFO_LENGTH_MISMATCH)
+    if (libscylla::windows_api()->NtQuerySystemInformation(SystemProcessInformation, pBuffer, bufferLength, &retLength) == STATUS_INFO_LENGTH_MISMATCH)
     {
         free(pBuffer);
         bufferLength = retLength + sizeof(SYSTEM_PROCESS_INFORMATION);
@@ -163,7 +163,7 @@ std::vector<Process>& ProcessLister::getProcessListSnapshotNative()
         if (!pBuffer)
             return processList;
 
-        if (NativeWinApi::NtQuerySystemInformation(SystemProcessInformation, pBuffer, bufferLength, &retLength) != STATUS_SUCCESS)
+        if (libscylla::windows_api()->NtQuerySystemInformation(SystemProcessInformation, pBuffer, bufferLength, &retLength) != STATUS_SUCCESS)
         {
             return processList;
         }
@@ -257,13 +257,13 @@ DWORD_PTR ProcessLister::getPebAddressFromProcess(HANDLE hProcess)
         void * PebAddress = nullptr;
         PROCESS_BASIC_INFORMATION myProcessBasicInformation[5]{};
 
-        if (NativeWinApi::NtQueryInformationProcess(hProcess, ProcessBasicInformation, myProcessBasicInformation, sizeof(PROCESS_BASIC_INFORMATION), &RequiredLen) == STATUS_SUCCESS)
+        if (libscylla::windows_api()->NtQueryInformationProcess(hProcess, ProcessBasicInformation, myProcessBasicInformation, sizeof(PROCESS_BASIC_INFORMATION), &RequiredLen) == STATUS_SUCCESS)
         {
             PebAddress = reinterpret_cast<void*>(myProcessBasicInformation->PebBaseAddress);
         }
         else
         {
-            if (NativeWinApi::NtQueryInformationProcess(hProcess, ProcessBasicInformation, myProcessBasicInformation, RequiredLen, &RequiredLen) == STATUS_SUCCESS)
+            if (libscylla::windows_api()->NtQueryInformationProcess(hProcess, ProcessBasicInformation, myProcessBasicInformation, RequiredLen, &RequiredLen) == STATUS_SUCCESS)
             {
                 PebAddress = reinterpret_cast<void*>(myProcessBasicInformation->PebBaseAddress);
             }

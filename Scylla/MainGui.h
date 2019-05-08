@@ -1,7 +1,6 @@
 #pragma once
 
 #include <windows.h>
-#include "resource.h"
 
 // WTL
 #include <atlbase.h>       // base ATL classes
@@ -16,10 +15,7 @@
 #include "hexedit.h"
 
 #include "Scylla.h"
-#include "IATSearch.h"
-#include "PickDllGui.h"
 #include "DumpMemoryGui.h"
-#include "DumpSectionGui.h"
 #include "ImportsHandling.h"
 #include "IATReferenceScan.h"
 
@@ -29,6 +25,7 @@ typedef struct _GUI_DLL_PARAMETER {
     DWORD_PTR entrypoint;
 } GUI_DLL_PARAMETER, *PGUI_DLL_PARAMETER;
 
+class libscylla;
 
 // Initialize GUI instance
 int InitializeGui(HINSTANCE hInstance, LPARAM param);
@@ -110,7 +107,7 @@ public:
         MSG_WM_GETDLGCODE(OnTreeImportsSubclassGetDlgCode)
         MSG_WM_CHAR(OnTreeImportsSubclassChar)
 
-        END_MSG_MAP()
+    END_MSG_MAP()
 
     // Dialog resize 'table'
     // States if child controls move or resize or center in a specific direction
@@ -162,13 +159,11 @@ protected:
     TCHAR stringBuffer[600];
 
     ImportsHandling importsHandling;
-    //ProcessAccessHelp processAccessHelp;
-    ApiReader apiReader;
     IATReferenceScan iatReferenceScan;
 
     Process * selectedProcess;
     bool isProcessSuspended;
-    SCY_HANDLE hProcessContext;
+    std::shared_ptr<libscylla> context;
 
     // File selection filters
 

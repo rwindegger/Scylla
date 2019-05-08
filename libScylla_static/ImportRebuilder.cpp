@@ -1,9 +1,9 @@
-
 #include "ImportRebuilder.h"
+#include "configuration_holder.h"
+#include "configuration.h"
+
 #include "Scylla.h"
 #include "StringConversion.h"
-
-
 
 /*
 New Scylla section contains:
@@ -121,7 +121,7 @@ bool ImportRebuilder::createNewImportSection(std::map<DWORD_PTR, ImportModuleThu
 {
 	char sectionName[IMAGE_SIZEOF_SHORT_NAME + 1] = {0};
 
-    const LPCTSTR sectionNameW = Scylla::config[IAT_SECTION_NAME].getString();
+    const LPCTSTR sectionNameW = Scylla::config[config_option::IAT_SECTION_NAME].getString();
 
 	calculateImportSizes(moduleList);
 
