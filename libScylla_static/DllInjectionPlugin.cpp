@@ -6,6 +6,7 @@
 #include "api_info.h"
 
 #include "Scylla.h"
+#include "StringConversion.h"
 
 LPCTSTR DllInjectionPlugin::FILE_MAPPING_NAME = TEXT("ScyllaPluginExchange");
 
@@ -259,11 +260,11 @@ void DllInjectionPlugin::updateImportsWithPluginResult(PUNRESOLVED_IMPORT firstU
                     importThunk->hint = static_cast<WORD>(apiInfo->hint());
                     importThunk->ordinal = apiInfo->ordinal();
                     _tcscpy_s(importThunk->name, apiInfo->name());
-                    _tcscpy_s(importThunk->moduleName, apiInfo->module()->filename().c_str());
+                    StringConversion::ToTStr(apiInfo->module()->filename().c_str(), importThunk->moduleName, _countof(importThunk->moduleName));
 
                     if (moduleThunk->moduleName[0] == TEXT('?'))
                     {
-                        _tcscpy_s(moduleThunk->moduleName, _countof(importThunk->moduleName), apiInfo->module()->filename().c_str());
+                        StringConversion::ToTStr(apiInfo->module()->filename().c_str(), moduleThunk->moduleName, _countof(moduleThunk->moduleName));
                     }
                 }
 

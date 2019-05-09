@@ -2,6 +2,7 @@
 #include "libscylla.h"
 #include <Windows.h>
 #include <tchar.h>
+#include "StringConversion.h"
 
 module_info::module_info(std::shared_ptr<libscylla> context)
     : context_{ std::move(context) }
@@ -66,30 +67,31 @@ void module_info::priority(const int priority)
 }
 void module_info::set_priority()
 {
-    const auto moduleFileName = filename();
-
+    TCHAR module_file_name[MAX_PATH];
+    StringConversion::ToTStr(filename().c_str(), module_file_name, _countof(module_file_name));
+    
     //imports by kernelbase don't exist
-    if (!_tcsicmp(moduleFileName.c_str(), TEXT("kernelbase.dll")))
+    if (!_tcsicmp(module_file_name, TEXT("kernelbase.dll")))
     {
         priority(-1);
     }
-    else if (!_tcsicmp(moduleFileName.c_str(), TEXT("ntdll.dll")))
+    else if (!_tcsicmp(module_file_name, TEXT("ntdll.dll")))
     {
         priority(0);
     }
-    else if (!_tcsicmp(moduleFileName.c_str(), TEXT("shlwapi.dll")))
+    else if (!_tcsicmp(module_file_name, TEXT("shlwapi.dll")))
     {
         priority(0);
     }
-    else if (!_tcsicmp(moduleFileName.c_str(), TEXT("ShimEng.dll")))
+    else if (!_tcsicmp(module_file_name, TEXT("ShimEng.dll")))
     {
         priority(0);
     }
-    else if (!_tcsicmp(moduleFileName.c_str(), TEXT("kernel32.dll")))
+    else if (!_tcsicmp(module_file_name, TEXT("kernel32.dll")))
     {
         priority(2);
     }
-    else if (!_tcsnicmp(moduleFileName.c_str(), TEXT("API-"), 4) || !_tcsnicmp(moduleFileName.c_str(), TEXT("EXT-"), 4)) //API_SET_PREFIX_NAME, API_SET_EXTENSION
+    else if (!_tcsnicmp(module_file_name, TEXT("API-"), 4) || !_tcsnicmp(module_file_name, TEXT("EXT-"), 4)) //API_SET_PREFIX_NAME, API_SET_EXTENSION
     {
         priority(0);
     }
@@ -101,12 +103,14 @@ void module_info::set_priority()
 
 bool module_info::is_in_winsxs() const
 {
-    if (_tcsstr(full_path_.c_str(), TEXT("\\WinSxS\\")))
+    TCHAR module_file_name[MAX_PATH];
+    StringConversion::ToTStr(full_path().c_str(), module_file_name, _countof(module_file_name));
+    if (_tcsstr(module_file_name, TEXT("\\WinSxS\\")))
     {
         return true;
     }
 
-    if (_tcsstr(full_path_.c_str(), TEXT("\\winsxs\\")))
+    if (_tcsstr(module_file_name, TEXT("\\winsxs\\")))
     {
         return true;
     }
@@ -115,9 +119,13 @@ bool module_info::is_in_winsxs() const
 }
 bool module_info::is_loaded_local() const
 {
+    TCHAR module_file_name[MAX_PATH];
+    StringConversion::ToTStr(full_path().c_str(), module_file_name, _countof(module_file_name));
     for (auto& i : *context_->local_modules())
     {
-        if (!_tcsicmp(full_path_.c_str(), i->full_path_.c_str()))
+        TCHAR local_name[MAX_PATH];
+        StringConversion::ToTStr(i->full_path().c_str(), local_name, _countof(local_name));
+        if (!_tcsicmp(module_file_name, local_name))
         {
             //printf("isModuleLoadedInOwnProcess :: %s %s\n",module->fullPath,ownModuleList[i].fullPath);
             return true;

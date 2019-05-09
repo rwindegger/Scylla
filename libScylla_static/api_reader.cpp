@@ -90,7 +90,9 @@ void api_reader::parse_module(std::unordered_multimap<uintptr_t, std::shared_ptr
 
 void api_reader::parse_module_mapping(std::unordered_multimap<uintptr_t, std::shared_ptr<api_info>>& api_list, const std::shared_ptr<module_info>& module)
 {
-    LPVOID file_mapping = create_file_mapping_view_read(module->full_path().c_str());
+    TCHAR module_file_name[MAX_PATH];
+    StringConversion::ToTStr(module->full_path().c_str(), module_file_name, _countof(module_file_name));
+    LPVOID file_mapping = create_file_mapping_view_read(module_file_name);
 
     if (file_mapping == nullptr)
         return;
@@ -109,7 +111,9 @@ void api_reader::parse_module_mapping(std::unordered_multimap<uintptr_t, std::sh
 
 void api_reader::parse_module_local(std::unordered_multimap<uintptr_t, std::shared_ptr<api_info>>& api_list, const std::shared_ptr<module_info>& module)
 {
-    HMODULE hModule = GetModuleHandle(module->filename().c_str());
+    TCHAR module_file_name[MAX_PATH];
+    StringConversion::ToTStr(module->full_path().c_str(), module_file_name, _countof(module_file_name));
+    HMODULE hModule = GetModuleHandle(module_file_name);
 
     if (hModule)
     {
@@ -410,7 +414,10 @@ void api_reader::handle_forwarded_api(std::unordered_multimap<uintptr_t, std::sh
 
     _tcscat_s(dllName, TEXT(".dll"));
 
-    if (!_tcsicmp(dllName, parent_module->filename().c_str()))
+    TCHAR module_file_name[MAX_PATH];
+    StringConversion::ToTStr(parent_module->filename().c_str(), module_file_name, _countof(module_file_name));
+
+    if (!_tcsicmp(dllName, module_file_name))
     {
         module = parent_module;
     }
@@ -479,7 +486,9 @@ std::shared_ptr<module_info> api_reader::find_module_by_name(LPCTSTR name) const
 {
     for (auto& i : *context_->target_modules())
     {
-        if (!_tcsicmp(i->filename().c_str(), name))
+        TCHAR module_file_name[MAX_PATH];
+        StringConversion::ToTStr(i->filename().c_str(), module_file_name, _countof(module_file_name));
+        if (!_tcsicmp(module_file_name, name))
         {
             return i;
         }
@@ -501,7 +510,9 @@ void api_reader::find_api_by_module(const std::shared_ptr<module_info>& module, 
 {
     if (module->is_loaded_local())
     {
-        HMODULE hModule = GetModuleHandle(module->filename().c_str());
+        TCHAR module_file_name[MAX_PATH];
+        StringConversion::ToTStr(module->filename().c_str(), module_file_name, _countof(module_file_name));
+        HMODULE hModule = GetModuleHandle(module_file_name);
 
         if (hModule)
         {
@@ -866,7 +877,9 @@ void api_reader::add_found_api_to_module_list(uintptr_t iatAddress, const std::s
 {
     if (isNewModule)
     {
-        add_module_to_module_list(api_found->module()->filename().c_str(), iatAddress - target_image_base_, module_list_new);
+        TCHAR module_file_name[MAX_PATH];
+        StringConversion::ToTStr(api_found->module()->filename().c_str(), module_file_name, _countof(module_file_name));
+        add_module_to_module_list(module_file_name, iatAddress - target_image_base_, module_list_new);
     }
     add_function_to_module_list(api_found, iatAddress, iatAddress - target_image_base_, api_found->ordinal(), true, isSuspect, module_list_new);
 }
@@ -1019,8 +1032,10 @@ bool api_reader::add_function_to_module_list(const std::shared_ptr<api_info>& ap
     import.ordinal = ordinal;
     import.hint = api_found->hint();
 
-    if (_tcslen(api_found->module()->filename().c_str()) < MAX_PATH)
-        _tcscpy_s(import.moduleName, api_found->module()->filename().c_str());
+    TCHAR module_file_name[MAX_PATH];
+    StringConversion::ToTStr(api_found->module()->filename().c_str(), module_file_name, _countof(module_file_name));
+    if (_tcslen(module_file_name) < MAX_PATH)
+        _tcscpy_s(import.moduleName, module_file_name);
     _tcscpy_s(import.name, api_found->name());
 
     module->thunkList.insert(std::pair<DWORD_PTR, ImportThunk>(import.rva, import));
