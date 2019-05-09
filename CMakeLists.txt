@@ -89,7 +89,7 @@ install(FILES ${libScylla_static_dir}/Logger.h DESTINATION include)
 install(FILES ${libScylla_static_dir}/ProcessLister.h DESTINATION include)
 install(FILES ${libScylla_static_dir}/native_win_api.h DESTINATION include)
 install(FILES ${libScylla_static_dir}/PluginLoader.h DESTINATION include)
-install(FILES ${libScylla_static_dir}/ConfigurationHolder.h DESTINATION include)
+install(FILES ${libScylla_static_dir}/configuration_holder.h DESTINATION include)
 
 message(STATUS "-- Configuring : libScylla")
 file(GLOB libScylla_files "${libScylla_dir}/*.cpp")
